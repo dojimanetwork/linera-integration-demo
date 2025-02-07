@@ -141,7 +141,7 @@ impl QueryRoot {
         Ok(pools)
     }
 
-    async fn get_pool_balance(&self, pool_address: String) -> Result<Option<u64>> {
+    async fn get_pool_balance(&self, pool_address: String) -> Result<Option<String>> {
         Ok(self.file_solver_app.pool_balances.get(&pool_address).await?)
     }
 
@@ -150,7 +150,7 @@ impl QueryRoot {
         self.file_solver_app.pool_balances.for_each_index_value(|pool_address, balance| {
             balances.push(PoolBalance {
                 pool_address: pool_address.clone(),
-                balance: *balance,
+                balance: (*balance).parse::<f64>().unwrap(),
             });
             Ok(())
         }).await?;
@@ -159,7 +159,7 @@ impl QueryRoot {
     async fn calculate_swap(&self,
         from_token: String,
         to_token: String,
-        amount: u64,
+        amount: f64,
     ) -> Result<SwapResult> {
         // Verify tokens exist in pool list
         let from_address = self.file_solver_app.pool_list.get(&from_token).await?
@@ -171,14 +171,13 @@ impl QueryRoot {
         let from_balance = self.file_solver_app.pool_balances.get(&from_address).await?
             .ok_or_else(|| async_graphql::Error::new("Source balance not found"))?;
 
-        if from_balance < amount {
+        if from_balance.parse::<f64>().unwrap() < amount {
             return Err(async_graphql::Error::new("Insufficient balance"));
         }
 
         let exchange_rate = self.calculate_rate(from_token.clone(), to_token.clone())?;
         
-        // Calculate final swap amount based on rate and input amount
-        let to_amount = ((amount as f64) * exchange_rate) as u64;
+        let to_amount = amount * exchange_rate;
         
         Ok(SwapResult {
             from_token,
@@ -247,7 +246,10 @@ impl QueryRoot {
         );
 
         // Calculate and return exchange rate
-        Ok(to_price / from_price)
+        // If from_price is ETH price ($2000) and to_price is SOL price ($14.21)
+        // Then rate should be from_price/to_price = 140.72
+        // This gives correct conversion: 10 ETH * 140.72 = 140.72 SOL
+        Ok(from_price / to_price)
     }
 }
 
@@ -278,11 +280,11 @@ impl MutationRoot {
         }).unwrap()
     }
 
-    async fn update_pool_balance(&self, pool_address: String, balance: u64) -> Vec<u8> {
-        bcs::to_bytes(&Operation::UpdatePoolBalance {
+    async fn update_pool_balance(&self, pool_address: String, balance: String) -> Result<Vec<u8>> {
+        Ok(bcs::to_bytes(&Operation::UpdatePoolBalance {
             pool_address,
             balance,
-        }).unwrap()
+        }).unwrap())
     }
 
     async fn swap(
@@ -290,7 +292,7 @@ impl MutationRoot {
         from_token: String,
         to_token: String,
         destination_address: String,
-        amount: u64
+        amount: String
     ) -> Result<Vec<u8>> {
         Ok(bcs::to_bytes(&Operation::Swap {
             from_token,

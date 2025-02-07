@@ -64,7 +64,7 @@ impl Contract for UniversalSolverContract {
                     .expect("Target pool not found");
 
                 // Track and validate the swap
-                self.validate_and_track_swap(&from_pool, amount).await;
+                self.validate_and_track_swap(&from_pool, amount.parse::<f64>().unwrap()).await;
 
                 // Calculate swap amount using service query
                 let application_id = self.runtime.application_id();
@@ -87,8 +87,8 @@ impl Contract for UniversalSolverContract {
                     to_token,
                     amount,
                     match swap_result.get("toAmount") {
-                        Some(async_graphql::Value::Number(n)) => n.as_u64().unwrap(),
-                        _ => 0 // Fallback value if toAmount is invalid
+                        Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                        _ => 0.0 // Fallback value if toAmount is invalid
                     },
                     match swap_result.get("exchangeRate") {
                         Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
@@ -96,7 +96,7 @@ impl Contract for UniversalSolverContract {
                     }
                 );
                 let to_amount = match swap_result.get("toAmount") {
-                    Some(async_graphql::Value::Number(n)) => n.as_u64().unwrap(),
+                    Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
                     _ => panic!("Invalid toAmount in swap result: {swap_result:?}")
                 };
 
@@ -122,7 +122,7 @@ impl Contract for UniversalSolverContract {
                 self.execute_token_swap(
                     from_pool,
                     to_pool,
-                    amount,
+                    amount.parse::<f64>().unwrap(),
                     to_amount
                 ).await;
             }
@@ -198,13 +198,13 @@ impl Contract for UniversalSolverContract {
     }
 
     /// Validates and tracks a swap operation
-    async fn validate_and_track_swap(&mut self, from_address: &str, amount: u64) {
+    async fn validate_and_track_swap(&mut self, from_address: &str, amount: f64) {
         // Check balance
         let from_balance = self.state.pool_balances.get(from_address).await
             .expect("Failed to get source balance")
             .expect("Source balance not found");
 
-        assert!(from_balance >= amount, "Insufficient balance");
+        assert!(from_balance.parse::<f64>().unwrap() >= amount, "Insufficient balance");
     }
 
     /// Executes the token swap by updating balances
@@ -212,23 +212,25 @@ impl Contract for UniversalSolverContract {
         &mut self,
         from_address: String,
         to_address: String,
-        from_amount: u64,
-        to_amount: u64,
+        from_amount: f64,
+        to_amount: f64,
     ) {
         // Update source balance
         let mut from_balance = self.state.pool_balances.get(&from_address).await
             .expect("Failed to get source balance")
             .expect("Source balance not found");
-        from_balance += from_amount;
-        self.state.pool_balances.insert(&from_address, from_balance)
+        let mut from_balance_f64: f64 = from_balance.parse().unwrap();
+        from_balance_f64 += from_amount;
+        self.state.pool_balances.insert(&from_address, from_balance_f64.to_string())
             .expect("Failed to update source balance");
 
         // Update target balance
         let mut to_balance = self.state.pool_balances.get(&to_address).await
             .expect("Failed to get target balance")
-            .unwrap_or(0);
-        to_balance -= to_amount;
-        self.state.pool_balances.insert(&to_address, to_balance)
+            .unwrap_or(0f64.to_string());
+        let mut to_balance_f64: f64= to_balance.parse().unwrap();
+        to_balance_f64 -= to_amount;
+        self.state.pool_balances.insert(&to_address, to_balance_f64.to_string())
             .expect("Failed to update target balance");
     }
 }

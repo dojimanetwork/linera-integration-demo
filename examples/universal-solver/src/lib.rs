@@ -43,13 +43,13 @@ pub enum Operation {
     },
     UpdatePoolBalance {
         pool_address: String,
-        balance: u64,
+        balance: String,
     },
     Swap {
         from_token: String,
         to_token: String,
         destination_address: String,
-        amount: u64,
+        amount: String,
     },
 }
 
@@ -134,15 +134,15 @@ pub struct Pool {
 #[derive(SimpleObject)]
 pub struct PoolBalance {
     pub pool_address: String,
-    pub balance: u64,
+    pub balance: f64,
 }
 
 #[derive(SimpleObject)]
 pub struct SwapResult {
     pub from_token: String,
     pub to_token: String,
-    pub from_amount: u64,
-    pub to_amount: u64,
+    pub from_amount: f64,
+    pub to_amount: f64,
     pub exchange_rate: f64,
 }
 

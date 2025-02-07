@@ -10,5 +10,5 @@ pub struct UniversalSolverState {
     pub files: MapView<SolverFileId, SolverFile>,
     pub owned_files: MapView<AccountOwner, BTreeSet<SolverFileId>>,
     pub pool_list: MapView<String, String>,  // chain_name -> pool_address
-    pub pool_balances: MapView<String, u64>,
+    pub pool_balances: MapView<String, String>,
 }
