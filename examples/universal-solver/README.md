@@ -1,6 +1,26 @@
 # Universal Solver
 
-A Linera application for managing files and pool addresses.
+Architecture:
+  1. Add pools
+    - add l1 token with address containing balance
+  2. Add pool Addresses list
+    - add address along with balance
+  3. Transaction database
+    - TxInItem, TxOutItem
+      - tx_hash
+      - from
+      - to
+      - value
+      - gas
+      - gas_price
+      - chain
+      - token
+    - status 
+      - pending
+      - processed
+      - failed
+      - success
+  
 
 ## GraphQL API Reference
 
@@ -62,6 +82,23 @@ query {
 }
 ```
 
+#### Calculate Swap
+```graphql
+query {
+    calculateSwap(
+        fromToken: "ETH",
+        toToken: "SOL",
+        amount: 1000000000
+    ) {
+        fromToken
+        toToken
+        fromAmount
+        toAmount
+        exchangeRate
+    }
+}
+```
+
 ### Mutations
 
 #### Add File
@@ -94,6 +131,18 @@ mutation {
 }
 ```
 
+#### Execute Swap
+```graphql
+mutation {
+    executeSwap(
+        fromToken: "ETH",
+        toToken: "SOL",
+        amount: 1000000000,
+        destinationAddress: "0x123..."
+    )
+}
+```
+
 ## HTTP API Reference
 
 The service also provides a REST API for transaction-related operations.
@@ -101,17 +150,22 @@ The service also provides a REST API for transaction-related operations.
 ### Endpoints
 
 #### POST /post_tx_hash
-Get transaction details by hash.
+Get transaction details by hash and optionally execute a swap.
 
 Request:
 ```bash
-curl -X POST "http://localhost:3000/post_tx_hash?txHash=0x123..."
+# Get transaction details only
+curl -X POST "http://localhost:3000/post_tx_hash?chain=ethereum&txHash=0x123..."
+
+# Get transaction details and execute swap
+curl -X POST "http://localhost:3000/post_tx_hash?chain=ethereum&txHash=0x123...&toToken=SOL&destinationAddress=0xabc..."
 ```
 
-Response:
+Response (with swap):
 ```json
 {
   "status": "success",
+  "chain": "ethereum",
   "data": {
     "hash": "0x123...",
     "blockHash": "0x456...",
@@ -127,6 +181,17 @@ Response:
     "v": "0x1b",
     "r": "0xdef...",
     "s": "0x123..."
+  },
+  "swap_result": {
+    "tx_hash": "0x789...",
+    "swap_result": {
+      "from_token": "ETH",
+      "to_token": "SOL",
+      "from_amount": 1000000000000000000,
+      "to_amount": 25000000000,
+      "exchange_rate": 25.0
+    },
+    "status": "pending"
   }
 }
 ```
@@ -134,20 +199,43 @@ Response:
 ## Development
 
 ### Building
-```bash
-cargo build
 ```
 
-### Testing
+## Running the Client
+
+The client can be configured using command-line flags or environment variables:
+
+### Command-line Flags
 ```bash
-cargo test
+go run main.go [flags]
+
+Flags:
+  -solver-url string    Universal Solver service URL (default "http://localhost:8080/")
+  -solana-url string    Solana RPC endpoint (default "http://localhost:8899")
+  -ethereum-url string  Ethereum RPC endpoint (default "http://localhost:8545")
 ```
 
-### Running
-```bash
-# Start GraphQL server
-cargo run --bin solver_service
+### Environment Variables
+- `SOLVER_URL`: Universal Solver service URL
+- `SOLANA_RPC`: Solana RPC endpoint
+- `ETHEREUM_RPC`: Ethereum RPC endpoint
+- `PORT`: Server port (default "3000")
 
-# Start HTTP server
-cd client && go run main.go
-``` 
+### Examples
+
+1. Using command-line flags:
+```bash
+go run main.go \
+  -solver-url="http://solver.example.com/" \
+  -solana-url="http://solana.example.com" \
+  -ethereum-url="http://ethereum.example.com"
+```
+
+2. Using environment variables:
+```bash
+export SOLVER_URL="http://solver.example.com/"
+export SOLANA_RPC="http://solana.example.com"
+export ETHEREUM_RPC="http://ethereum.example.com"
+export PORT="8000"
+go run main.go
+```

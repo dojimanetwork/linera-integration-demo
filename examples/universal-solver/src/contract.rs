@@ -69,24 +69,54 @@ impl Contract for UniversalSolverContract {
                 // Calculate swap amount using service query
                 let application_id = self.runtime.application_id();
                 let request = async_graphql::Request::new(format!(
-                    r#"query {{ calculateSwap(fromToken: "{from_token}", toToken: "{to_token}", amount: {amount}) }}"#
+                    r#"query {{ calculateSwap(fromToken: "{from_token}", toToken: "{to_token}", amount: {amount}) {{ fromToken toToken fromAmount toAmount exchangeRate }} }}"#
                 ));
-
                 let response = self.runtime.query_service(application_id, request);
                 let async_graphql::Value::Object(data_object) = response.data else {
                     panic!("Unexpected response from `calculateSwap`: {response:?}");
                 };
 
-                let async_graphql::Value::Object(swap_result) = &data_object["calculateSwap"] else {
-                    panic!("Missing `calculateSwap` result in response data: {data_object:?}");  
+                let swap_result = match data_object.get("calculateSwap") {
+                    Some(async_graphql::Value::Object(result)) => result,
+                    _ => panic!("Missing or invalid calculateSwap result in response data: {data_object:?}")
+                };
+                // Log the swap result details
+                log::info!(
+                    "Swap result: from_token={}, to_token={}, amount={}, to_amount={}, exchange_rate={}",
+                    from_token,
+                    to_token,
+                    amount,
+                    match swap_result.get("toAmount") {
+                        Some(async_graphql::Value::Number(n)) => n.as_u64().unwrap(),
+                        _ => 0 // Fallback value if toAmount is invalid
+                    },
+                    match swap_result.get("exchangeRate") {
+                        Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                        _ => 0.0 // Fallback value if exchangeRate is invalid
+                    }
+                );
+                let to_amount = match swap_result.get("toAmount") {
+                    Some(async_graphql::Value::Number(n)) => n.as_u64().unwrap(),
+                    _ => panic!("Invalid toAmount in swap result: {swap_result:?}")
                 };
 
-                let async_graphql::Value::Number(to_amount_value) = &swap_result["toAmount"] else {
-                    panic!("Missing `toAmount` in swap result data: {swap_result:?}");
+                let exchange_rate = match swap_result.get("exchangeRate") {
+                    Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                    _ => panic!("Invalid exchangeRate in swap result: {swap_result:?}")
                 };
 
-                let to_amount = to_amount_value.as_u64()
-                    .expect("Invalid `toAmount` value in swap result");
+                // Verify the tokens match
+                let from_token_response = match swap_result.get("fromToken") {
+                    Some(async_graphql::Value::String(s)) => s,
+                    _ => panic!("Invalid fromToken in swap result: {swap_result:?}")
+                };
+                let to_token_response = match swap_result.get("toToken") {
+                    Some(async_graphql::Value::String(s)) => s,
+                    _ => panic!("Invalid toToken in swap result: {swap_result:?}")
+                };
+
+                assert_eq!(&from_token, from_token_response, "Mismatched from_token in response");
+                assert_eq!(&to_token, to_token_response, "Mismatched to_token in response");
 
                 // Execute the swap
                 self.execute_token_swap(
@@ -189,7 +219,7 @@ impl Contract for UniversalSolverContract {
         let mut from_balance = self.state.pool_balances.get(&from_address).await
             .expect("Failed to get source balance")
             .expect("Source balance not found");
-        from_balance -= from_amount;
+        from_balance += from_amount;
         self.state.pool_balances.insert(&from_address, from_balance)
             .expect("Failed to update source balance");
 
@@ -197,7 +227,7 @@ impl Contract for UniversalSolverContract {
         let mut to_balance = self.state.pool_balances.get(&to_address).await
             .expect("Failed to get target balance")
             .unwrap_or(0);
-        to_balance += to_amount;
+        to_balance -= to_amount;
         self.state.pool_balances.insert(&to_address, to_balance)
             .expect("Failed to update target balance");
     }

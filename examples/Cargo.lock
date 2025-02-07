@@ -6305,6 +6305,7 @@ dependencies = [
  "base64 0.21.7",
  "linera-sdk",
  "linera-views",
+ "log",
  "serde",
  "serde_json",
  "sha3",

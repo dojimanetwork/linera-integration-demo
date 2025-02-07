@@ -11,6 +11,7 @@ serde_json.workspace = true
 linera-views = { workspace = true }
 base64 = "0.21.7"
 sha3 = "0.10.8"
+log = "0.4.22"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 linera-sdk = { workspace = true, features = ["test", "wasmer", "unstable-oracles"] }

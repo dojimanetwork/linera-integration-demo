@@ -2,21 +2,123 @@ package solver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
+	"os"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/programs/system"
+	"github.com/mr-tron/base58"
 )
 
-type Client struct {
-	endpoint   string
-	httpClient *http.Client
+// Add at the top with other package-level variables
+var (
+	// RPC endpoints
+	EthereumRPC string
+	SolanaRPC   string
+)
+
+// Add a function to initialize RPC URLs
+func InitRPCEndpoints(ethereumURL, solanaURL string) {
+	EthereumRPC = ethereumURL
+	SolanaRPC = solanaURL
 }
 
-func NewClient(endpoint string) *Client {
+type Client struct {
+	baseURL string
+	http    *http.Client
+}
+
+func NewClient(baseURL string) *Client {
 	return &Client{
-		endpoint:   endpoint,
-		httpClient: &http.Client{},
+		baseURL: baseURL,
+		http:    &http.Client{},
 	}
+}
+
+// GetSolanaTransaction fetches transaction details from Solana
+func (c *Client) GetSolanaTransaction(_, txHash string) (interface{}, error) {
+	// Prepare the JSON-RPC request
+	requestBody := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "getTransaction",
+		"params": []interface{}{
+			txHash,
+			map[string]interface{}{
+				"encoding":   "json",
+				"commitment": "confirmed",
+			},
+		},
+	}
+
+	// Make the request
+	response, err := c.makeRPCRequest(SolanaRPC, requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Solana transaction: %w", err)
+	}
+
+	return response, nil
+}
+
+// GetEthereumTransaction fetches transaction details from Ethereum
+func (c *Client) GetEthereumTransaction(_, txHash string) (interface{}, error) {
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	hash := common.HexToHash(txHash)
+	tx, isPending, err := client.TransactionByHash(context.Background(), hash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Ethereum transaction: %w", err)
+	}
+
+	// Convert transaction to map for consistent response format
+	return map[string]interface{}{
+		"hash":      tx.Hash().Hex(),
+		"value":     tx.Value().String(),
+		"gas":       tx.Gas(),
+		"gasPrice":  tx.GasPrice().String(),
+		"nonce":     tx.Nonce(),
+		"isPending": isPending,
+	}, nil
+}
+
+func (c *Client) makeRPCRequest(endpoint string, requestBody interface{}) (interface{}, error) {
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (c *Client) GetFile(id string) (*SolverFile, error) {
@@ -24,14 +126,14 @@ func (c *Client) GetFile(id string) (*SolverFile, error) {
 		"query": "query { getFileSolverApp(id: \"%s\") { solverFileId owner name payload } }"
 	}`, id)
 
-	req, err := http.NewRequest("POST", c.endpoint, bytes.NewBuffer([]byte(query)))
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -65,14 +167,14 @@ func (c *Client) GetTransactionByHash(hash string) (*Transaction, error) {
 	 }}"
 	}`, hash)
 
-	req, err := http.NewRequest("POST", c.endpoint, bytes.NewBuffer([]byte(query)))
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -89,4 +191,542 @@ func (c *Client) GetTransactionByHash(hash string) (*Transaction, error) {
 	}
 
 	return result.Data.GetTransaction, nil
+}
+
+// CalculateSwap queries the universal solver for swap calculations
+func (c *Client) CalculateSwap(fromToken, toToken string, amount uint64) (*SwapResult, error) {
+	query := fmt.Sprintf(`{"query":"query calSwap{calculateSwap(fromToken:\"%s\",toToken:\"%s\",amount:%d){toToken toAmount fromToken fromAmount exchangeRate}}"}`, fromToken, toToken, amount)
+
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Parse the raw response first to validate structure
+	var rawResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
+		return nil, fmt.Errorf("error parsing raw response: %w", err)
+	}
+
+	// Create properly structured result
+	var result struct {
+		Data struct {
+			CalculateSwap struct {
+				ToToken      string  `json:"toToken"`
+				ToAmount     uint64  `json:"toAmount"`
+				FromToken    string  `json:"fromToken"`
+				FromAmount   uint64  `json:"fromAmount"`
+				ExchangeRate float64 `json:"exchangeRate"`
+			} `json:"calculateSwap"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors,omitempty"`
+	}
+
+	// Re-encode and decode to ensure proper type conversion
+	jsonData, err := json.Marshal(rawResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error re-encoding response: %w", err)
+	}
+
+	if err := json.Unmarshal(jsonData, &result); err != nil {
+		return nil, fmt.Errorf("error parsing structured response: %w", err)
+	}
+
+	if len(result.Errors) > 0 {
+		return nil, fmt.Errorf("GraphQL error: %s", result.Errors[0].Message)
+	}
+
+	return &SwapResult{
+		ToToken:      result.Data.CalculateSwap.ToToken,
+		ToAmount:     result.Data.CalculateSwap.ToAmount,
+		FromToken:    result.Data.CalculateSwap.FromToken,
+		FromAmount:   result.Data.CalculateSwap.FromAmount,
+		ExchangeRate: result.Data.CalculateSwap.ExchangeRate,
+	}, nil
+}
+
+// ExecuteSwap performs the swap operation
+func (c *Client) ExecuteSwap(fromToken, toToken string, amount uint64, destinationAddress string) (*SwapResponse, error) {
+	// First calculate the swap
+	swapResult, err := c.CalculateSwap(fromToken, toToken, amount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to calculate swap: %w", err)
+	}
+
+	// Execute the swap mutation
+	mutation := fmt.Sprintf(`{"query":"mutation calSwap{swap(fromToken:\"%s\",toToken:\"%s\",amount:%d,destinationAddress:\"%s\")}"}`, fromToken, toToken, amount, destinationAddress)
+
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(mutation)))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var rawResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
+		return nil, fmt.Errorf("error parsing raw response: %w", err)
+	}
+
+	// Create properly structured result
+	var result struct {
+		Data   string `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors,omitempty"`
+	}
+
+	// Re-encode and decode to ensure proper type conversion
+	jsonData, err := json.Marshal(rawResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error re-encoding response: %w", err)
+	}
+
+	if err := json.Unmarshal(jsonData, &result); err != nil {
+		return nil, fmt.Errorf("error parsing structured response: %w", err)
+	}
+
+	if len(result.Errors) > 0 {
+		return nil, fmt.Errorf("GraphQL error: %s", result.Errors[0].Message)
+	}
+
+	swapResponse := &SwapResponse{
+		TxHash:             result.Data,
+		SwapResult:         *swapResult,
+		Status:             "pending",
+		DestinationAddress: destinationAddress,
+	}
+
+	// Prepare transaction for signing based on chain
+	chain := c.determineChain(toToken)
+	if err := c.PrepareTransaction(chain, swapResponse); err != nil {
+		return nil, fmt.Errorf("failed to prepare transaction: %w", err)
+	}
+
+	// Sign the prepared transaction
+	if err := c.SignTransaction(swapResponse); err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	// Submit the signed transaction
+	if err := c.SubmitTransaction(swapResponse); err != nil {
+		return nil, fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	return swapResponse, nil
+}
+
+func (c *Client) determineChain(token string) string {
+	switch token {
+	case "ETH":
+		return "ethereum"
+	case "SOL":
+		return "solana"
+	default:
+		return "unknown"
+	}
+}
+
+// PrepareTransaction prepares a transaction for signing based on chain type
+func (c *Client) PrepareTransaction(chain string, swap *SwapResponse) error {
+	switch chain {
+	case "ethereum":
+		return c.prepareEthereumTransaction(swap)
+	case "solana":
+		return c.prepareSolanaTransaction(swap)
+	default:
+		return fmt.Errorf("unsupported chain: %s", chain)
+	}
+}
+
+// GetAllPools fetches all pool addresses
+func (c *Client) GetAllPools() ([]Pool, error) {
+	query := `{"query":"query pools{getAllPools{chainName poolAddress}}"}`
+
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data struct {
+			GetAllPools []Pool `json:"getAllPools"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors,omitempty"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	if len(result.Errors) > 0 {
+		return nil, fmt.Errorf("GraphQL error: %s", result.Errors[0].Message)
+	}
+
+	// Accumulate pools from response
+	var pools []Pool
+	for _, pool := range result.Data.GetAllPools {
+		pools = append(pools, Pool{
+			ChainName:   pool.ChainName,
+			PoolAddress: pool.PoolAddress,
+		})
+	}
+
+	return pools, nil
+}
+
+// GetAllPoolBalances fetches all pool balances
+func (c *Client) GetAllPoolBalances() ([]PoolBalance, error) {
+	query := `{"query":"query balances{getAllPoolBalances{poolAddress balance}}"}`
+
+	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data struct {
+			GetAllPoolBalances []PoolBalance `json:"getAllPoolBalances"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors,omitempty"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	if len(result.Errors) > 0 {
+		return nil, fmt.Errorf("GraphQL error: %s", result.Errors[0].Message)
+	}
+
+	return result.Data.GetAllPoolBalances, nil
+}
+
+// getPoolAddress gets the pool address for a given token
+func (c *Client) getPoolAddress(token string) (string, error) {
+	pools, err := c.GetAllPools()
+	if err != nil {
+		return "", fmt.Errorf("failed to get pools: %w", err)
+	}
+
+	for _, pool := range pools {
+		if pool.ChainName == token {
+			return pool.PoolAddress, nil
+		}
+	}
+
+	return "", fmt.Errorf("pool not found for token: %s", token)
+}
+
+// Update the prepareEthereumTransaction method
+func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
+	// Get pool address for the token
+	fromAddress, err := c.getPoolAddress(swap.SwapResult.FromToken)
+	if err != nil {
+		return fmt.Errorf("failed to get source pool address: %w", err)
+	}
+
+	// Query Ethereum node for current gas price
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get gas price: %w", err)
+	}
+
+	// Prepare transaction parameters
+	swap.TxToSign = &TransactionPrep{
+		Chain: "ethereum",
+		RawTx: "", // Will be filled by the signer
+		ChainParams: ChainParams{
+			FromAddress: fromAddress,
+			ToAddress:   swap.DestinationAddress,
+			Amount:      fmt.Sprintf("%d", swap.SwapResult.ToAmount),
+			GasPrice:    gasPrice.String(),
+			GasLimit:    21000, // Standard ETH transfer gas limit
+		},
+	}
+	return nil
+}
+
+// Update the prepareSolanaTransaction method
+func (c *Client) prepareSolanaTransaction(swap *SwapResponse) error {
+	// Get pool address for the token
+	fromAddress, err := c.getPoolAddress(swap.SwapResult.FromToken)
+	if err != nil {
+		return fmt.Errorf("failed to get source pool address: %w", err)
+	}
+
+	// Query Solana node for recent blockhash
+	resp, err := c.makeRPCRequest(SolanaRPC, map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "getRecentBlockhash",
+		"params":  []interface{}{},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get recent blockhash: %w", err)
+	}
+
+	result, ok := resp.(map[string]interface{})["result"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid response format")
+	}
+
+	blockhash, ok := result["blockhash"].(string)
+	if !ok {
+		return fmt.Errorf("invalid blockhash format")
+	}
+
+	// Prepare transaction parameters
+	swap.TxToSign = &TransactionPrep{
+		Chain: "solana",
+		RawTx: "", // Will be filled by the signer
+		ChainParams: ChainParams{
+			FromAddress:     fromAddress,
+			ToAddress:       swap.DestinationAddress,
+			Amount:          fmt.Sprintf("%d", swap.SwapResult.ToAmount),
+			RecentBlockhash: blockhash,
+			Lamports:        swap.SwapResult.ToAmount,
+		},
+	}
+	return nil
+}
+
+// SignTransaction signs the prepared transaction based on chain type
+func (c *Client) SignTransaction(swap *SwapResponse) error {
+	if swap.TxToSign == nil {
+		return fmt.Errorf("no transaction prepared for signing")
+	}
+
+	switch swap.TxToSign.Chain {
+	case "ethereum":
+		return c.signEthereumTransaction(swap)
+	case "solana":
+		return c.signSolanaTransaction(swap)
+	default:
+		return fmt.Errorf("unsupported chain for signing: %s", swap.TxToSign.Chain)
+	}
+}
+
+func (c *Client) signEthereumTransaction(swap *SwapResponse) error {
+	// Create the transaction object
+	tx := types.NewTransaction(
+		swap.TxToSign.ChainParams.Nonce,
+		common.HexToAddress(swap.TxToSign.ChainParams.ToAddress),
+		func() *big.Int {
+			amount, _ := new(big.Int).SetString(swap.TxToSign.ChainParams.Amount, 10)
+			return amount
+		}(),
+		swap.TxToSign.ChainParams.GasLimit,
+		func() *big.Int {
+			gasPrice, _ := new(big.Int).SetString(swap.TxToSign.ChainParams.GasPrice, 10)
+			return gasPrice
+		}(),
+		nil, // data
+	)
+
+	// Get the signer
+	chainID := big.NewInt(1337) // mainnet, adjust as needed
+	signer := types.NewEIP155Signer(chainID)
+
+	// Get private key from environment or configuration
+	privateKey, err := crypto.HexToECDSA(os.Getenv("ETH_PRIVATE_KEY"))
+	if err != nil {
+		return fmt.Errorf("failed to load private key: %w", err)
+	}
+
+	// Sign the transaction
+	signedTx, err := types.SignTx(tx, signer, privateKey)
+	if err != nil {
+		return fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	// Convert to raw bytes
+	rawTxBytes, err := signedTx.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("failed to encode signed transaction: %w", err)
+	}
+
+	// Store the raw signed transaction
+	swap.TxToSign.RawTx = hexutil.Encode(rawTxBytes)
+	return nil
+}
+
+func (c *Client) signSolanaTransaction(swap *SwapResponse) error {
+	from_addr, err := solana.PublicKeyFromBase58(swap.TxToSign.ChainParams.FromAddress)
+	to_addr, err := solana.PublicKeyFromBase58(swap.TxToSign.ChainParams.ToAddress)
+
+	// Create a new transaction
+	tx, err := solana.NewTransaction(
+		[]solana.Instruction{
+			system.NewTransferInstruction(
+				swap.TxToSign.ChainParams.Lamports,
+				from_addr,
+				to_addr,
+			).Build(),
+		},
+		solana.MustHashFromBase58(swap.TxToSign.ChainParams.RecentBlockhash),
+	)
+
+	// Get private key from environment or configuration
+	privateKey, err := solana.PrivateKeyFromBase58(os.Getenv("SOL_PRIVATE_KEY"))
+	if err != nil {
+		return fmt.Errorf("failed to load private key: %w", err)
+	}
+
+	// Sign the transaction
+	_, _ = tx.Sign(
+		func(key solana.PublicKey) *solana.PrivateKey {
+			if privateKey.PublicKey().Equals(key) {
+				return &privateKey
+			}
+			return nil
+		},
+	)
+	// var signature []byte
+	// // since only one signer we can be sure to extract at array one position
+	// signature = signedTx[0][:]
+
+	// if err != nil {
+	// 	return fmt.Errorf("failed to sign transaction: %w", err)
+	// }
+
+	// Store the raw signed transaction
+	rawTx, err := tx.MarshalBinary()
+	if err != nil {
+		return fmt.Errorf("failed to serialize signed transaction: %w", err)
+	}
+	swap.TxToSign.RawTx = base58.Encode(rawTx)
+
+	return nil
+}
+
+// SubmitTransaction submits the signed transaction to the appropriate chain
+func (c *Client) SubmitTransaction(swap *SwapResponse) error {
+	if swap.TxToSign == nil || swap.TxToSign.RawTx == "" {
+		return fmt.Errorf("no signed transaction available")
+	}
+
+	switch swap.TxToSign.Chain {
+	case "ethereum":
+		return c.submitEthereumTransaction(swap)
+	case "solana":
+		return c.submitSolanaTransaction(swap)
+	default:
+		return fmt.Errorf("unsupported chain for submission: %s", swap.TxToSign.Chain)
+	}
+}
+
+func (c *Client) submitEthereumTransaction(swap *SwapResponse) error {
+	// Connect to Ethereum node
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	// Decode raw transaction
+	rawTxBytes, err := hexutil.Decode(swap.TxToSign.RawTx)
+	if err != nil {
+		return fmt.Errorf("failed to decode raw transaction: %w", err)
+	}
+
+	var tx types.Transaction
+	if err := tx.UnmarshalBinary(rawTxBytes); err != nil {
+		return fmt.Errorf("failed to unmarshal transaction: %w", err)
+	}
+
+	// Submit transaction
+	if err := client.SendTransaction(context.Background(), &tx); err != nil {
+		return fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	// Update response with transaction hash
+	swap.TxHash = tx.Hash().Hex()
+	swap.Status = "submitted"
+
+	return nil
+}
+
+func (c *Client) submitSolanaTransaction(swap *SwapResponse) error {
+	// Create RPC request
+	requestBody := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      1,
+		"method":  "sendTransaction",
+		"params": []interface{}{
+			swap.TxToSign.RawTx,
+			map[string]interface{}{
+				"encoding": "base58",
+			},
+		},
+	}
+
+	// Submit transaction
+	response, err := c.makeRPCRequest(SolanaRPC, requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	// Extract transaction signature
+	result, ok := response.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid response format")
+	}
+
+	if errMsg, hasError := result["error"]; hasError {
+		return fmt.Errorf("RPC error: %v", errMsg)
+	}
+
+	signature, ok := result["result"].(string)
+	if !ok {
+		return fmt.Errorf("invalid signature format in response")
+	}
+
+	// Update response with transaction signature
+	swap.TxHash = signature
+	swap.Status = "submitted"
+
+	return nil
 }

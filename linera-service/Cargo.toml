@@ -13,7 +13,8 @@ version.workspace = true
 
 [features]
 ethereum = []
-default = ["wasmer", "rocksdb", "storage-service"]
+default = ["wasmer", "rocksdb", "storage-service", "unstable-services"]
+unstable-services = ["linera-core/unstable-oracles", "linera-execution/unstable-oracles"]
 test = [
     "linera-base/test",
     "linera-execution/test",

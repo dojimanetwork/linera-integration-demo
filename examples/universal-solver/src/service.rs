@@ -156,12 +156,11 @@ impl QueryRoot {
         }).await?;
         Ok(balances)
     }
-
-    async fn get_swap_quote(&self,
+    async fn calculate_swap(&self,
         from_token: String,
         to_token: String,
         amount: u64,
-    ) -> Result<f64>{
+    ) -> Result<SwapResult> {
         // Verify tokens exist in pool list
         let from_address = self.file_solver_app.pool_list.get(&from_token).await?
             .ok_or_else(|| async_graphql::Error::new("Source token pool not found"))?;
@@ -176,15 +175,25 @@ impl QueryRoot {
             return Err(async_graphql::Error::new("Insufficient balance"));
         }
 
-        let rate = self.calculate_swap(from_token, to_token);
-        rate
+        let exchange_rate = self.calculate_rate(from_token.clone(), to_token.clone())?;
+        
+        // Calculate final swap amount based on rate and input amount
+        let to_amount = ((amount as f64) * exchange_rate) as u64;
+        
+        Ok(SwapResult {
+            from_token,
+            to_token,
+            from_amount: amount,
+            to_amount,
+            exchange_rate,
+        })
     }
 
 
 }
 
 impl QueryRoot {
-    fn calculate_swap(
+    fn calculate_rate(
         &self,
         from_token: String,
         to_token: String,
@@ -218,12 +227,18 @@ impl QueryRoot {
             .map_err(|e| async_graphql::Error::new(format!("Failed to parse response: {}", e)))?;
 
         // Extract and validate prices
-        let from_price = data["tokens"][&from_token]["price"]
-            .as_f64()
+        let from_price = data["data"]
+            .as_array()
+            .and_then(|tokens| tokens.iter().find(|t| t["symbol"].as_str() == Some(&from_token)))
+            .and_then(|token| token["prices"][0]["value"].as_str())
+            .and_then(|price| price.parse::<f64>().ok())
             .ok_or_else(|| async_graphql::Error::new(format!("Price not found for {}", from_token)))?;
 
-        let to_price = data["tokens"][&to_token]["price"]
-            .as_f64()
+        let to_price = data["data"]
+            .as_array() 
+            .and_then(|tokens| tokens.iter().find(|t| t["symbol"].as_str() == Some(&to_token)))
+            .and_then(|token| token["prices"][0]["value"].as_str())
+            .and_then(|price| price.parse::<f64>().ok())
             .ok_or_else(|| async_graphql::Error::new(format!("Price not found for {}", to_token)))?;
 
         ensure!(

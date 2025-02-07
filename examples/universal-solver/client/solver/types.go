@@ -30,3 +30,51 @@ type Transaction struct {
 	R                string `json:"r"`
 	S                string `json:"s"`
 }
+
+type SwapResult struct {
+	FromToken    string  `json:"from_token"`
+	ToToken      string  `json:"to_token"`
+	FromAmount   uint64  `json:"from_amount"`
+	ToAmount     uint64  `json:"to_amount"`
+	ExchangeRate float64 `json:"exchange_rate"`
+}
+
+type TransactionPrep struct {
+	Chain       string      `json:"chain"`
+	RawTx       string      `json:"raw_tx"`
+	ChainParams ChainParams `json:"chain_params"`
+}
+
+type ChainParams struct {
+	// Common params
+	FromAddress string `json:"from_address"`
+	ToAddress   string `json:"to_address"`
+	Amount      string `json:"amount"`
+
+	// Ethereum specific
+	GasPrice string `json:"gas_price,omitempty"`
+	GasLimit uint64 `json:"gas_limit,omitempty"`
+	Nonce    uint64 `json:"nonce,omitempty"`
+
+	// Solana specific
+	RecentBlockhash string `json:"recent_blockhash,omitempty"`
+	Lamports        uint64 `json:"lamports,omitempty"`
+}
+
+type SwapResponse struct {
+	TxHash             string           `json:"tx_hash"`
+	SwapResult         SwapResult       `json:"swap_result"`
+	Status             string           `json:"status"`
+	TxToSign           *TransactionPrep `json:"tx_to_sign,omitempty"`
+	DestinationAddress string           `json:"destination_address"`
+}
+
+type Pool struct {
+	ChainName   string `json:"chainName"`
+	PoolAddress string `json:"poolAddress"`
+}
+
+type PoolBalance struct {
+	PoolAddress string `json:"poolAddress"`
+	Balance     uint64 `json:"balance"`
+}
