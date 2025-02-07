@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"os"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
+	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/linera-protocol/examples/universal-solver/client/solver/keys"
 	"github.com/mr-tron/base58"
 )
 
@@ -24,12 +24,24 @@ var (
 	// RPC endpoints
 	EthereumRPC string
 	SolanaRPC   string
+	// Chain keys
+	chainKeys *keys.ChainKeys
 )
 
 // Add a function to initialize RPC URLs
 func InitRPCEndpoints(ethereumURL, solanaURL string) {
 	EthereumRPC = ethereumURL
 	SolanaRPC = solanaURL
+}
+
+// InitKeys initializes the private keys from a seed phrase
+func InitKeys(seedPhrase string) error {
+	var err error
+	chainKeys, err = keys.DeriveKeysFromSeedPhrase(seedPhrase)
+	if err != nil {
+		return fmt.Errorf("failed to derive keys: %w", err)
+	}
+	return nil
 }
 
 type Client struct {
@@ -194,8 +206,8 @@ func (c *Client) GetTransactionByHash(hash string) (*Transaction, error) {
 }
 
 // CalculateSwap queries the universal solver for swap calculations
-func (c *Client) CalculateSwap(fromToken, toToken string, amount uint64) (*SwapResult, error) {
-	query := fmt.Sprintf(`{"query":"query calSwap{calculateSwap(fromToken:\"%s\",toToken:\"%s\",amount:%d){toToken toAmount fromToken fromAmount exchangeRate}}"}`, fromToken, toToken, amount)
+func (c *Client) CalculateSwap(fromToken, toToken string, amount float64) (*SwapResult, error) {
+	query := fmt.Sprintf(`{"query":"query calSwap{calculateSwap(fromToken:\"%s\",toToken:\"%s\",amount:%f){toToken toAmount fromToken fromAmount exchangeRate}}"}`, fromToken, toToken, amount)
 
 	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
@@ -221,9 +233,9 @@ func (c *Client) CalculateSwap(fromToken, toToken string, amount uint64) (*SwapR
 		Data struct {
 			CalculateSwap struct {
 				ToToken      string  `json:"toToken"`
-				ToAmount     uint64  `json:"toAmount"`
+				ToAmount     float64 `json:"toAmount"`
 				FromToken    string  `json:"fromToken"`
-				FromAmount   uint64  `json:"fromAmount"`
+				FromAmount   float64 `json:"fromAmount"`
 				ExchangeRate float64 `json:"exchangeRate"`
 			} `json:"calculateSwap"`
 		} `json:"data"`
@@ -248,15 +260,15 @@ func (c *Client) CalculateSwap(fromToken, toToken string, amount uint64) (*SwapR
 
 	return &SwapResult{
 		ToToken:      result.Data.CalculateSwap.ToToken,
-		ToAmount:     result.Data.CalculateSwap.ToAmount,
+		ToAmount:     float64(result.Data.CalculateSwap.ToAmount),
 		FromToken:    result.Data.CalculateSwap.FromToken,
-		FromAmount:   result.Data.CalculateSwap.FromAmount,
+		FromAmount:   float64(result.Data.CalculateSwap.FromAmount),
 		ExchangeRate: result.Data.CalculateSwap.ExchangeRate,
 	}, nil
 }
 
 // ExecuteSwap performs the swap operation
-func (c *Client) ExecuteSwap(fromToken, toToken string, amount uint64, destinationAddress string) (*SwapResponse, error) {
+func (c *Client) ExecuteSwap(fromToken, toToken string, amount float64, destinationAddress string) (*SwapResponse, error) {
 	// First calculate the swap
 	swapResult, err := c.CalculateSwap(fromToken, toToken, amount)
 	if err != nil {
@@ -264,7 +276,7 @@ func (c *Client) ExecuteSwap(fromToken, toToken string, amount uint64, destinati
 	}
 
 	// Execute the swap mutation
-	mutation := fmt.Sprintf(`{"query":"mutation calSwap{swap(fromToken:\"%s\",toToken:\"%s\",amount:%d,destinationAddress:\"%s\")}"}`, fromToken, toToken, amount, destinationAddress)
+	mutation := fmt.Sprintf(`{"query":"mutation calSwap{swap(fromToken:\"%s\",toToken:\"%s\",amount:\"%v\",destinationAddress:\"%s\")}"}`, fromToken, toToken, amount, destinationAddress)
 
 	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
@@ -457,7 +469,7 @@ func (c *Client) getPoolAddress(token string) (string, error) {
 // Update the prepareEthereumTransaction method
 func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
 	// Get pool address for the token
-	fromAddress, err := c.getPoolAddress(swap.SwapResult.FromToken)
+	fromAddress, err := c.getPoolAddress(swap.SwapResult.ToToken)
 	if err != nil {
 		return fmt.Errorf("failed to get source pool address: %w", err)
 	}
@@ -474,6 +486,12 @@ func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
 		return fmt.Errorf("failed to get gas price: %w", err)
 	}
 
+	// Get nonce for the from address
+	nonce, err := client.PendingNonceAt(context.Background(), common.HexToAddress(fromAddress))
+	if err != nil {
+		return fmt.Errorf("failed to get nonce: %w", err)
+	}
+
 	// Prepare transaction parameters
 	swap.TxToSign = &TransactionPrep{
 		Chain: "ethereum",
@@ -484,6 +502,7 @@ func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
 			Amount:      fmt.Sprintf("%d", swap.SwapResult.ToAmount),
 			GasPrice:    gasPrice.String(),
 			GasLimit:    21000, // Standard ETH transfer gas limit
+			Nonce:       nonce,
 		},
 	}
 	return nil
@@ -492,30 +511,16 @@ func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
 // Update the prepareSolanaTransaction method
 func (c *Client) prepareSolanaTransaction(swap *SwapResponse) error {
 	// Get pool address for the token
-	fromAddress, err := c.getPoolAddress(swap.SwapResult.FromToken)
+	fromAddress, err := c.getPoolAddress(swap.SwapResult.ToToken)
 	if err != nil {
 		return fmt.Errorf("failed to get source pool address: %w", err)
 	}
 
 	// Query Solana node for recent blockhash
-	resp, err := c.makeRPCRequest(SolanaRPC, map[string]interface{}{
-		"jsonrpc": "2.0",
-		"id":      1,
-		"method":  "getRecentBlockhash",
-		"params":  []interface{}{},
-	})
+	client := rpc.New(SolanaRPC)
+	resp, err := client.GetLatestBlockhash(context.Background(), rpc.CommitmentConfirmed)
 	if err != nil {
 		return fmt.Errorf("failed to get recent blockhash: %w", err)
-	}
-
-	result, ok := resp.(map[string]interface{})["result"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("invalid response format")
-	}
-
-	blockhash, ok := result["blockhash"].(string)
-	if !ok {
-		return fmt.Errorf("invalid blockhash format")
 	}
 
 	// Prepare transaction parameters
@@ -525,8 +530,8 @@ func (c *Client) prepareSolanaTransaction(swap *SwapResponse) error {
 		ChainParams: ChainParams{
 			FromAddress:     fromAddress,
 			ToAddress:       swap.DestinationAddress,
-			Amount:          fmt.Sprintf("%d", swap.SwapResult.ToAmount),
-			RecentBlockhash: blockhash,
+			Amount:          fmt.Sprintf("%f", swap.SwapResult.ToAmount),
+			RecentBlockhash: resp.Value.Blockhash.String(),
 			Lamports:        swap.SwapResult.ToAmount,
 		},
 	}
@@ -550,6 +555,11 @@ func (c *Client) SignTransaction(swap *SwapResponse) error {
 }
 
 func (c *Client) signEthereumTransaction(swap *SwapResponse) error {
+	// Get derived Ethereum key instead of environment variable
+	if chainKeys == nil || chainKeys.EthereumKey == nil {
+		return fmt.Errorf("ethereum private key not initialized")
+	}
+
 	// Create the transaction object
 	tx := types.NewTransaction(
 		swap.TxToSign.ChainParams.Nonce,
@@ -570,14 +580,8 @@ func (c *Client) signEthereumTransaction(swap *SwapResponse) error {
 	chainID := big.NewInt(1337) // mainnet, adjust as needed
 	signer := types.NewEIP155Signer(chainID)
 
-	// Get private key from environment or configuration
-	privateKey, err := crypto.HexToECDSA(os.Getenv("ETH_PRIVATE_KEY"))
-	if err != nil {
-		return fmt.Errorf("failed to load private key: %w", err)
-	}
-
 	// Sign the transaction
-	signedTx, err := types.SignTx(tx, signer, privateKey)
+	signedTx, err := types.SignTx(tx, signer, chainKeys.EthereumKey)
 	if err != nil {
 		return fmt.Errorf("failed to sign transaction: %w", err)
 	}
@@ -594,43 +598,42 @@ func (c *Client) signEthereumTransaction(swap *SwapResponse) error {
 }
 
 func (c *Client) signSolanaTransaction(swap *SwapResponse) error {
-	from_addr, err := solana.PublicKeyFromBase58(swap.TxToSign.ChainParams.FromAddress)
-	to_addr, err := solana.PublicKeyFromBase58(swap.TxToSign.ChainParams.ToAddress)
+	// Get derived Solana key instead of environment variable
+	if chainKeys == nil || chainKeys.SolanaKey == nil {
+		return fmt.Errorf("solana private key not initialized")
+	}
+
+	from_address, err := solana.PublicKeyFromBase58(swap.TxToSign.ChainParams.FromAddress)
+	if err != nil {
+		return fmt.Errorf("failed to get from address: %w", err)
+	}
+	to_address, err := solana.PublicKeyFromBase58(swap.TxToSign.ChainParams.ToAddress)
+
+	if err != nil {
+		return fmt.Errorf("failed to get to address: %w", err)
+	}
 
 	// Create a new transaction
 	tx, err := solana.NewTransaction(
 		[]solana.Instruction{
 			system.NewTransferInstruction(
-				swap.TxToSign.ChainParams.Lamports,
-				from_addr,
-				to_addr,
+				uint64(swap.TxToSign.ChainParams.Lamports),
+				from_address,
+				to_address,
 			).Build(),
 		},
 		solana.MustHashFromBase58(swap.TxToSign.ChainParams.RecentBlockhash),
 	)
 
-	// Get private key from environment or configuration
-	privateKey, err := solana.PrivateKeyFromBase58(os.Getenv("SOL_PRIVATE_KEY"))
-	if err != nil {
-		return fmt.Errorf("failed to load private key: %w", err)
-	}
-
 	// Sign the transaction
 	_, _ = tx.Sign(
 		func(key solana.PublicKey) *solana.PrivateKey {
-			if privateKey.PublicKey().Equals(key) {
-				return &privateKey
+			if chainKeys.SolanaKey.PublicKey().Equals(key) {
+				return chainKeys.SolanaKey
 			}
 			return nil
 		},
 	)
-	// var signature []byte
-	// // since only one signer we can be sure to extract at array one position
-	// signature = signedTx[0][:]
-
-	// if err != nil {
-	// 	return fmt.Errorf("failed to sign transaction: %w", err)
-	// }
 
 	// Store the raw signed transaction
 	rawTx, err := tx.MarshalBinary()

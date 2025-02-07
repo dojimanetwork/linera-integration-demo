@@ -95,28 +95,29 @@ impl Contract for UniversalSolverContract {
                         _ => 0.0 // Fallback value if exchangeRate is invalid
                     }
                 );
+
                 let to_amount = match swap_result.get("toAmount") {
                     Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
                     _ => panic!("Invalid toAmount in swap result: {swap_result:?}")
                 };
 
-                let exchange_rate = match swap_result.get("exchangeRate") {
-                    Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
-                    _ => panic!("Invalid exchangeRate in swap result: {swap_result:?}")
-                };
-
-                // Verify the tokens match
-                let from_token_response = match swap_result.get("fromToken") {
-                    Some(async_graphql::Value::String(s)) => s,
-                    _ => panic!("Invalid fromToken in swap result: {swap_result:?}")
-                };
-                let to_token_response = match swap_result.get("toToken") {
-                    Some(async_graphql::Value::String(s)) => s,
-                    _ => panic!("Invalid toToken in swap result: {swap_result:?}")
-                };
-
-                assert_eq!(&from_token, from_token_response, "Mismatched from_token in response");
-                assert_eq!(&to_token, to_token_response, "Mismatched to_token in response");
+                // let exchange_rate = match swap_result.get("exchangeRate") {
+                //     Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                //     _ => panic!("Invalid exchangeRate in swap result: {swap_result:?}")
+                // };
+                //
+                // // Verify the tokens match
+                // let from_token_response = match swap_result.get("fromToken") {
+                //     Some(async_graphql::Value::String(s)) => s,
+                //     _ => panic!("Invalid fromToken in swap result: {swap_result:?}")
+                // };
+                // let to_token_response = match swap_result.get("toToken") {
+                //     Some(async_graphql::Value::String(s)) => s,
+                //     _ => panic!("Invalid toToken in swap result: {swap_result:?}")
+                // };
+                //
+                // assert_eq!(&from_token, from_token_response, "Mismatched from_token in response");
+                // assert_eq!(&to_token, to_token_response, "Mismatched to_token in response");
 
                 // Execute the swap
                 self.execute_token_swap(

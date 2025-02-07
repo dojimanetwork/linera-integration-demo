@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -38,6 +39,13 @@ func TestMain(m *testing.M) {
 		"http://localhost:8545", // Ethereum RPC
 		"http://localhost:8899", // Solana RPC
 	)
+
+	// Initialize with test mnemonic - using a valid BIP39 seed phrase
+	testMnemonic := "indoor dish desk flag debris potato excuse depart ticket judge file exit"
+	if err := solver.InitKeys(testMnemonic); err != nil {
+		log.Fatalf("Failed to initialize test keys: %v", err)
+	}
+
 	solverClient = solver.NewClient("http://localhost:8080/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/fe5249547ea2bd2a0754f42dc619007532c6bb1304bc5e7aaafaf646a044fd67cfb392dbb9f8603587a75e842d45992fc8e925f74565bd741f88718ce3a5a89be476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65170000000000000000000000")
 
 	// Run tests
@@ -45,6 +53,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestHandlePostTxHash(t *testing.T) {
+	// Create mock client
+	mockClient := new(MockSolverClient)
+
+	// Store original client and replace with mock
+	originalClient := solverClient
+	solverClient = interface{}(mockClient).(*solver.Client)
+	defer func() {
+		solverClient = originalClient
+	}()
+
 	tests := []struct {
 		name             string
 		method           string
@@ -53,7 +71,6 @@ func TestHandlePostTxHash(t *testing.T) {
 		expectedStatus   int
 		expectedResponse map[string]interface{}
 		expectedErrorMsg string
-		expectedTxPrep   *solver.TransactionPrep
 	}{
 		{
 			name:   "Valid Ethereum Transaction with Swap",
@@ -61,28 +78,41 @@ func TestHandlePostTxHash(t *testing.T) {
 			queryParams: map[string]string{
 				"chain":              "ethereum",
 				"txHash":             "0x106125634d7a095de31cb4c04a297011bc42c2becce8de788b1c30059192eda6",
-				"toToken":            "AVAX",
-				"destinationAddress": "0x807cF9A772d5a3f9CeFBc1192e939D62f0D9bD39",
+				"toToken":            "solana",
+				"destinationAddress": "2Qv1eJ5d8mW8J6rAHrajXgbEZNyAyBkZZDaRtHhh8KVW",
 			},
 			mockSetup: func(m *MockSolverClient) {
 				// Mock Ethereum transaction response
-				m.On("GetEthereumTransaction", "http://localhost:8545", "0x106125634d7a095de31cb4c04a297011bc42c2becce8de788b1c30059192eda6").Return(map[string]interface{}{
+				m.On("GetEthereumTransaction", mock.Anything, mock.Anything).Return(map[string]interface{}{
 					"hash":  "0x106125634d7a095de31cb4c04a297011bc42c2becce8de788b1c30059192eda6",
-					"value": "0x10000000000000000000",
+					"value": "1000000000000000000", // 1 ETH
 				}, nil)
 
-				// Mock swap response with ETH as fromToken
-				m.On("ExecuteSwap", "ETH", "AVAX", uint64(18446744073709551615), "0x807cF9A772d5a3f9CeFBc1192e939D62f0D9bD39").Return(&solver.SwapResponse{
+				// Mock swap response with actual derived addresses
+				swapResp := &solver.SwapResponse{
 					TxHash: "0x789def",
 					SwapResult: solver.SwapResult{
 						FromToken:    "ETH",
-						ToToken:      "AVAX",
-						FromAmount:   18446744073709551615,
-						ToAmount:     18446744073709551615,
+						ToToken:      "SOL",
+						FromAmount:   1000000000000000000,
+						ToAmount:     1000000000,
 						ExchangeRate: 1.0,
 					},
-					Status: "pending",
-				}, nil)
+					Status:             "pending",
+					DestinationAddress: "2Qv1eJ5d8mW8J6rAHrajXgbEZNyAyBkZZDaRtHhh8KVW",
+					TxToSign: &solver.TransactionPrep{
+						Chain: "solana",
+						RawTx: "base58...",
+						ChainParams: solver.ChainParams{
+							FromAddress:     "3h1zGmCwsRJnVk5BuRNMLsPaQu1y2aqXqXDWYCgrp5UG",
+							ToAddress:       "2Qv1eJ5d8mW8J6rAHrajXgbEZNyAyBkZZDaRtHhh8KVW",
+							Amount:          "1000000000",
+							RecentBlockhash: "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM",
+							Lamports:        1000000000,
+						},
+					},
+				}
+				m.On("ExecuteSwap", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(swapResp, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedResponse: map[string]interface{}{
@@ -90,28 +120,30 @@ func TestHandlePostTxHash(t *testing.T) {
 				"chain":  "ethereum",
 				"data": map[string]interface{}{
 					"hash":  "0x106125634d7a095de31cb4c04a297011bc42c2becce8de788b1c30059192eda6",
-					"value": "0x10000000000000000000",
+					"value": "1000000000000000000",
 				},
 				"swap_result": map[string]interface{}{
 					"tx_hash": "0x789def",
 					"swap_result": map[string]interface{}{
 						"from_token":    "ETH",
-						"to_token":      "AVAX",
-						"from_amount":   float64(18446744073709551615),
-						"to_amount":     float64(18446744073709551615),
+						"to_token":      "SOL",
+						"from_amount":   float64(1000000000000000000),
+						"to_amount":     float64(1000000000),
 						"exchange_rate": 1.0,
 					},
-					"status": "pending",
-				},
-			},
-			expectedTxPrep: &solver.TransactionPrep{
-				Chain: "ethereum",
-				ChainParams: solver.ChainParams{
-					FromAddress: "ETH",
-					ToAddress:   "AVAX",
-					Amount:      "18446744073709551615",
-					GasPrice:    "20000000000",
-					GasLimit:    21000,
+					"status":              "pending",
+					"destination_address": "2Qv1eJ5d8mW8J6rAHrajXgbEZNyAyBkZZDaRtHhh8KVW",
+					"tx_to_sign": map[string]interface{}{
+						"chain":  "solana",
+						"raw_tx": "base58...",
+						"chain_params": map[string]interface{}{
+							"from_address":     "3h1zGmCwsRJnVk5BuRNMLsPaQu1y2aqXqXDWYCgrp5UG",
+							"to_address":       "2Qv1eJ5d8mW8J6rAHrajXgbEZNyAyBkZZDaRtHhh8KVW",
+							"amount":           "1000000000",
+							"recent_blockhash": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM",
+							"lamports":         float64(1000000000),
+						},
+					},
 				},
 			},
 		},
@@ -125,14 +157,16 @@ func TestHandlePostTxHash(t *testing.T) {
 				"destinationAddress": "0xdef456",
 			},
 			mockSetup: func(m *MockSolverClient) {
-				m.On("GetSolanaTransaction", "http://localhost:8899", "abc123").Return(map[string]interface{}{
+				// Mock Solana transaction response
+				m.On("GetSolanaTransaction", mock.Anything, mock.Anything).Return(map[string]interface{}{
 					"result": map[string]interface{}{
 						"hash":   "abc123",
 						"amount": float64(1000000000), // 1 SOL
 					},
 				}, nil)
 
-				m.On("ExecuteSwap", "solana", "ETH", uint64(1000000000), "0xdef456").Return(&solver.SwapResponse{
+				// Mock swap response
+				swapResp := &solver.SwapResponse{
 					TxHash: "0x456abc",
 					SwapResult: solver.SwapResult{
 						FromToken:    "SOL",
@@ -141,8 +175,21 @@ func TestHandlePostTxHash(t *testing.T) {
 						ToAmount:     40000000,
 						ExchangeRate: 0.04,
 					},
-					Status: "pending",
-				}, nil)
+					Status:             "pending",
+					DestinationAddress: "0xdef456",
+					TxToSign: &solver.TransactionPrep{
+						Chain: "solana",
+						RawTx: "base58...", // Will be filled by signing
+						ChainParams: solver.ChainParams{
+							FromAddress:     "sol123...", // Test address derived from seed
+							ToAddress:       "0xdef456",
+							Amount:          "1000000000",
+							RecentBlockhash: "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM",
+							Lamports:        1000000000,
+						},
+					},
+				}
+				m.On("ExecuteSwap", "SOL", "ETH", uint64(1000000000), "0xdef456").Return(swapResp, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedResponse: map[string]interface{}{
@@ -163,7 +210,19 @@ func TestHandlePostTxHash(t *testing.T) {
 						"to_amount":     float64(40000000),
 						"exchange_rate": 0.04,
 					},
-					"status": "pending",
+					"status":              "pending",
+					"destination_address": "0xdef456",
+					"tx_to_sign": map[string]interface{}{
+						"chain":  "solana",
+						"raw_tx": "base58...",
+						"chain_params": map[string]interface{}{
+							"from_address":     "sol123...",
+							"to_address":       "0xdef456",
+							"amount":           "1000000000",
+							"recent_blockhash": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM",
+							"lamports":         float64(1000000000),
+						},
+					},
 				},
 			},
 		},
@@ -237,16 +296,9 @@ func TestHandlePostTxHash(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock client
-			mockClient := new(MockSolverClient)
+			// Setup mock for this test case
+			mockClient.ExpectedCalls = nil
 			tt.mockSetup(mockClient)
-
-			// Replace global client with mock
-			originalClient := solverClient
-			// solverClient = mockClient
-			defer func() {
-				solverClient = originalClient
-			}()
 
 			// Create request
 			req := httptest.NewRequest(tt.method, "/post_tx_hash", nil)

@@ -32,10 +32,25 @@ func initFlags() {
 	solverURL := flag.String("solver-url", getEnvOrDefault("SOLVER_URL", "http://localhost:8080/"), "Universal Solver service URL")
 	solanaRPCURL := flag.String("solana-url", getEnvOrDefault("SOLANA_RPC", "http://localhost:8899"), "Solana RPC endpoint")
 	ethereumRPCURL := flag.String("ethereum-url", getEnvOrDefault("ETHEREUM_RPC", "http://localhost:8545"), "Ethereum RPC endpoint")
+	seedPhrase := flag.String("seed-phrase", "", "Seed phrase for deriving chain keys (required)")
 
 	// Only parse flags if not running tests
 	if !testing.Testing() {
 		flag.Parse()
+
+		// Validate required seed phrase
+		if *seedPhrase == "" {
+			fmt.Println("Usage:")
+			fmt.Println("  -solver-url string")
+			fmt.Println("        Universal Solver service URL (default: http://localhost:8080/)")
+			fmt.Println("  -solana-url string")
+			fmt.Println("        Solana RPC endpoint (default: http://localhost:8899)")
+			fmt.Println("  -ethereum-url string")
+			fmt.Println("        Ethereum RPC endpoint (default: http://localhost:8545)")
+			fmt.Println("  -seed-phrase string")
+			fmt.Println("        Seed phrase for deriving chain keys (required)")
+			os.Exit(1)
+		}
 	}
 
 	// Initialize solver client with provided URL
@@ -44,11 +59,17 @@ func initFlags() {
 	// Initialize RPC endpoints
 	solver.InitRPCEndpoints(*ethereumRPCURL, *solanaRPCURL)
 
-	// Log configuration
+	// Initialize keys with seed phrase
+	if err := solver.InitKeys(*seedPhrase); err != nil {
+		log.Fatalf("Failed to initialize keys: %v", err)
+	}
+
+	// Log configuration (without exposing seed phrase)
 	log.Printf("Initialized with:")
 	log.Printf("  Solver URL: %s", *solverURL)
 	log.Printf("  Solana RPC: %s", *solanaRPCURL)
 	log.Printf("  Ethereum RPC: %s", *ethereumRPCURL)
+	log.Printf("  Keys: Initialized successfully")
 }
 
 func getEnvOrDefault(key, defaultValue string) string {
@@ -137,7 +158,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Execute swap with correct fromToken
-		swapResponse, err := solverClient.ExecuteSwap(fromToken, toToken, amount, destinationAddress)
+		swapResponse, err := solverClient.ExecuteSwap(fromToken, toToken, float64(amount), destinationAddress)
 		if err != nil {
 			http.Error(w, "Error executing swap: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -171,14 +192,25 @@ func extractAmountFromTx(tx interface{}) (uint64, error) {
 			return ethValue.Uint64(), nil
 		}
 		// For Solana
-		if value, ok := v["result"].(map[string]interface{}); ok {
-			if lamports, ok := value["amount"].(float64); ok {
-				// Convert from lamports to SOL (divide by 10^9)
-				solValue := lamports / 1e9
-				if solValue > float64(^uint64(0)) {
-					return 0, fmt.Errorf("converted SOL value exceeds uint64 range: %f", solValue)
+		if result, ok := v["result"].(map[string]interface{}); ok {
+			meta := result
+			if meta, ok := meta["meta"].(map[string]interface{}); ok {
+				if preBalances, ok := meta["preBalances"].([]interface{}); ok && len(preBalances) > 0 {
+					if postBalances, ok := meta["postBalances"].([]interface{}); ok && len(postBalances) > 0 {
+						// Get the difference between pre and post balances of sender
+						preBalance := uint64(preBalances[0].(float64))
+						postBalance := uint64(postBalances[0].(float64))
+						if preBalance > postBalance {
+							// Convert from lamports to SOL (divide by 10^9)
+							lamports := preBalance - postBalance
+							solValue := float64(lamports) / 1e9
+							if solValue > float64(^uint64(0)) {
+								return 0, fmt.Errorf("converted SOL value exceeds uint64 range: %f", solValue)
+							}
+							return uint64(solValue), nil
+						}
+					}
 				}
-				return uint64(solValue), nil
 			}
 		}
 	}

@@ -34,8 +34,8 @@ type Transaction struct {
 type SwapResult struct {
 	FromToken    string  `json:"from_token"`
 	ToToken      string  `json:"to_token"`
-	FromAmount   uint64  `json:"from_amount"`
-	ToAmount     uint64  `json:"to_amount"`
+	FromAmount   float64 `json:"from_amount"`
+	ToAmount     float64 `json:"to_amount"`
 	ExchangeRate float64 `json:"exchange_rate"`
 }
 
@@ -57,8 +57,8 @@ type ChainParams struct {
 	Nonce    uint64 `json:"nonce,omitempty"`
 
 	// Solana specific
-	RecentBlockhash string `json:"recent_blockhash,omitempty"`
-	Lamports        uint64 `json:"lamports,omitempty"`
+	RecentBlockhash string  `json:"recent_blockhash,omitempty"`
+	Lamports        float64 `json:"lamports,omitempty"`
 }
 
 type SwapResponse struct {
@@ -75,6 +75,6 @@ type Pool struct {
 }
 
 type PoolBalance struct {
-	PoolAddress string `json:"poolAddress"`
-	Balance     uint64 `json:"balance"`
+	PoolAddress string  `json:"pool_address"`
+	Balance     float64 `json:"balance"`
 }
