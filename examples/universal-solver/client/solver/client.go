@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -499,7 +500,7 @@ func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
 		ChainParams: ChainParams{
 			FromAddress: fromAddress,
 			ToAddress:   swap.DestinationAddress,
-			Amount:      fmt.Sprintf("%d", swap.SwapResult.ToAmount),
+			Amount:      fmt.Sprintf("%f", swap.SwapResult.ToAmount),
 			GasPrice:    gasPrice.String(),
 			GasLimit:    21000, // Standard ETH transfer gas limit
 			Nonce:       nonce,
@@ -565,8 +566,15 @@ func (c *Client) signEthereumTransaction(swap *SwapResponse) error {
 		swap.TxToSign.ChainParams.Nonce,
 		common.HexToAddress(swap.TxToSign.ChainParams.ToAddress),
 		func() *big.Int {
-			amount, _ := new(big.Int).SetString(swap.TxToSign.ChainParams.Amount, 10)
-			return amount
+			// Convert decimal to integer by multiplying by 10^18 (standard ETH decimals)
+			amountFloat, _ := strconv.ParseFloat(swap.TxToSign.ChainParams.Amount, 64)
+			amountBigFloat := new(big.Float).SetFloat64(amountFloat)
+			multiplier := new(big.Float).SetFloat64(1e18)
+			result := new(big.Float).Mul(amountBigFloat, multiplier)
+
+			amountBigInt := new(big.Int)
+			result.Int(amountBigInt)
+			return amountBigInt
 		}(),
 		swap.TxToSign.ChainParams.GasLimit,
 		func() *big.Int {
