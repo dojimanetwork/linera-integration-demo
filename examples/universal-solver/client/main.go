@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/linera-protocol/examples/universal-solver/client/solver"
@@ -103,6 +104,7 @@ func main() {
 	http.HandleFunc("/faucet", corsMiddleware(handleFaucet))
 	http.HandleFunc("/get_pool_address", corsMiddleware(handleGetPoolAddress))
 	http.HandleFunc("/fetch_balance", corsMiddleware(handleFetchBalance))
+	http.HandleFunc("/quote_swap", corsMiddleware(handleQuoteSwap))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3000")
@@ -374,5 +376,58 @@ func handleFetchBalance(w http.ResponseWriter, r *http.Request) {
 		"status": "success",
 		"chain":  chain,
 		"data":   balance,
+	})
+}
+
+func handleQuoteSwap(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get parameters
+	fromChain := r.URL.Query().Get("fromChain")
+	if fromChain == "" {
+		http.Error(w, "fromChain parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	toChain := r.URL.Query().Get("toChain")
+	if toChain == "" {
+		http.Error(w, "toChain parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	fromAmount := r.URL.Query().Get("fromAmount")
+	if fromAmount == "" {
+		http.Error(w, "fromAmount parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Convert amount to float64
+	amount, err := strconv.ParseFloat(fromAmount, 64)
+	if err != nil {
+		http.Error(w, "Invalid fromAmount value", http.StatusBadRequest)
+		return
+	}
+
+	// Get quote using calculate swap
+	quote, err := solverClient.CalculateSwap(fromChain, toChain, amount)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error calculating swap: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"data": map[string]interface{}{
+			"fromChain":     fromChain,
+			"toChain":       toChain,
+			"fromAmount":    amount,
+			"toAmount":      quote.ToAmount,
+			"exchangeRate":  quote.ExchangeRate,
+		},
 	})
 }

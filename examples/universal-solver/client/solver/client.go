@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -68,16 +69,30 @@ func (c *Client) GetSolanaTransaction(_, txHash string) (interface{}, error) {
 		"params": []interface{}{
 			txHash,
 			map[string]interface{}{
-				"encoding":   "json",
-				"commitment": "confirmed",
+				"encoding":                       "json",
+				"maxSupportedTransactionVersion": 0,
 			},
 		},
 	}
 
-	// Make the request
-	response, err := c.makeRPCRequest(SolanaRPC, requestBody)
+	// Make the request with retries
+	var response interface{}
+	var err error
+	for i := 0; i < 10; i++ {
+		response, err = c.makeRPCRequest(SolanaRPC, requestBody)
+		if responseMap, ok := response.(map[string]interface{}); ok {
+			if responseMap["result"] == nil {
+				time.Sleep(5 * time.Second)
+				continue // Retry if result is nil
+			}
+		}
+
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Solana transaction: %w", err)
+		return nil, fmt.Errorf("failed to get Solana transaction after 10 retries: %w", err)
 	}
 
 	return response, nil
@@ -207,66 +222,46 @@ func (c *Client) GetTransactionByHash(hash string) (*Transaction, error) {
 	return result.Data.GetTransaction, nil
 }
 
-// CalculateSwap queries the universal solver for swap calculations
+// CalculateSwap calculates swap details without executing the swap
 func (c *Client) CalculateSwap(fromToken, toToken string, amount float64) (*SwapResult, error) {
-	query := fmt.Sprintf(`{"query":"query calSwap{calculateSwap(fromToken:\"%s\",toToken:\"%s\",amount:%f){toToken toAmount fromToken fromAmount exchangeRate}}"}`, fromToken, toToken, amount)
+	// Prepare GraphQL query
+	query := fmt.Sprintf(`{
+		"query": "query { calculateSwap(fromToken:\"%s\",toToken:\"%s\",amount:%f) { fromToken toToken fromAmount toAmount exchangeRate } }"
+	}`, fromToken, toToken, amount)
 
+	// Create request
 	req, err := http.NewRequest("POST", c.baseURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 
+	// Execute request
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
+		return nil, fmt.Errorf("error executing request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Parse the raw response first to validate structure
-	var rawResponse map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, fmt.Errorf("error parsing raw response: %w", err)
-	}
-
-	// Create properly structured result
+	// Parse response
 	var result struct {
 		Data struct {
-			CalculateSwap struct {
-				ToToken      string  `json:"toToken"`
-				ToAmount     float64 `json:"toAmount"`
-				FromToken    string  `json:"fromToken"`
-				FromAmount   float64 `json:"fromAmount"`
-				ExchangeRate float64 `json:"exchangeRate"`
-			} `json:"calculateSwap"`
+			CalculateSwap SwapResult `json:"calculateSwap"`
 		} `json:"data"`
 		Errors []struct {
 			Message string `json:"message"`
 		} `json:"errors,omitempty"`
 	}
 
-	// Re-encode and decode to ensure proper type conversion
-	jsonData, err := json.Marshal(rawResponse)
-	if err != nil {
-		return nil, fmt.Errorf("error re-encoding response: %w", err)
-	}
-
-	if err := json.Unmarshal(jsonData, &result); err != nil {
-		return nil, fmt.Errorf("error parsing structured response: %w", err)
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("error decoding response: %w", err)
 	}
 
 	if len(result.Errors) > 0 {
 		return nil, fmt.Errorf("GraphQL error: %s", result.Errors[0].Message)
 	}
 
-	return &SwapResult{
-		ToToken:      result.Data.CalculateSwap.ToToken,
-		ToAmount:     float64(result.Data.CalculateSwap.ToAmount),
-		FromToken:    result.Data.CalculateSwap.FromToken,
-		FromAmount:   float64(result.Data.CalculateSwap.FromAmount),
-		ExchangeRate: result.Data.CalculateSwap.ExchangeRate,
-	}, nil
+	return &result.Data.CalculateSwap, nil
 }
 
 // ExecuteSwap performs the swap operation

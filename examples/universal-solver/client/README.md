@@ -102,4 +102,31 @@ Response:
         "symbol": "ETH"
     }
 }
+```
+
+### GET /quote_swap
+Get a quote for swapping tokens between chains.
+
+Parameters:
+- `fromChain`: Source chain (e.g., `ethereum` or `solana`)
+- `toChain`: Destination chain
+- `fromAmount`: Amount to swap in source chain's native units
+
+Example:
+```bash
+curl "http://localhost:3000/quote_swap?fromChain=ethereum&toChain=solana&fromAmount=1.5"
+```
+
+Response:
+```json
+{
+    "status": "success",
+    "data": {
+        "fromChain": "ethereum",
+        "toChain": "solana",
+        "fromAmount": 1.5,
+        "toAmount": 210.75,
+        "exchangeRate": 140.5
+    }
+}
 ``` 
