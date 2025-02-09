@@ -1,7 +1,6 @@
 [Unit]
 Description=Linera Network Service
 After=network-online.target
-StartLimitIntervalSec=0
 
 [Service]
 Restart=always
