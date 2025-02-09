@@ -78,3 +78,10 @@ type PoolBalance struct {
 	PoolAddress string  `json:"pool_address"`
 	Balance     float64 `json:"balance"`
 }
+
+// Add new type for balance responses
+type Balance struct {
+	Address string  `json:"address"`
+	Amount  float64 `json:"amount"`
+	Symbol  string  `json:"symbol"`
+}

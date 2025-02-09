@@ -79,9 +79,30 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
+// Add CORS middleware
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
 func main() {
-	// Define routes
-	http.HandleFunc("/post_tx_hash", handlePostTxHash)
+	// Define routes with CORS middleware
+	http.HandleFunc("/post_tx_hash", corsMiddleware(handlePostTxHash))
+	http.HandleFunc("/faucet", corsMiddleware(handleFaucet))
+	http.HandleFunc("/get_pool_address", corsMiddleware(handleGetPoolAddress))
+	http.HandleFunc("/fetch_balance", corsMiddleware(handleFetchBalance))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3000")
@@ -223,4 +244,135 @@ func getTokenForChain(chain string) (string, error) {
 		return "", fmt.Errorf("unsupported chain: %s", chain)
 	}
 	return token, nil
+}
+
+// Add new handler function
+func handleFaucet(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get chain parameter
+	chain := r.URL.Query().Get("chain")
+	if chain == "" {
+		http.Error(w, "chain parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Get address parameter
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		http.Error(w, "address parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	var result map[string]interface{}
+	var err error
+
+	switch chain {
+	case "solana":
+		result, err = solverClient.RequestSolanaAirdrop(address)
+	case "ethereum":
+		result, err = solverClient.RequestEthereumFaucet(address)
+	default:
+		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
+		return
+	}
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error requesting faucet: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"chain":  chain,
+		"data":   result,
+	})
+}
+
+// Add new handler function
+func handleGetPoolAddress(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get chain parameter
+	chain := r.URL.Query().Get("chain")
+	if chain == "" {
+		http.Error(w, "chain parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Get pool address for the chain
+	poolAddress, err := solverClient.GetPool(chain)
+	if err != nil {
+		if err.Error() == fmt.Sprintf("pool not found for token: %s", chain) {
+			http.Error(w, fmt.Sprintf("No pool found for chain: %s", chain), http.StatusNotFound)
+			return
+		}
+		http.Error(w, fmt.Sprintf("Error fetching pool: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"chain":  chain,
+		"data": map[string]interface{}{
+			"address": poolAddress,
+		},
+	})
+}
+
+func handleFetchBalance(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get parameters
+	chain := r.URL.Query().Get("chain")
+	if chain == "" {
+		http.Error(w, "chain parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	address := r.URL.Query().Get("address")
+	if address == "" {
+		http.Error(w, "address parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Get balance based on chain
+	var balance *solver.Balance
+	var err error
+
+	switch chain {
+	case "solana":
+		balance, err = solverClient.GetSolanaBalance(address)
+	case "ethereum":
+		balance, err = solverClient.GetEthereumBalance(address)
+	default:
+		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
+		return
+	}
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error fetching balance: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"chain":  chain,
+		"data":   balance,
+	})
 }

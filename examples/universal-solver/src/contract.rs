@@ -81,20 +81,20 @@ impl Contract for UniversalSolverContract {
                     _ => panic!("Missing or invalid calculateSwap result in response data: {data_object:?}")
                 };
                 // Log the swap result details
-                log::info!(
-                    "Swap result: from_token={}, to_token={}, amount={}, to_amount={}, exchange_rate={}",
-                    from_token,
-                    to_token,
-                    amount,
-                    match swap_result.get("toAmount") {
-                        Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
-                        _ => 0.0 // Fallback value if toAmount is invalid
-                    },
-                    match swap_result.get("exchangeRate") {
-                        Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
-                        _ => 0.0 // Fallback value if exchangeRate is invalid
-                    }
-                );
+                // log::info!(
+                //     "Swap result: from_token={}, to_token={}, amount={}, to_amount={}, exchange_rate={}",
+                //     from_token,
+                //     to_token,
+                //     amount,
+                //     match swap_result.get("toAmount") {
+                //         Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                //         _ => 0.0 // Fallback value if toAmount is invalid
+                //     },
+                //     match swap_result.get("exchangeRate") {
+                //         Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                //         _ => 0.0 // Fallback value if exchangeRate is invalid
+                //     }
+                // );
 
                 let to_amount = match swap_result.get("toAmount") {
                     Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),

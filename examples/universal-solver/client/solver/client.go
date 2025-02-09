@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
@@ -451,6 +452,12 @@ func (c *Client) GetAllPoolBalances() ([]PoolBalance, error) {
 	return result.Data.GetAllPoolBalances, nil
 }
 
+// GetPool fetches pool address for a specific chain
+func (c *Client) GetPool(chain string) (string, error) {
+	// Reuse existing getPoolAddress method
+	return c.getPoolAddress(chain)
+}
+
 // getPoolAddress gets the pool address for a given token
 func (c *Client) getPoolAddress(token string) (string, error) {
 	pools, err := c.GetAllPools()
@@ -740,4 +747,166 @@ func (c *Client) submitSolanaTransaction(swap *SwapResponse) error {
 	swap.Status = "submitted"
 
 	return nil
+}
+
+func (c *Client) RequestSolanaAirdrop(address string) (map[string]interface{}, error) {
+	// Create RPC client
+	client := rpc.New(SolanaRPC)
+
+	// Parse address
+	pubKey, err := solana.PublicKeyFromBase58(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Solana address: %w", err)
+	}
+
+	// Request airdrop (2 SOL)
+	sig, err := client.RequestAirdrop(
+		context.Background(),
+		pubKey,
+		2*solana.LAMPORTS_PER_SOL,
+		rpc.CommitmentFinalized,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to request airdrop: %w", err)
+	}
+
+	// Wait for confirmation
+	// _, err = client.GetConfirmedTransactionWithOpts(context.Background(), sig, &rpc.GetTransactionOpts{
+	// 	Commitment: rpc.CommitmentConfirmed,
+	// })
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to confirm airdrop: %w", err)
+	// }
+
+	return map[string]interface{}{
+		"signature": sig.String(),
+		"amount":    "2 SOL",
+		"address":   address,
+	}, nil
+}
+
+func (c *Client) RequestEthereumFaucet(address string) (map[string]interface{}, error) {
+	// For testnet/local network only
+	if !common.IsHexAddress(address) {
+		return nil, fmt.Errorf("invalid Ethereum address")
+	}
+
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	// Get the faucet's private key
+	if chainKeys == nil || chainKeys.EthereumKey == nil {
+		return nil, fmt.Errorf("ethereum faucet key not initialized")
+	}
+
+	// Create transaction
+	nonce, err := client.PendingNonceAt(context.Background(), crypto.PubkeyToAddress(chainKeys.EthereumKey.PublicKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nonce: %w", err)
+	}
+
+	value := big.NewInt(1000000000000000000) // 1 ETH
+	gasLimit := uint64(21000)
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gas price: %w", err)
+	}
+
+	tx := types.NewTransaction(
+		nonce,
+		common.HexToAddress(address),
+		value,
+		gasLimit,
+		gasPrice,
+		nil,
+	)
+
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain id: %w", err)
+	}
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), chainKeys.EthereumKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return map[string]interface{}{
+		"txHash":  signedTx.Hash().String(),
+		"amount":  "1 ETH",
+		"address": address,
+	}, nil
+}
+
+// GetSolanaBalance fetches SOL balance for an address
+func (c *Client) GetSolanaBalance(address string) (*Balance, error) {
+	// Create RPC client
+	client := rpc.New(SolanaRPC)
+
+	// Parse address
+	pubKey, err := solana.PublicKeyFromBase58(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Solana address: %w", err)
+	}
+
+	// Get balance
+	balance, err := client.GetBalance(
+		context.Background(),
+		pubKey,
+		rpc.CommitmentFinalized,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balance: %w", err)
+	}
+
+	// Convert lamports to SOL
+	solBalance := float64(balance.Value) / float64(solana.LAMPORTS_PER_SOL)
+
+	return &Balance{
+		Address: address,
+		Amount:  solBalance,
+		Symbol:  "SOL",
+	}, nil
+}
+
+// GetEthereumBalance fetches ETH balance for an address
+func (c *Client) GetEthereumBalance(address string) (*Balance, error) {
+	// Validate address
+	if !common.IsHexAddress(address) {
+		return nil, fmt.Errorf("invalid Ethereum address")
+	}
+
+	// Connect to Ethereum node
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	// Get balance
+	account := common.HexToAddress(address)
+	balance, err := client.BalanceAt(context.Background(), account, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get balance: %w", err)
+	}
+
+	// Convert wei to ETH
+	fbalance := new(big.Float)
+	fbalance.SetString(balance.String())
+	ethValue := new(big.Float).Quo(fbalance, big.NewFloat(1e18))
+	amount, _ := ethValue.Float64()
+
+	return &Balance{
+		Address: address,
+		Amount:  amount,
+		Symbol:  "ETH",
+	}, nil
 }
