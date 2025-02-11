@@ -95,8 +95,14 @@ export const getNFTData = async (tokenId: string) => {
     }
 }
 
-export const buyNFT = async (tokenId: string) => {
+export const buyNFT = async (pvtKey: string, tokenId: string) => {
     try {
+        const signer = new ethers.Wallet(pvtKey, provider)
+        const contract = new ethers.Contract(
+            MarketplaceData.address,
+            MarketplaceData.abi as InterfaceAbi,
+            signer,
+        )
         console.log("Buying the NFT... Please Wait (Up to 5 mins)")
         const nft = await getNFTData(tokenId);
         const salePrice = ethers.parseUnits(nft?.price || "0", "ether")
@@ -111,12 +117,16 @@ export const buyNFT = async (tokenId: string) => {
     }
 }
 
-const uploadMetadataToIPFS = async (name: string, description: string, price: string, file: File) => {
+const uploadMetadataToIPFS = async (name: string, description: string, price: string, filePath: string) => {
     console.log("Uploading image... please wait.")
     let fileURL = ""
+    if (!name || !description || !price || !filePath) {
+        console.log("Please fill all the fields!")
+        return null
+    }
     try {
         console.log("Uploading image... please wait.")
-        const response = await uploadFileToIPFS(file)
+        const response = await uploadFileToIPFS(name, filePath)
         if (response.success) {
             fileURL = response.pinataURL as string
             console.log("Image uploaded successfully!")
@@ -124,8 +134,9 @@ const uploadMetadataToIPFS = async (name: string, description: string, price: st
     } catch (e) {
         console.error("Error during file upload", e)
     }
-    if (!name || !description || !price || !fileURL) {
-        console.log("Please fill all the fields!")
+
+    if (!fileURL) {
+        console.log("Failed to get pinataUrl")
         return null
     }
 
@@ -142,11 +153,11 @@ const uploadMetadataToIPFS = async (name: string, description: string, price: st
     return null
 }
 
-export const listNFT = async (name: string, description: string, price: string, file: File) => {
+export const listNFT = async (name: string, description: string, price: string, filePath: string) => {
     console.log("Uploading NFT... please wait.")
 
     try {
-        const metadataURL = await uploadMetadataToIPFS(name, description, price, file)
+        const metadataURL = await uploadMetadataToIPFS(name, description, price, filePath)
         console.log("metadataURL : ", metadataURL);
         if (!metadataURL) {
             console.log("Failed to upload metadata. Please try again.")

@@ -5,13 +5,15 @@
   "main": "hardhat.config.ts",
   "scripts": {
     "test": "hardhat test",
-    "compile": "hardhat compile",
-    "deploy": "hardhat run scripts/deploy.ts"
+    "compile": "npx hardhat compile",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "list-nft": "npx ts-node methods/listNFTExample.ts",
+    "getUserNFTs": "npx ts-node methods/getUserNFTsExample.ts",
+    "getMarketplaceAllNFTs": "npx ts-node methods/getMarketplaceAllNFTsExample.ts",
+    "getNFTData": "npx ts-node methods/getNFTDataExample.ts",
+    "buyNFT": "npx ts-node methods/buyNFTExample.ts"
   },
   "devDependencies": {
-    "typescript": "^5.1.6",
-    "ts-node": "^10.0.0",
-    "@types/node": "^14.0.0",
     "@ethersproject/providers": "^5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
@@ -29,11 +31,14 @@
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^14.0.0",
     "chai": "^4.3.7",
     "commander": "^3.0.1",
     "dotenv": "^16.3.1",
     "ethereumjs-util": "^7.1.5",
     "ethers": "^6.9.2",
+    "form-data": "^4.0.1",
     "har-validator": "^5.1.5",
     "hardhat": "^2.19.4",
     "hardhat-deploy": "^0.11.43",
@@ -46,9 +51,11 @@
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.8.1",
     "solidity-rlp": "^2.0.0",
-    "typechain": "^8.3.0"
+    "ts-node": "^10.0.0",
+    "typechain": "^8.3.0",
+    "typescript": "^5.1.6"
   },
   "keywords": [],
   "author": "",
   "license": "MIT"
-} 
+}
