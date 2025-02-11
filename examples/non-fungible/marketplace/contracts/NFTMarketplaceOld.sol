@@ -6,8 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract NFTMarketplace is ERC721URIStorage {
-
+contract NFTMarketplaceOld is ERC721URIStorage {
 
     using Counters for Counters.Counter;
     //_tokenIds variable has the most recent minted tokenId
@@ -67,7 +66,7 @@ contract NFTMarketplace is ERC721URIStorage {
     }
 
     //The first time a token is created, it is listed here
-    function createToken(string memory tokenURI) public payable returns (uint) {
+    function createToken(string memory tokenURI, uint256 price) public payable returns (uint) {
         //Increment the tokenId counter, which is keeping track of the number of minted NFTs
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
@@ -78,37 +77,17 @@ contract NFTMarketplace is ERC721URIStorage {
         //Map the tokenId to the tokenURI (which is an IPFS URL with the NFT metadata)
         _setTokenURI(newTokenId, tokenURI);
 
-        // //Helper function to update Global variables and emit an event
-        // createListedToken(newTokenId, price);
-
-        return newTokenId;
-    }
-
-    //The first time a token is created, it is listed here
-    function createAndListToken(string memory tokenURI, uint256 price) public payable returns (uint) {
-        //Increment the tokenId counter, which is keeping track of the number of minted NFTs
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
-
-        //Mint the NFT with tokenId newTokenId to the address who called createToken
-        _safeMint(msg.sender, newTokenId);
-
-        //Map the tokenId to the tokenURI (which is an IPFS URL with the NFT metadata)
-        _setTokenURI(newTokenId, tokenURI);
-
-        // //Helper function to update Global variables and emit an event
+        //Helper function to update Global variables and emit an event
         createListedToken(newTokenId, price);
 
         return newTokenId;
     }
 
     function createListedToken(uint256 tokenId, uint256 price) private {
-        //Only owner can list the nft
-        require(ownerOf(tokenId) == msg.sender, "Only NFT owner can list the token");
         //Make sure the sender sent enough ETH to pay for listing
-        require(msg.value == listPrice, "Incorrect listing fee");
+        require(msg.value == listPrice, "Hopefully sending the correct price");
         //Just sanity check
-        require(price > 0, "Price must be greater than zero");
+        require(price > 0, "Make sure the price isn't negative");
 
         //Update the mapping of tokenId's to Token details, useful for retrieval functions
         idToListedToken[tokenId] = ListedToken(
@@ -177,17 +156,15 @@ contract NFTMarketplace is ERC721URIStorage {
     }
 
     function executeSale(uint256 tokenId) public payable {
-        require(idToListedToken[tokenId].currentlyListed, "NFT is not listed for sale");
-        require(msg.value == idToListedToken[tokenId].price, "Incorrect price submitted");
-
+        uint price = idToListedToken[tokenId].price;
         address seller = idToListedToken[tokenId].seller;
+        require(msg.value == price, "Please submit the asking price in order to complete the purchase");
 
         //update the details of the token
-        idToListedToken[tokenId].owner = payable(msg.sender);
-        idToListedToken[tokenId].seller = payable(address(0));
-        idToListedToken[tokenId].currentlyListed = false;
-
+        idToListedToken[tokenId].currentlyListed = true;
+        idToListedToken[tokenId].seller = payable(msg.sender);
         _itemsSold.increment();
+
         //Actually transfer the token to the new owner
         _transfer(address(this), msg.sender, tokenId);
         //approve the marketplace to sell NFTs on your behalf
@@ -198,4 +175,8 @@ contract NFTMarketplace is ERC721URIStorage {
         //Transfer the proceeds from the sale to the seller of the NFT
         payable(seller).transfer(msg.value);
     }
+
+    //We might add a resell token function in the future
+    //In that case, tokens won't be listed by default but users can send a request to actually list a token
+    //Currently NFTs are listed by default
 }
