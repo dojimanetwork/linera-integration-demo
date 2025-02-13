@@ -4,7 +4,7 @@
 /*! ABI of the Non-Fungible Token Example Application */
 
 use std::fmt::{Display, Formatter};
-
+use std::ptr::hash;
 use async_graphql::{InputObject, Request, Response, SimpleObject};
 use fungible::Account;
 use linera_sdk::{
@@ -42,12 +42,21 @@ pub enum Operation {
         minter: AccountOwner,
         name: String,
         blob_hash: DataBlobHash,
+        token: String, // ETH, SOL
+        price: String, // 0.05 [token]
+        id: u64, // specific chain nft id
+        chain_minter: String, // chain nft minter
+        chain_owner: String, // chain nft owner
     },
     /// Transfers a token from a (locally owned) account to a (possibly remote) account.
     Transfer {
         source_owner: AccountOwner,
         token_id: TokenId,
         target_account: Account,
+        chain_owner: String,
+        buy_from_token: String,
+        to_token: String,
+        amount: String,
     },
     /// Same as `Transfer` but the source account may be remote. Depending on its
     /// configuration, the target chain may take time or refuse to process
@@ -77,11 +86,16 @@ pub enum Message {
 #[derive(Debug, Serialize, Deserialize, Clone, SimpleObject, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Nft {
-    pub token_id: TokenId,
+    pub token_id: TokenId, // linera token id
     pub owner: AccountOwner,
     pub name: String,
     pub minter: AccountOwner,
     pub blob_hash: DataBlobHash,
+    pub token: String, // ETH, SOL
+    pub price: String, // 0.05 [token]
+    pub id: u64, // specific chain nft id
+    pub chain_minter: String, // chain nft minter
+    pub chain_owner: String, // chain nft owner
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, SimpleObject, PartialEq, Eq)]
@@ -92,6 +106,11 @@ pub struct NftOutput {
     pub name: String,
     pub minter: AccountOwner,
     pub payload: Vec<u8>,
+    pub token: String, // ETH, SOL
+    pub price: String, // 0.05 [token]
+    pub id: u64, // specific chain nft id
+    pub chain_minter: String, // chain nft minter
+    pub chain_owner: String, // chain nft owner
 }
 
 impl NftOutput {
@@ -104,6 +123,11 @@ impl NftOutput {
             name: nft.name,
             minter: nft.minter,
             payload,
+            token: nft.token,
+            price: nft.price,
+            id: nft.id,
+            chain_minter: nft.chain_minter,
+            chain_owner: nft.chain_owner,
         }
     }
 
@@ -114,6 +138,11 @@ impl NftOutput {
             name: nft.name,
             minter: nft.minter,
             payload,
+            token: nft.token,
+            price: nft.price,
+            id: nft.id,
+            chain_minter: nft.chain_minter,
+            chain_owner: nft.chain_owner,
         }
     }
 }
@@ -132,6 +161,11 @@ impl Nft {
         minter: &AccountOwner,
         blob_hash: &DataBlobHash,
         num_minted_nfts: u64,
+        token: &String,
+        price: String,
+        id: u64,
+        chain_minter: &String,
+        chain_owner: &String,
     ) -> Result<TokenId, bcs::Error> {
         use sha3::Digest as _;
 
@@ -143,6 +177,11 @@ impl Nft {
         hasher.update(minter.to_bcs_bytes()?);
         hasher.update(blob_hash.to_bcs_bytes()?);
         hasher.update(num_minted_nfts.to_bcs_bytes()?);
+        hasher.update(token.to_bcs_bytes()?);
+        hasher.update(id.to_bcs_bytes()?);
+        hasher.update(price.to_bcs_bytes()?);
+        hasher.update(chain_owner.to_bcs_bytes()?);
+        hasher.update(chain_minter.to_bcs_bytes()?);
 
         Ok(TokenId {
             id: hasher.finalize().to_vec(),

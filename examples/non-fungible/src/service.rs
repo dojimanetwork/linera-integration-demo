@@ -182,11 +182,22 @@ struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-    async fn mint(&self, minter: AccountOwner, name: String, blob_hash: DataBlobHash) -> Vec<u8> {
+    async fn mint(&self, minter: AccountOwner, name: String, blob_hash: DataBlobHash,
+                  token: String, // ETH, SOL
+                  price: String, // 0.05 [token]
+                  id: u64, // specific chain nft id
+                  chain_minter: String, // chain nft minter
+                  chain_owner: String, // chain nft owner
+                  ) -> Vec<u8> {
         bcs::to_bytes(&Operation::Mint {
             minter,
             name,
             blob_hash,
+            token,
+            price,
+            id,
+            chain_owner,
+            chain_minter,
         })
         .unwrap()
     }
@@ -196,6 +207,10 @@ impl MutationRoot {
         source_owner: AccountOwner,
         token_id: String,
         target_account: Account,
+        chain_owner: String,
+        buy_from_token: String,
+        to_token: String,
+        amount: String,
     ) -> Vec<u8> {
         bcs::to_bytes(&Operation::Transfer {
             source_owner,
@@ -203,6 +218,10 @@ impl MutationRoot {
                 id: STANDARD_NO_PAD.decode(token_id).unwrap(),
             },
             target_account,
+            chain_owner,
+            buy_from_token,
+            to_token,
+            amount,
         })
         .unwrap()
     }

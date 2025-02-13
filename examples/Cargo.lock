@@ -4084,6 +4084,7 @@ dependencies = [
  "serde",
  "sha3",
  "tokio",
+ "universal-solver",
 ]
 
 [[package]]

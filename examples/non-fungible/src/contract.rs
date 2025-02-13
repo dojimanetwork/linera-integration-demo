@@ -13,8 +13,9 @@ use linera_sdk::{
     views::{RootView, View},
     Contract, ContractRuntime, DataBlobHash,
 };
+use linera_sdk::base::ApplicationId;
 use non_fungible::{Message, Nft, NonFungibleTokenAbi, Operation, TokenId};
-
+use universal_solver::UniversalSolverAbi;
 use self::state::NonFungibleTokenState;
 
 pub struct NonFungibleTokenContract {
@@ -31,7 +32,7 @@ impl WithContractAbi for NonFungibleTokenContract {
 impl Contract for NonFungibleTokenContract {
     type Message = Message;
     type InstantiationArgument = ();
-    type Parameters = ();
+    type Parameters = ApplicationId<UniversalSolverAbi>;
 
     async fn load(runtime: ContractRuntime<Self>) -> Self {
         let state = NonFungibleTokenState::load(runtime.root_view_storage_context())
@@ -52,20 +53,40 @@ impl Contract for NonFungibleTokenContract {
                 minter,
                 name,
                 blob_hash,
+                token,
+                price,
+                id,
+                chain_owner,
+                chain_minter
             } => {
                 self.check_account_authentication(minter);
-                self.mint(minter, name, blob_hash).await;
+                self.mint(minter, name, blob_hash, token, price, id, chain_owner, chain_minter).await;
             }
 
             Operation::Transfer {
                 source_owner,
                 token_id,
                 target_account,
+                chain_owner,
+                buy_from_token,
+                to_token,
+                amount
             } => {
                 self.check_account_authentication(source_owner);
 
-                let nft = self.get_nft(&token_id).await;
+                let mut nft = self.get_nft(&token_id).await;
+                // change chain owner
+                nft.chain_owner = chain_owner.clone();
                 self.check_account_authentication(nft.owner);
+                let call_swap = universal_solver::Operation::Swap {
+                    from_token: buy_from_token,
+                    to_token,
+                    amount,
+                    destination_address: chain_owner.clone(),
+                };
+
+                let universal_solver_id = self.universal_solver_id();
+                self.runtime.call_application(false, universal_solver_id, &call_swap);
 
                 self.transfer(nft, target_account).await;
             }
@@ -127,6 +148,11 @@ impl Contract for NonFungibleTokenContract {
 }
 
 impl NonFungibleTokenContract {
+
+    fn universal_solver_id(&mut self) -> ApplicationId<UniversalSolverAbi> {
+        self.runtime.application_parameters()
+    }
+
     /// Verifies that a transfer is authenticated for this local account.
     fn check_account_authentication(&mut self, owner: AccountOwner) {
         match owner {
@@ -176,7 +202,13 @@ impl NonFungibleTokenContract {
             .expect("NFT {token_id} not found")
     }
 
-    async fn mint(&mut self, owner: AccountOwner, name: String, blob_hash: DataBlobHash) {
+    async fn mint(&mut self, owner: AccountOwner, name: String, blob_hash: DataBlobHash,
+                  token: String, // ETH, SOL
+                  price: String, // 0.05 [token]
+                  id: u64, // specific chain nft id
+                  chain_minter: String, // chain nft minter
+                  chain_owner: String,
+    ) {
         self.runtime.assert_data_blob_exists(blob_hash);
         let token_id = Nft::create_token_id(
             &self.runtime.chain_id(),
@@ -185,6 +217,11 @@ impl NonFungibleTokenContract {
             &owner,
             &blob_hash,
             *self.state.num_minted_nfts.get(),
+            &token,
+            price.clone(),
+            id,
+            &chain_owner,
+            &chain_minter
         )
         .expect("Failed to serialize NFT metadata");
 
@@ -194,6 +231,11 @@ impl NonFungibleTokenContract {
             name,
             minter: owner,
             blob_hash,
+            token,
+            price,
+            id,
+            chain_owner,
+            chain_minter
         })
         .await;
 

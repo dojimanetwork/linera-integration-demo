@@ -50,6 +50,7 @@ native-fungible = { path = "./native-fungible" }
 non-fungible = { path = "./non-fungible" }
 amm = { path = "./amm" }
 matching-engine = { path = "./matching-engine" }
+universal-solver = { path = "./universal-solver" }
 
 [profile.release]
 debug = true
