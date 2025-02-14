@@ -91,6 +91,31 @@ impl QueryRoot {
         }
     }
 
+    async fn nftUsingBlobHash(&self, blobHash: DataBlobHash) -> Option<NftOutput> {
+        let token_id = self.non_fungible_token.blob_token_ids.get(&blobHash).await.unwrap();
+
+        let nft = self
+            .non_fungible_token
+            .nfts
+            .get(&token_id.clone().unwrap())
+            .await
+            .unwrap();
+
+        if let Some(nft) = nft {
+            let payload = {
+                let mut runtime = self
+                    .runtime
+                    .try_lock()
+                    .expect("Services only run in a single thread");
+                runtime.read_data_blob(nft.blob_hash)
+            };
+            let nft_output = NftOutput::new_with_token_id(token_id.unwrap().to_string(), nft, payload);
+            Some(nft_output)
+        } else {
+            None
+        }
+    }
+
     async fn nfts(&self) -> BTreeMap<String, NftOutput> {
         let mut nfts = BTreeMap::new();
         self.non_fungible_token
@@ -188,6 +213,7 @@ impl MutationRoot {
                   id: u64, // specific chain nft id
                   chain_minter: String, // chain nft minter
                   chain_owner: String, // chain nft owner
+                  description: String,
                   ) -> Vec<u8> {
         bcs::to_bytes(&Operation::Mint {
             minter,
@@ -198,6 +224,7 @@ impl MutationRoot {
             id,
             chain_owner,
             chain_minter,
+            description,
         })
         .unwrap()
     }

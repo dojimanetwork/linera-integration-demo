@@ -169,8 +169,17 @@ export const listNFT = async (name: string, description: string, price: string, 
 
         const transaction = await contract.createAndListToken(metadataURL, nftPrice, { value: listingPrice })
         console.log("Sell Tx : ", transaction);
-        await transaction.wait()
-
+        const receipt = await transaction.wait()
+        // Step 4: Extract the return value (newTokenId) from the transaction
+        if (receipt && receipt.logs) {
+            // Decode the logs to get the return value
+            const abi = contract.interface; // Get the contract ABI
+            const event = abi.parseLog(receipt.logs[0]); // Parse the first log (assuming it contains the return value)
+            const newTokenId = event?.args[0]; // Extract the newTokenId from the event args
+            console.log("Successfully listed your NFT! New Token ID:", newTokenId.toString());
+        } else {
+            console.log("Failed to retrieve the new Token ID from the transaction.");
+        }
         console.log("Successfully listed your NFT!")
     } catch (e) {
         console.error("Error listing NFT:", e)

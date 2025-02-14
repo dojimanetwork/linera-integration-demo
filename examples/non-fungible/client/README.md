@@ -67,14 +67,18 @@ Request tokens from the faucet for testing purposes.
 Parameters:
 - `chain`: Chain to request tokens from (`solana` or `ethereum`)
 - `address`: Recipient address
+- `amount` (optional): Amount of tokens to request (e.g., "1.5" for 1.5 SOL/ETH)
 
 Example:
 ```bash
-# Request Solana tokens
-curl -X POST "http://localhost:3000/faucet?chain=solana&address=YOUR_SOLANA_ADDRESS"
+# Request specific amount of Solana tokens
+curl -X POST "http://localhost:3001/faucet?chain=solana&address=YOUR_SOLANA_ADDRESS&amount=1.5"
 
-# Request Ethereum tokens
-curl -X POST "http://localhost:3000/faucet?chain=ethereum&address=YOUR_ETH_ADDRESS"
+# Request specific amount of Ethereum tokens
+curl -X POST "http://localhost:3001/faucet?chain=ethereum&address=YOUR_ETH_ADDRESS&amount=2.0"
+
+# Request default amount
+curl -X POST "http://localhost:3001/faucet?chain=solana&address=YOUR_SOLANA_ADDRESS"
 ```
 
 Response:
@@ -84,7 +88,7 @@ Response:
     "chain": "solana",
     "data": {
         "signature": "5UYoBkwP4UUxLm6LuYUZfsi2PJww2GXwVNhXBKCRLGUqQYN7MBHXBtxEgzqxH2Nf7FnQYYP2GNP3sABr82dhUv1D",
-        "amount": "2 SOL",
+        "amount": "1.5 SOL",
         "address": "YOUR_SOLANA_ADDRESS"
     }
 }
@@ -224,7 +228,8 @@ Lists a new NFT by publishing the image data and minting the NFT.
 ```json
 {
     "status": "success",
-    "message": "NFT listed successfully"
+    "message": "NFT listed successfully",
+    "blobHash": "8To2zwly72nvTMFagZ/rBcumhpx/hzfYHJmMZNVBAR4"
 }
 ```
 

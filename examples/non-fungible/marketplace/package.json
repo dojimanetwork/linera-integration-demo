@@ -6,7 +6,7 @@
   "scripts": {
     "test": "hardhat test",
     "compile": "npx hardhat compile",
-    "deploy": "hardhat run scripts/deploy.ts",
+    "deploy": "hardhat run scripts/deployCollection.js",
     "list-nft": "npx ts-node methods/listNFTExample.ts",
     "getUserNFTs": "npx ts-node methods/getUserNFTsExample.ts",
     "getMarketplaceAllNFTs": "npx ts-node methods/getMarketplaceAllNFTsExample.ts",

@@ -5,7 +5,7 @@
 
 use std::fmt::{Display, Formatter};
 use std::ptr::hash;
-use async_graphql::{InputObject, Request, Response, SimpleObject};
+use async_graphql::{Enum, InputObject, Request, Response, SimpleObject};
 use fungible::Account;
 use linera_sdk::{
     base::{AccountOwner, ApplicationId, ChainId, ContractAbi, ServiceAbi},
@@ -47,6 +47,7 @@ pub enum Operation {
         id: u64, // specific chain nft id
         chain_minter: String, // chain nft minter
         chain_owner: String, // chain nft owner
+        description: String,
     },
     /// Transfers a token from a (locally owned) account to a (possibly remote) account.
     Transfer {
@@ -83,6 +84,14 @@ pub enum Message {
     },
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Enum)]
+pub enum NftStatus {
+    /// sold status
+    Sold,
+    /// on sale status
+    OnSale,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, SimpleObject, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Nft {
@@ -96,6 +105,8 @@ pub struct Nft {
     pub id: u64, // specific chain nft id
     pub chain_minter: String, // chain nft minter
     pub chain_owner: String, // chain nft owner
+    pub description: String,
+    pub status: NftStatus,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, SimpleObject, PartialEq, Eq)]
@@ -111,6 +122,9 @@ pub struct NftOutput {
     pub id: u64, // specific chain nft id
     pub chain_minter: String, // chain nft minter
     pub chain_owner: String, // chain nft owner
+    pub description: String,
+    pub blob_hash: DataBlobHash,
+    pub status: NftStatus,
 }
 
 impl NftOutput {
@@ -128,6 +142,9 @@ impl NftOutput {
             id: nft.id,
             chain_minter: nft.chain_minter,
             chain_owner: nft.chain_owner,
+            description: nft.description,
+            blob_hash: nft.blob_hash,
+            status: nft.status,
         }
     }
 
@@ -143,6 +160,9 @@ impl NftOutput {
             id: nft.id,
             chain_minter: nft.chain_minter,
             chain_owner: nft.chain_owner,
+            description: nft.description,
+            blob_hash: nft.blob_hash,
+            status: nft.status,
         }
     }
 }

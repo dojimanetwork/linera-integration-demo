@@ -144,6 +144,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Get additional transfer parameters
 	sourceOwner := r.URL.Query().Get("sourceOwner")
 	tokenId := r.URL.Query().Get("tokenId")
+	blobHash := r.URL.Query().Get("blobHash")
 
 	if err != nil {
 		http.Error(w, "Invalid tokenId", http.StatusBadRequest)
@@ -218,10 +219,11 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 			BuyFromToken:  fromToken,
 			ToToken:       toToken,
 			Amount:        fmt.Sprintf("%f", swapResult.ToAmount), // Use calculated amount
+			BlobHash:      blobHash,
 		}
 
 		// Execute transfer mutation with swap result
-		transferResp, err := solverClient.ExecuteTransferMutation(transferParams)
+		transferResp, txhash, err := solverClient.ExecuteTransferMutation(transferParams)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -229,6 +231,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 
 		response["transfer_result"] = transferResp.Data
 		response["swap_calculation"] = swapResult
+		response["txhash"] = txhash
 	}
 
 	// Return response
@@ -290,7 +293,7 @@ func getTokenForChain(chain string) (string, error) {
 	return token, nil
 }
 
-// Add handler for listing NFT
+// Update handler for listing NFT to return blob hash
 func handleListNFT(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -336,16 +339,18 @@ func handleListNFT(w http.ResponseWriter, r *http.Request) {
 		Token:       requestBody.Token,
 	}
 
-	// List NFT
-	if err := solverClient.ListNFT(params); err != nil {
+	// List NFT and get blob hash
+	blobHash, err := solverClient.ListNFT(params)
+	if err != nil {
 		http.Error(w, "Error listing NFT: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Return success response
-	response := map[string]string{
-		"status":  "success",
-		"message": "NFT listed successfully",
+	// Return success response with blob hash
+	response := map[string]interface{}{
+		"status":   "success",
+		"message":  "NFT listed successfully",
+		"blobHash": blobHash,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

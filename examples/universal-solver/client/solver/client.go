@@ -246,7 +246,13 @@ func (c *Client) CalculateSwap(fromToken, toToken string, amount float64) (*Swap
 	// Parse response
 	var result struct {
 		Data struct {
-			CalculateSwap SwapResult `json:"calculateSwap"`
+			CalculateSwap struct {
+				FromToken    string  `json:"fromToken"`
+				ToToken      string  `json:"toToken"` 
+				FromAmount   float64 `json:"fromAmount"`
+				ToAmount     float64 `json:"toAmount"`
+				ExchangeRate float64 `json:"exchangeRate"`
+			} `json:"calculateSwap"`
 		} `json:"data"`
 		Errors []struct {
 			Message string `json:"message"`
@@ -261,7 +267,13 @@ func (c *Client) CalculateSwap(fromToken, toToken string, amount float64) (*Swap
 		return nil, fmt.Errorf("GraphQL error: %s", result.Errors[0].Message)
 	}
 
-	return &result.Data.CalculateSwap, nil
+	return &SwapResult{
+		FromToken:    result.Data.CalculateSwap.FromToken,
+		ToToken:      result.Data.CalculateSwap.ToToken,
+		FromAmount:   result.Data.CalculateSwap.FromAmount,
+		ToAmount:     result.Data.CalculateSwap.ToAmount,
+		ExchangeRate: result.Data.CalculateSwap.ExchangeRate,
+	}, nil
 }
 
 // ExecuteSwap performs the swap operation
@@ -903,5 +915,92 @@ func (c *Client) GetEthereumBalance(address string) (*Balance, error) {
 		Address: address,
 		Amount:  amount,
 		Symbol:  "ETH",
+	}, nil
+}
+
+// Add new functions with amount parameter
+func (c *Client) RequestSolanaAirdropWithAmount(address string, amount float64) (map[string]interface{}, error) {
+	// Convert amount to lamports (1 SOL = 1e9 lamports)
+	lamports := uint64(amount * 1e9)
+
+	client := rpc.New(SolanaRPC)
+	pubKey, err := solana.PublicKeyFromBase58(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Solana address: %w", err)
+	}
+
+	sig, err := client.RequestAirdrop(
+		context.Background(),
+		pubKey,
+		lamports,
+		rpc.CommitmentFinalized,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to request airdrop: %w", err)
+	}
+
+	return map[string]interface{}{
+		"signature": sig.String(),
+		"amount":    fmt.Sprintf("%f SOL", amount),
+		"address":   address,
+	}, nil
+}
+
+func (c *Client) RequestEthereumFaucetWithAmount(address string, amount float64) (map[string]interface{}, error) {
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	// Convert amount to wei (1 ETH = 1e18 wei)
+	weiAmount := new(big.Int)
+	weiAmount.SetString(fmt.Sprintf("%.0f", amount*1e18), 10)
+
+	// Get the faucet's private key
+	privateKey := chainKeys.EthereumKey
+
+	// Get the faucet's nonce
+	nonce, err := client.PendingNonceAt(context.Background(), crypto.PubkeyToAddress(privateKey.PublicKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nonce: %w", err)
+	}
+
+	// Create transaction
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gas price: %w", err)
+	}
+
+	tx := types.NewTransaction(
+		nonce,
+		common.HexToAddress(address),
+		weiAmount,
+		21000,
+		gasPrice,
+		nil,
+	)
+
+	// Sign transaction
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain ID: %w", err)
+	}
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	// Send transaction
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	return map[string]interface{}{
+		"hash":    signedTx.Hash().String(),
+		"amount":  fmt.Sprintf("%f ETH", amount),
+		"address": address,
 	}, nil
 }

@@ -107,7 +107,7 @@ func main() {
 	http.HandleFunc("/quote_swap", corsMiddleware(handleQuoteSwap))
 
 	// Start server
-	port := getEnvOrDefault("PORT", "3000")
+	port := getEnvOrDefault("PORT", "3001")
 	log.Printf("Server starting on :%s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatalf("Error starting server: %v", err)
@@ -248,35 +248,53 @@ func getTokenForChain(chain string) (string, error) {
 	return token, nil
 }
 
-// Add new handler function
+// Update handleFaucet to accept amount parameter
 func handleFaucet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Get chain parameter
+	// Get parameters
 	chain := r.URL.Query().Get("chain")
 	if chain == "" {
 		http.Error(w, "chain parameter is required", http.StatusBadRequest)
 		return
 	}
 
-	// Get address parameter
 	address := r.URL.Query().Get("address")
 	if address == "" {
 		http.Error(w, "address parameter is required", http.StatusBadRequest)
 		return
 	}
 
-	var result map[string]interface{}
+	// Get optional amount parameter
+	amount := r.URL.Query().Get("amount")
+	var amountFloat float64
 	var err error
+	if amount != "" {
+		amountFloat, err = strconv.ParseFloat(amount, 64)
+		if err != nil {
+			http.Error(w, "Invalid amount value", http.StatusBadRequest)
+			return
+		}
+	}
+
+	var result map[string]interface{}
 
 	switch chain {
 	case "solana":
-		result, err = solverClient.RequestSolanaAirdrop(address)
+		if amount == "" {
+			result, err = solverClient.RequestSolanaAirdrop(address)
+		} else {
+			result, err = solverClient.RequestSolanaAirdropWithAmount(address, amountFloat)
+		}
 	case "ethereum":
-		result, err = solverClient.RequestEthereumFaucet(address)
+		if amount == "" {
+			result, err = solverClient.RequestEthereumFaucet(address)
+		} else {
+			result, err = solverClient.RequestEthereumFaucetWithAmount(address, amountFloat)
+		}
 	default:
 		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
 		return
@@ -423,11 +441,11 @@ func handleQuoteSwap(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": "success",
 		"data": map[string]interface{}{
-			"fromChain":     fromChain,
-			"toChain":       toChain,
-			"fromAmount":    amount,
-			"toAmount":      quote.ToAmount,
-			"exchangeRate":  quote.ExchangeRate,
+			"fromChain":    fromChain,
+			"toChain":      toChain,
+			"fromAmount":   amount,
+			"toAmount":     quote.ToAmount,
+			"exchangeRate": quote.ExchangeRate,
 		},
 	})
 }

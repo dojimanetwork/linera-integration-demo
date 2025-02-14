@@ -14,7 +14,7 @@ use linera_sdk::{
     Contract, ContractRuntime, DataBlobHash,
 };
 use linera_sdk::base::ApplicationId;
-use non_fungible::{Message, Nft, NonFungibleTokenAbi, Operation, TokenId};
+use non_fungible::{Message, Nft, NftStatus, NonFungibleTokenAbi, Operation, TokenId};
 use universal_solver::UniversalSolverAbi;
 use self::state::NonFungibleTokenState;
 
@@ -57,10 +57,11 @@ impl Contract for NonFungibleTokenContract {
                 price,
                 id,
                 chain_owner,
-                chain_minter
+                chain_minter,
+                description
             } => {
                 self.check_account_authentication(minter);
-                self.mint(minter, name, blob_hash, token, price, id, chain_owner, chain_minter).await;
+                self.mint(minter, name, blob_hash, token, price, id, chain_owner, chain_minter, description).await;
             }
 
             Operation::Transfer {
@@ -177,6 +178,7 @@ impl NonFungibleTokenContract {
     /// Authentication needs to have happened already.
     async fn transfer(&mut self, mut nft: Nft, target_account: Account) {
         self.remove_nft(&nft).await;
+        nft.status = NftStatus::Sold;
         if target_account.chain_id == self.runtime.chain_id() {
             nft.owner = target_account.owner;
             self.add_nft(nft).await;
@@ -208,6 +210,7 @@ impl NonFungibleTokenContract {
                   id: u64, // specific chain nft id
                   chain_minter: String, // chain nft minter
                   chain_owner: String,
+                  description: String
     ) {
         self.runtime.assert_data_blob_exists(blob_hash);
         let token_id = Nft::create_token_id(
@@ -235,7 +238,9 @@ impl NonFungibleTokenContract {
             price,
             id,
             chain_owner,
-            chain_minter
+            chain_minter,
+            description,
+            status: NftStatus::OnSale,
         })
         .await;
 
@@ -263,10 +268,11 @@ impl NonFungibleTokenContract {
     async fn add_nft(&mut self, nft: Nft) {
         let token_id = nft.token_id.clone();
         let owner = nft.owner;
+        let blob_hash = nft.blob_hash.clone();
 
         self.state
             .nfts
-            .insert(&token_id, nft)
+            .insert(&token_id, nft.clone())
             .expect("Error in insert statement");
         if let Some(owned_token_ids) = self
             .state
@@ -275,15 +281,22 @@ impl NonFungibleTokenContract {
             .await
             .expect("Error in get_mut statement")
         {
-            owned_token_ids.insert(token_id);
+            owned_token_ids.insert(token_id.clone());
         } else {
             let mut owned_token_ids = BTreeSet::new();
-            owned_token_ids.insert(token_id);
+            owned_token_ids.insert(token_id.clone());
             self.state
                 .owned_token_ids
                 .insert(&owner, owned_token_ids)
                 .expect("Error in insert statement");
         }
+
+         self
+        .state
+        .blob_token_ids
+        .insert(&blob_hash, nft.token_id.clone())
+        .expect("Error in get_mut statement")
+
     }
 
     async fn remove_nft(&mut self, nft: &Nft) {
@@ -300,5 +313,12 @@ impl NonFungibleTokenContract {
             .expect("NFT set should be there!");
 
         owned_token_ids.remove(&nft.token_id);
+
+            self
+            .state
+            .blob_token_ids
+            .remove(&nft.blob_hash)
+            .expect("Error in get_mut statement")
+
     }
 }

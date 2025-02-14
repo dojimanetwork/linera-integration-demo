@@ -128,6 +128,9 @@ type NFT struct {
 	ID          int    `json:"id"`
 	ChainMinter string `json:"chainMinter"`
 	ChainOwner  string `json:"chainOwner"`
+	Description string `json:"description"`
+	BlobHash    string `json:"blobHash"`
+	NftStatus   string `json:"status"`
 }
 
 // Add response type for NFTs query

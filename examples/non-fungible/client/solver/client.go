@@ -947,6 +947,7 @@ type TransferParams struct {
 	BuyFromToken  string `json:"buyFromToken"`
 	ToToken       string `json:"toToken"`
 	Amount        string `json:"amount"`
+	BlobHash      string `json:"blobHash"`
 }
 
 // Add this type to handle the transfer mutation response
@@ -957,10 +958,10 @@ type TransferResponse struct {
 	} `json:"errors,omitempty"`
 }
 
-// Add this type for NFT query response
+// Update NFTQueryResponse type to match new structure
 type NFTQueryResponse struct {
 	Data struct {
-		NFT struct {
+		NftUsingBlobHash struct {
 			Token       string `json:"token"`
 			TokenId     string `json:"tokenId"`
 			Price       string `json:"price"`
@@ -969,15 +970,17 @@ type NFTQueryResponse struct {
 			Name        string `json:"name"`
 			Owner       string `json:"owner"`
 			ID          int    `json:"id"`
-		} `json:"nft"`
+			Minter      string `json:"minter"`
+			Payload     []int  `json:"payload"`
+		} `json:"nftUsingBlobHash"`
 	} `json:"data"`
 }
 
-// Add function to query NFT details
-func (c *Client) GetNFTDetails(tokenId string) (*NFTQueryResponse, error) {
+// Update GetNFTDetails function
+func (c *Client) GetNFTDetails(blobHash string) (*NFTQueryResponse, error) {
 	query := `{
-    "query": "query nft{nft(tokenId:\"` + tokenId + `\"){token tokenId price chainOwner chainMinter name owner id}}"
-}`
+		"query": "query nft{nftUsingBlobHash(blobHash:\"` + blobHash + `\"){token tokenId price chainOwner chainMinter name owner id minter payload}}"
+	}`
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
@@ -1001,11 +1004,11 @@ func (c *Client) GetNFTDetails(tokenId string) (*NFTQueryResponse, error) {
 }
 
 // Update ExecuteNFTContractTransaction to use the NFT ID
-func (c *Client) ExecuteNFTContractTransaction(tokenId string, calSwapAmount float64, listedPrice float64) error {
+func (c *Client) ExecuteNFTContractTransaction(tokenId int, calSwapAmount float64, listedPrice float64) (string, error) {
 	// Connect to Ethereum node
 	client, err := ethclient.Dial(EthereumRPC)
 	if err != nil {
-		return fmt.Errorf("failed to connect to Ethereum node: %w", err)
+		return "", fmt.Errorf("failed to connect to Ethereum node: %w", err)
 	}
 	defer client.Close()
 
@@ -1026,42 +1029,43 @@ func (c *Client) ExecuteNFTContractTransaction(tokenId string, calSwapAmount flo
 	// Create transaction
 	auth, err := bind.NewKeyedTransactorWithChainID(chainKeys.EthereumKey, big.NewInt(1337))
 	if err != nil {
-		return fmt.Errorf("failed to create auth: %w", err)
+		return "", fmt.Errorf("failed to create auth: %w", err)
 	}
 	auth.Value = amountWei
 
 	// Use the NFT ID from the query
-	tokenIdInt, ok := new(big.Int).SetString(tokenId, 10)
+	tokenIdInt, ok := new(big.Int).SetString(strconv.Itoa(tokenId), 10)
 	if !ok {
-		return fmt.Errorf("failed to parse token ID: %s", tokenId)
+		return "", fmt.Errorf("failed to parse token ID: %s", tokenId)
 	}
 
 	// Execute sale transaction
 	tx, err := contract.Transact(auth, "executeSale", tokenIdInt)
 	if err != nil {
-		return fmt.Errorf("failed to execute sale: %w", err)
+		return "", fmt.Errorf("failed to execute sale: %w", err)
 	}
 
 	// Wait for transaction to be mined
 	_, err = bind.WaitMined(context.Background(), client, tx)
 	if err != nil {
-		return fmt.Errorf("failed to wait for transaction: %w", err)
+		return "", fmt.Errorf("failed to wait for transaction: %w", err)
 	}
 
-	return nil
+	return tx.Hash().String(), nil
 }
 
-func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferResponse, error) {
+func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferResponse, string, error) {
 	// First get the NFT details to get the ID
-	nftDetails, err := c.GetNFTDetails(params.TokenId)
+	nftDetails, err := c.GetNFTDetails(params.BlobHash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get NFT details: %w", err)
+		return nil, "", fmt.Errorf("failed to get NFT details: %w", err)
 	}
-
+	var hash string
 	// After successful transfer mutation, if this is an ETH transfer, execute the NFT contract transaction
 	if params.ToToken == "ETH" {
-		if err := c.ExecuteNFTContractTransaction(nftDetails.Data.NFT.TokenId, parseFloat64(params.Amount), parseFloat64(nftDetails.Data.NFT.Price)); err != nil {
-			return nil, fmt.Errorf("failed to execute NFT contract transaction after transfer: %w", err)
+		hash, err = c.ExecuteNFTContractTransaction(nftDetails.Data.NftUsingBlobHash.ID, parseFloat64(params.Amount), parseFloat64(nftDetails.Data.NftUsingBlobHash.Price))
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to execute NFT contract transaction after transfer: %w", err)
 		}
 	}
 
@@ -1071,27 +1075,27 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 }`
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
-		return nil, fmt.Errorf("error creating transfer request: %w", err)
+		return nil, "", fmt.Errorf("error creating transfer request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error executing transfer: %w", err)
+		return nil, "", fmt.Errorf("error executing transfer: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var transferResp TransferResponse
 	if err := json.NewDecoder(resp.Body).Decode(&transferResp); err != nil {
-		return nil, fmt.Errorf("error parsing transfer response: %w", err)
+		return nil, "", fmt.Errorf("error parsing transfer response: %w", err)
 	}
 
 	if len(transferResp.Errors) > 0 {
-		return nil, fmt.Errorf("transfer error: %s", transferResp.Errors[0].Message)
+		return nil, "", fmt.Errorf("transfer error: %s", transferResp.Errors[0].Message)
 	}
 
-	return &transferResp, nil
+	return &transferResp, hash, nil
 }
 
 // Helper function to parse float64
@@ -1157,8 +1161,8 @@ func (c *Client) PublishDataBlob(chainId string, imageBytes []byte) (string, err
 // Add function to mint NFT
 func (c *Client) MintNFT(params ListNFTParams, blobHash string, id int, token string) error {
 	mutation := fmt.Sprintf(`{
-		"query": "mutation mint{mint(minter:\"%s\",name:\"%s\",blobHash:\"%s\",token:\"%s\",price:\"%s\",id:%d,chainMinter:\"%s\",chainOwner:\"%s\")}"
-	}`, params.Minter, params.Name, blobHash, token, params.Price, id, params.ChainMinter, params.ChainOwner)
+		"query": "mutation mint{mint(minter:\"%s\",name:\"%s\",blobHash:\"%s\",token:\"%s\",price:\"%s\",id:%d,chainMinter:\"%s\",chainOwner:\"%s\",description:\"%s\")}"
+	}`, params.Minter, params.Name, blobHash, token, params.Price, id, params.ChainMinter, params.ChainOwner, params.Description)
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
@@ -1186,20 +1190,20 @@ func (c *Client) MintNFT(params ListNFTParams, blobHash string, id int, token st
 	return nil
 }
 
-// Add function to list NFT
-func (c *Client) ListNFT(params ListNFTParams) error {
+// Update ListNFT to return the blob hash
+func (c *Client) ListNFT(params ListNFTParams) (string, error) {
 	// First publish the image data blob
 	blobHash, err := c.PublishDataBlob(params.ChainId, params.ImageBytes)
 	if err != nil {
-		return fmt.Errorf("failed to publish data blob: %w", err)
+		return "", fmt.Errorf("failed to publish data blob: %w", err)
 	}
 
 	// Mint the NFT with the blob hash
 	if err := c.MintNFT(params, blobHash, params.ID, params.Token); err != nil {
-		return fmt.Errorf("failed to mint NFT: %w", err)
+		return "", fmt.Errorf("failed to mint NFT: %w", err)
 	}
 
-	return nil
+	return blobHash, nil
 }
 
 // Add function to get all NFTs
