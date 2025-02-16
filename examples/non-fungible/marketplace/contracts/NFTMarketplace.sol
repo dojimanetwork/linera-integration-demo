@@ -98,20 +98,25 @@ contract NFTMarketplace is ERC721URIStorage {
         _setTokenURI(newTokenId, tokenURI);
 
         // //Helper function to update Global variables and emit an event
-        createListedToken(newTokenId, price);
+        listToken(newTokenId, price);
 
         return newTokenId;
     }
 
-    function createListedToken(uint256 tokenId, uint256 price) private {
-        //Only owner can list the nft
+    function listToken(uint256 tokenId, uint256 price) public payable {
+        // Check if the caller is the owner of the NFT
         require(ownerOf(tokenId) == msg.sender, "Only NFT owner can list the token");
-        //Make sure the sender sent enough ETH to pay for listing
+        
+        // Check if the NFT is already listed
+        require(!idToListedToken[tokenId].currentlyListed, "NFT is already listed for sale");
+        
+        // Make sure the sender sent enough ETH to pay for listing
         require(msg.value == listPrice, "Incorrect listing fee");
-        //Just sanity check
+        
+        // Just sanity check
         require(price > 0, "Price must be greater than zero");
 
-        //Update the mapping of tokenId's to Token details, useful for retrieval functions
+        // Update the mapping of tokenId's to Token details, useful for retrieval functions
         idToListedToken[tokenId] = ListedToken(
             tokenId,
             payable(address(this)),
@@ -121,7 +126,8 @@ contract NFTMarketplace is ERC721URIStorage {
         );
 
         _transfer(msg.sender, address(this), tokenId);
-        //Emit the event for successful transfer. The frontend parses this message and updates the end user
+        
+        // Emit the event for successful transfer. The frontend parses this message and updates the end user
         emit TokenListedSuccess(
             tokenId,
             address(this),

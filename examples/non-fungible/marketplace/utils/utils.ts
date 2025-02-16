@@ -7,7 +7,7 @@
 
 export const GetIpfsUrlFromPinata = (pinataUrl: string) => {
     if (!pinataUrl || !pinataUrl.includes("ipfs://")) {
-      console.warn("Invalid Pinata URL", pinataUrl)
+      // console.warn("Invalid Pinata URL", pinataUrl)
       return pinataUrl
     }
   

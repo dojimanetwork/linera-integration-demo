@@ -1,8 +1,8 @@
 import { buyNFT } from './index';
 
 const main = async () => {
-    const tokenId = "4"; // Replace with a valid token ID
-    const pvtKey = "f4d1b0ad213d47acf07e61bcb6c21f522f3c6e195cf077ccb649dbdf8f978f98";
+    const tokenId = "1"; // Replace with a valid token ID
+    const pvtKey = "ae1d058b9c5713848e7ac4c1901fac9a737729a34c10c997991c861dd7705ac0";
     await buyNFT(pvtKey, tokenId);
 };
 

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "hardhat test",
     "compile": "npx hardhat compile",
-    "deploy": "hardhat run scripts/deployCollection.js",
+    "deploy": "npx hardhat run scripts/deployCollection.js --network eth_dojima",
+    "create-and-list-nft": "npx ts-node methods/createAndListNFTExample.ts",
     "list-nft": "npx ts-node methods/listNFTExample.ts",
     "getUserNFTs": "npx ts-node methods/getUserNFTsExample.ts",
     "getMarketplaceAllNFTs": "npx ts-node methods/getMarketplaceAllNFTsExample.ts",

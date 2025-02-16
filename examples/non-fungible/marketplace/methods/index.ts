@@ -25,7 +25,7 @@ export const getUserNFTs = async () => {
                 const price = ethers.formatUnits(i.price.toString(), "ether")
                 return {
                     price,
-                    tokenId: i.tokenId.toNumber(),
+                    tokenId: `${Number.parseInt(i.tokenId)}`,
                     seller: i.seller,
                     owner: i.owner,
                     image: meta.data.image,
@@ -54,7 +54,7 @@ export const getMarketplaceAllNFTs = async () => {
                 const price = ethers.formatUnits(i.price.toString(), "ether")
                 return {
                     price,
-                    tokenId: i.tokenId.toNumber(),
+                    tokenId: `${Number.parseInt(i.tokenId)}`,
                     seller: i.seller,
                     owner: i.owner,
                     image: meta.data.image,
@@ -153,7 +153,7 @@ const uploadMetadataToIPFS = async (name: string, description: string, price: st
     return null
 }
 
-export const listNFT = async (name: string, description: string, price: string, filePath: string) => {
+export const createAndListNFT = async (name: string, description: string, price: string, filePath: string) => {
     console.log("Uploading NFT... please wait.")
 
     try {
@@ -183,5 +183,40 @@ export const listNFT = async (name: string, description: string, price: string, 
         console.log("Successfully listed your NFT!")
     } catch (e) {
         console.error("Error listing NFT:", e)
+    }
+}
+
+export const listNFT = async (tokenId: string, price: string) => {
+    console.log("Listing NFT... please wait.");
+
+    // Validate price input
+    if (isNaN(Number(price)) || Number(price) <= 0) {
+        console.error("Invalid price. Please enter a valid number greater than zero.");
+        return;
+    }
+
+    try {
+        const nftPrice = ethers.parseUnits(price, "ether")
+        const listingPrice = (await contract.getListPrice()).toString()
+        console.log("Listing price : ", listingPrice);
+
+        // Call the smart contract to list the NFT
+        const transaction = await contract.listToken(tokenId, nftPrice, { value: listingPrice });
+        console.log("List Tx : ", transaction);
+        const receipt = await transaction.wait();
+
+        // Extract the return value (newTokenId) from the transaction
+        if (receipt && receipt.logs) {
+            // Decode the logs to get the return value
+            const abi = contract.interface; // Get the contract ABI
+            const event = abi.parseLog(receipt.logs[0]); // Parse the first log (assuming it contains the return value)
+            const newTokenId = event?.args[0]; // Extract the newTokenId from the event args
+            console.log("Successfully listed your NFT! New Token ID:", newTokenId.toString());
+        } else {
+            console.log("Failed to retrieve the new Token ID from the transaction.");
+        }
+        console.log("Successfully listed your NFT!");
+    } catch (e) {
+        console.error("Error listing NFT:", e);
     }
 }
