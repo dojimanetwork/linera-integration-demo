@@ -111,9 +111,10 @@ impl Contract for NonFungibleTokenContract {
 
             Operation::ListNftForSale {
                 token_id,
+                chain_owner
             } => {
                 let nft = self.get_nft(&token_id).await;
-                self.list_nft_for_sale(nft).await;
+                self.list_nft_for_sale(nft, chain_owner).await;
             }
         }
     }
@@ -275,7 +276,7 @@ impl NonFungibleTokenContract {
     async fn add_nft(&mut self, nft: Nft) {
         let token_id = nft.token_id.clone();
         let owner = nft.owner;
-        let blob_hash = nft.blob_hash.clone();
+        let _id = nft.id;
 
         self.state
             .nfts
@@ -301,13 +302,14 @@ impl NonFungibleTokenContract {
          self
         .state
         .blob_token_ids
-        .insert(&blob_hash, nft.token_id.clone())
+        .insert(&_id, nft.token_id.clone())
         .expect("Error in get_mut statement")
 
     }
 
-    async fn list_nft_for_sale(&mut self, mut nft: Nft){
+    async fn list_nft_for_sale(&mut self, mut nft: Nft, chain_owner: String){
         nft.status = NftStatus::OnSale;
+        nft.chain_owner = chain_owner;
         self.state
             .nfts
             .insert(&nft.token_id, nft.clone())
@@ -332,7 +334,7 @@ impl NonFungibleTokenContract {
             self
             .state
             .blob_token_ids
-            .remove(&nft.blob_hash)
+            .remove(&nft.id)
             .expect("Error in get_mut statement")
 
     }

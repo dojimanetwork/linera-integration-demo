@@ -16,7 +16,7 @@ pub struct NonFungibleTokenState {
     // Map from owners to the set of NFT token IDs they own
     pub owned_token_ids: MapView<AccountOwner, BTreeSet<TokenId>>,
     // chain owned to the set of NFTs for multiple chains
-    pub blob_token_ids: MapView<DataBlobHash, TokenId>,
+    pub blob_token_ids: MapView<u64, TokenId>,
     // Counter of NFTs minted in this chain, used for hash uniqueness
     pub num_minted_nfts: RegisterView<u64>,
 }

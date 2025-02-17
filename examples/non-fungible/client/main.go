@@ -116,6 +116,8 @@ func main() {
 	http.HandleFunc("/list_nft", corsMiddleware(handleListNFT))
 	http.HandleFunc("/list_nft_for_sale", corsMiddleware(handleListNFTForSale))
 	http.HandleFunc("/nfts", corsMiddleware(handleGetNFTs))
+	http.HandleFunc("/publish_image", corsMiddleware(handleBlobHash))
+	http.HandleFunc("/next_nft_id", corsMiddleware(handleNextNFTID))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3000")
@@ -154,6 +156,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	}
 	targetChainId := r.URL.Query().Get("targetChainId")
 	targetOwner := r.URL.Query().Get("targetOwner")
+	nftId := r.URL.Query().Get("nftId")
 
 	// Validate required parameters
 	if txHash == "" {
@@ -222,6 +225,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 			ToToken:       toToken,
 			Amount:        fmt.Sprintf("%f", swapResult.ToAmount), // Use calculated amount
 			BlobHash:      blobHash,
+			NftId:         nftId,
 		}
 
 		// Execute transfer mutation with swap result
@@ -295,25 +299,15 @@ func getTokenForChain(chain string) (string, error) {
 	return token, nil
 }
 
-// Update handler for listing NFT to return blob hash
-func handleListNFT(w http.ResponseWriter, r *http.Request) {
+func handleBlobHash(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Parse JSON request body
 	var requestBody struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Price       string `json:"price"`
-		ImageBytes  []int  `json:"imageBytes"` // Expect array of integers
-		ChainId     string `json:"chainId"`
-		Minter      string `json:"minter"`
-		ChainMinter string `json:"chainMinter"`
-		ChainOwner  string `json:"chainOwner"`
-		ID          int    `json:"id"`
-		Token       string `json:"token"`
+		ImageBytes []int  `json:"imageBytes"` // Expect array of integers
+		ChainId    string `json:"chainId"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -327,18 +321,68 @@ func handleListNFT(w http.ResponseWriter, r *http.Request) {
 		imageBytes[i] = byte(b)
 	}
 
+	blobHash, err := solverClient.PublishDataBlob(requestBody.ChainId, imageBytes)
+	if err != nil {
+		http.Error(w, "Error publishing blob: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response with blob hash
+	response := map[string]interface{}{
+		"status":   "success",
+		"message":  "Blob is published successfully",
+		"blobHash": blobHash,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+}
+
+// Update handler for listing NFT to return blob hash
+func handleListNFT(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse JSON request body
+	var requestBody struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Price       string `json:"price"`
+		ChainId     string `json:"chainId"`
+		Minter      string `json:"minter"`
+		ChainMinter string `json:"chainMinter"`
+		ChainOwner  string `json:"chainOwner"`
+		ID          int    `json:"id"`
+		Token       string `json:"token"`
+		BlobHash    string `json:"blobHash"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Error parsing request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Convert int array to byte array
+	// imageBytes := make([]byte, len(requestBody.ImageBytes))
+	// for i, b := range requestBody.ImageBytes {
+	// 	imageBytes[i] = byte(b)
+	// }
+
 	// Create params
 	params := solver.ListNFTParams{
 		Name:        requestBody.Name,
 		Description: requestBody.Description,
 		Price:       requestBody.Price,
-		ImageBytes:  imageBytes,
 		ChainId:     requestBody.ChainId,
 		Minter:      requestBody.Minter,
 		ChainMinter: requestBody.ChainMinter,
 		ChainOwner:  requestBody.ChainOwner,
 		ID:          requestBody.ID,
 		Token:       requestBody.Token,
+		BlobHash:    requestBody.BlobHash,
 	}
 
 	// List NFT and get blob hash
@@ -419,6 +463,36 @@ func handleGetNFTs(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"status": "success",
 		"data":   nfts,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// Add the handler function
+func handleNextNFTID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get current token ID
+	currentID, err := solverClient.GetCurrentTokenID()
+	if err != nil {
+		http.Error(w, "Error getting next NFT ID: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// The next ID will be current + 1
+	nextID := currentID + 1
+
+	// Return success response
+	response := map[string]interface{}{
+		"status": "success",
+		"data": map[string]uint64{
+			"currentId": currentID,
+			"nextId":    nextID,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

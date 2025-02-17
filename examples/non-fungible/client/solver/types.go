@@ -107,13 +107,18 @@ type ListNFTParams struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Price       string `json:"price"`
-	ImageBytes  []byte `json:"imageBytes"`
 	ChainId     string `json:"chainId"`
 	Minter      string `json:"minter"`
 	ChainMinter string `json:"chainMinter"`
 	ChainOwner  string `json:"chainOwner"`
 	ID          int    `json:"id"`
 	Token       string `json:"token"`
+	BlobHash    string `json:"blobHash"`
+}
+
+type BlobHashParams struct {
+	ImageBytes []byte `json:"imageBytes"`
+	ChainId    string `json:"chainId"`
 }
 
 // Add NFT type to represent individual NFT data

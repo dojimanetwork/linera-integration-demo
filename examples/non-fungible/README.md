@@ -186,3 +186,65 @@ echo "http://localhost:3000/$CHAIN_1?app=$APP_ID&owner=$OWNER_2&port=$PORT"
 ```
 
 For the final part, refer to [Fungible Token Example Application - Using web frontend](https://github.com/linera-io/linera-protocol/blob/main/examples/fungible/README.md#using-web-frontend).
+
+
+# NFT Marketplace API
+
+## Endpoints
+
+### POST /publish_image
+
+This endpoint allows you to publish an image to the blockchain and receive a blob hash in return.
+
+#### Request Body
+
+The request body should be a JSON object with the following structure:
+
+```json
+{
+  "imageBytes": [1, 2, 3, 4, ...],  // Array of integers representing the image bytes
+  "chainId": "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65"
+}
+```
+
+- `imageBytes`: An array of integers representing the image data. This should be the byte representation of the image you want to publish.
+- `chainId`: The ID of the blockchain where the image will be published.
+
+#### Response
+
+On success, the response will be a JSON object with the following structure:
+
+```json
+{
+  "status": "success",
+  "message": "Blob is published successfully",
+  "blobHash": "8To2zwly72nvTMFagZ/rBcumhpx/hzfYHJmMZNVBAR4"
+}
+```
+
+In case of an error, the response will contain an error message:
+
+```json
+{
+  "status": "error",
+  "message": "Error message here"
+}
+```
+
+### Example Request
+
+Here’s an example of how to call the `/publish_image` endpoint using `curl`:
+
+```bash
+curl -X POST http://localhost:3000/publish_image \
+-H "Content-Type: application/json" \
+-d '{
+  "imageBytes": [1, 2, 3, 4, ...],
+  "chainId": "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65"
+}'
+```
+
+### Notes
+
+- Ensure that the `imageBytes` and `chainId` values are correctly set according to your image data and blockchain details.
+- The server must be running and accessible at the specified URL.

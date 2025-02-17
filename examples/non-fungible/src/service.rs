@@ -91,8 +91,8 @@ impl QueryRoot {
         }
     }
 
-    async fn nftUsingBlobHash(&self, blobHash: DataBlobHash) -> Option<NftOutput> {
-        let token_id = self.non_fungible_token.blob_token_ids.get(&blobHash).await.unwrap();
+    async fn nftUsingBlobHash(&self, id: u64) -> Option<NftOutput> {
+        let token_id = self.non_fungible_token.blob_token_ids.get(&id).await.unwrap();
 
         let nft = self
             .non_fungible_token
@@ -272,11 +272,13 @@ impl MutationRoot {
     async fn listNftForSale(
         &self,
         token_id: String,
+        chain_owner: String,
     ) -> Vec<u8> {
         bcs::to_bytes(&Operation::ListNftForSale {
             token_id: TokenId {
                 id: STANDARD_NO_PAD.decode(token_id).unwrap(),
-            }
+            },
+            chain_owner,
         }).unwrap()
     }
 }

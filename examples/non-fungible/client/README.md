@@ -361,3 +361,56 @@ curl http://localhost:3000/nfts
 **Error Responses:**
 - `405 Method Not Allowed`: If not using GET method
 - `500 Internal Server Error`: Error fetching NFTs 
+
+
+# NFT Marketplace API
+
+## Endpoints
+
+### GET /next_nft_id
+
+This endpoint returns the next available NFT ID that can be used when minting a new NFT.
+
+#### Request
+
+No parameters are required.
+
+#### Response
+
+On success, the response will be a JSON object with the following structure:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "currentId": 5,
+    "nextId": 6
+  }
+}
+```
+
+- `currentId`: The current token ID in the contract.
+- `nextId`: The next available token ID that can be used for minting.
+
+In case of an error, the response will contain an error message:
+
+```json
+{
+  "status": "error",
+  "message": "Error message here"
+}
+```
+
+### Example Request
+
+Here’s an example of how to call the `/next_nft_id` endpoint using `curl`:
+
+```bash
+curl -X GET http://localhost:3000/next_nft_id
+```
+
+### Notes
+
+- The endpoint returns both the current ID and the next available ID for convenience.
+- The server must be running and accessible at the specified URL.
+- The endpoint requires a connection to the Ethereum network to read the contract state.

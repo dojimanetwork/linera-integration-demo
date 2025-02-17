@@ -69,6 +69,7 @@ pub enum Operation {
     },
     ListNftForSale {
         token_id: TokenId,
+        chain_owner: String,
     }
 }
 

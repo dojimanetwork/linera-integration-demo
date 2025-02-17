@@ -48,18 +48,18 @@ export const getMarketplaceAllNFTs = async () => {
 
         const items = await Promise.all(
             transaction.map(async (i: any) => {
-                let tokenURI = await contract.tokenURI(i.tokenId)
-                tokenURI = GetIpfsUrlFromPinata(tokenURI)
-                const meta = await axios.get(tokenURI)
+                // let tokenURI = await contract.tokenURI(i.tokenId)
+                // tokenURI = GetIpfsUrlFromPinata(tokenURI)
+                // const meta = await axios.get(tokenURI)
                 const price = ethers.formatUnits(i.price.toString(), "ether")
                 return {
                     price,
                     tokenId: `${Number.parseInt(i.tokenId)}`,
                     seller: i.seller,
                     owner: i.owner,
-                    image: meta.data.image,
-                    name: meta.data.name,
-                    description: meta.data.description,
+                    // image: meta.data.image,
+                    // name: meta.data.name,
+                    // description: meta.data.description,
                 }
             }),
         )
