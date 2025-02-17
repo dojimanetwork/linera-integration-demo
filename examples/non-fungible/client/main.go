@@ -73,6 +73,7 @@ func initFlags() {
 		log.Fatalf("Failed to initialize keys: %v", err)
 	}
 
+	solver.InitLogger()
 	// Log configuration
 	log.Printf("Initialized with:")
 	log.Printf("  Solver URL: %s", *solverURL)
@@ -113,6 +114,7 @@ func main() {
 	// Define routes with CORS middleware
 	http.HandleFunc("/post_tx_hash", corsMiddleware(handlePostTxHash))
 	http.HandleFunc("/list_nft", corsMiddleware(handleListNFT))
+	http.HandleFunc("/list_nft_for_sale", corsMiddleware(handleListNFTForSale))
 	http.HandleFunc("/nfts", corsMiddleware(handleGetNFTs))
 
 	// Start server
@@ -351,6 +353,50 @@ func handleListNFT(w http.ResponseWriter, r *http.Request) {
 		"status":   "success",
 		"message":  "NFT listed successfully",
 		"blobHash": blobHash,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// Update the handleListNFTForSale function
+func handleListNFTForSale(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse JSON request body
+	var requestBody struct {
+		Owner   string `json:"owner"`
+		ChainId string `json:"chainId"`
+		TokenId string `json:"tokenId"`
+		Price   string `json:"price"`
+		NftId   string `json:"nftId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Error parsing request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Call the ListNftForSale function with all parameters
+	data, err := solverClient.ListNftForSale(
+		requestBody.Owner,
+		requestBody.ChainId,
+		requestBody.TokenId,
+		requestBody.Price,
+		requestBody.NftId,
+	)
+	if err != nil {
+		http.Error(w, "Error listing NFT for sale: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response
+	response := map[string]interface{}{
+		"status": "success",
+		"data":   data,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -978,12 +978,14 @@ type NFTQueryResponse struct {
 
 // Update GetNFTDetails function
 func (c *Client) GetNFTDetails(blobHash string) (*NFTQueryResponse, error) {
+	Logger.Printf("Fetching NFT details for blobHash: %s", blobHash)
 	query := `{
 		"query": "query nft{nftUsingBlobHash(blobHash:\"` + blobHash + `\"){token tokenId price chainOwner chainMinter name owner id minter payload}}"
 	}`
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
+		Logger.Printf("Error creating NFT query request: %v", err)
 		return nil, fmt.Errorf("error creating NFT query request: %w", err)
 	}
 
@@ -991,29 +993,32 @@ func (c *Client) GetNFTDetails(blobHash string) (*NFTQueryResponse, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		Logger.Printf("Error executing NFT query: %v", err)
 		return nil, fmt.Errorf("error executing NFT query: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var nftResp NFTQueryResponse
 	if err := json.NewDecoder(resp.Body).Decode(&nftResp); err != nil {
+		Logger.Printf("Error parsing NFT query response: %v", err)
 		return nil, fmt.Errorf("error parsing NFT query response: %w", err)
 	}
-
 	return &nftResp, nil
 }
 
 // Update ExecuteNFTContractTransaction to use the NFT ID
 func (c *Client) ExecuteNFTContractTransaction(tokenId int, calSwapAmount float64, listedPrice float64) (string, error) {
+	Logger.Printf("Executing NFT contract transaction for tokenId: %d", tokenId)
 	// Connect to Ethereum node
 	client, err := ethclient.Dial(EthereumRPC)
 	if err != nil {
+		Logger.Printf("Failed to connect to Ethereum node: %v", err)
 		return "", fmt.Errorf("failed to connect to Ethereum node: %w", err)
 	}
 	defer client.Close()
 
 	// Create contract instance
-	contractAddress := common.HexToAddress("0x8AE98D5e0A732Ead1a5d38f5766CBE84382cD01D")
+	contractAddress := common.HexToAddress(NFTAddress)
 	contract := bind.NewBoundContract(contractAddress, marketplaceABI, client, client, client)
 	var amount float64
 	if calSwapAmount > listedPrice {
@@ -1029,6 +1034,7 @@ func (c *Client) ExecuteNFTContractTransaction(tokenId int, calSwapAmount float6
 	// Create transaction
 	auth, err := bind.NewKeyedTransactorWithChainID(chainKeys.EthereumKey, big.NewInt(1337))
 	if err != nil {
+		Logger.Printf("Failed to create auth: %v", err)
 		return "", fmt.Errorf("failed to create auth: %w", err)
 	}
 	auth.Value = amountWei
@@ -1036,28 +1042,34 @@ func (c *Client) ExecuteNFTContractTransaction(tokenId int, calSwapAmount float6
 	// Use the NFT ID from the query
 	tokenIdInt, ok := new(big.Int).SetString(strconv.Itoa(tokenId), 10)
 	if !ok {
+		Logger.Printf("Failed to parse token ID: %s", tokenId)
 		return "", fmt.Errorf("failed to parse token ID: %s", tokenId)
 	}
 
 	// Execute sale transaction
 	tx, err := contract.Transact(auth, "executeSale", tokenIdInt)
 	if err != nil {
+		Logger.Printf("Failed to execute sale: %v", err)
 		return "", fmt.Errorf("failed to execute sale: %w", err)
 	}
 
 	// Wait for transaction to be mined
 	_, err = bind.WaitMined(context.Background(), client, tx)
 	if err != nil {
+		Logger.Printf("Failed to wait for transaction: %v", err)
 		return "", fmt.Errorf("failed to wait for transaction: %w", err)
 	}
 
+	Logger.Printf("Successfully executed NFT contract transaction: %s", tx.Hash().Hex())
 	return tx.Hash().String(), nil
 }
 
 func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferResponse, string, error) {
+	Logger.Printf("Executing transfer mutation with params: %+v", params)
 	// First get the NFT details to get the ID
 	nftDetails, err := c.GetNFTDetails(params.BlobHash)
 	if err != nil {
+		Logger.Printf("Failed to get NFT details: %v", err)
 		return nil, "", fmt.Errorf("failed to get NFT details: %w", err)
 	}
 	var hash string
@@ -1065,6 +1077,7 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 	if params.ToToken == "ETH" {
 		hash, err = c.ExecuteNFTContractTransaction(nftDetails.Data.NftUsingBlobHash.ID, parseFloat64(params.Amount), parseFloat64(nftDetails.Data.NftUsingBlobHash.Price))
 		if err != nil {
+			Logger.Printf("Failed to execute NFT contract transaction after transfer: %v", err)
 			return nil, "", fmt.Errorf("failed to execute NFT contract transaction after transfer: %w", err)
 		}
 	}
@@ -1075,6 +1088,7 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 }`
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
+		Logger.Printf("Error creating transfer request: %v", err)
 		return nil, "", fmt.Errorf("error creating transfer request: %w", err)
 	}
 
@@ -1082,19 +1096,23 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		Logger.Printf("Error executing transfer: %v", err)
 		return nil, "", fmt.Errorf("error executing transfer: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var transferResp TransferResponse
 	if err := json.NewDecoder(resp.Body).Decode(&transferResp); err != nil {
+		Logger.Printf("Error parsing transfer response: %v", err)
 		return nil, "", fmt.Errorf("error parsing transfer response: %w", err)
 	}
 
 	if len(transferResp.Errors) > 0 {
+		Logger.Printf("Transfer error: %s", transferResp.Errors[0].Message)
 		return nil, "", fmt.Errorf("transfer error: %s", transferResp.Errors[0].Message)
 	}
 
+	Logger.Printf("Successfully executed transfer mutation: %+v", transferResp)
 	return &transferResp, hash, nil
 }
 
@@ -1118,11 +1136,44 @@ const marketplaceABIJson = `[
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
-	}
+	},
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        }
+      ],
+      "name": "listToken",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getListPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
 ]`
 
 // Add function to publish data blob
 func (c *Client) PublishDataBlob(chainId string, imageBytes []byte) (string, error) {
+	Logger.Printf("Publishing data blob for chainId: %s", chainId)
+
 	// Convert bytes to array of integers
 	byteInts := make([]int, len(imageBytes))
 	for i, b := range imageBytes {
@@ -1135,6 +1186,7 @@ func (c *Client) PublishDataBlob(chainId string, imageBytes []byte) (string, err
 
 	req, err := http.NewRequest("POST", c.lineraURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
+		Logger.Printf("Error creating publish blob request: %v", err)
 		return "", fmt.Errorf("error creating publish blob request: %w", err)
 	}
 
@@ -1142,30 +1194,37 @@ func (c *Client) PublishDataBlob(chainId string, imageBytes []byte) (string, err
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		Logger.Printf("Error publishing blob: %v", err)
 		return "", fmt.Errorf("error publishing blob: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var blobResp DataBlobResponse
 	if err := json.NewDecoder(resp.Body).Decode(&blobResp); err != nil {
+		Logger.Printf("Error parsing blob response: %v", err)
 		return "", fmt.Errorf("error parsing blob response: %w", err)
 	}
 
 	if len(blobResp.Errors) > 0 {
+		Logger.Printf("Blob error: %s", blobResp.Errors[0].Message)
 		return "", fmt.Errorf("blob error: %s", blobResp.Errors[0].Message)
 	}
 
+	Logger.Printf("Successfully published data blob: %s", blobResp.Data.PublishDataBlob)
 	return blobResp.Data.PublishDataBlob, nil
 }
 
 // Add function to mint NFT
 func (c *Client) MintNFT(params ListNFTParams, blobHash string, id int, token string) error {
+	Logger.Printf("Minting NFT with params: %+v, blobHash: %s", params, blobHash)
+
 	mutation := fmt.Sprintf(`{
 		"query": "mutation mint{mint(minter:\"%s\",name:\"%s\",blobHash:\"%s\",token:\"%s\",price:\"%s\",id:%d,chainMinter:\"%s\",chainOwner:\"%s\",description:\"%s\")}"
 	}`, params.Minter, params.Name, blobHash, token, params.Price, id, params.ChainMinter, params.ChainOwner, params.Description)
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
+		Logger.Printf("Error creating mint request: %v", err)
 		return fmt.Errorf("error creating mint request: %w", err)
 	}
 
@@ -1173,47 +1232,58 @@ func (c *Client) MintNFT(params ListNFTParams, blobHash string, id int, token st
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		Logger.Printf("Error minting NFT: %v", err)
 		return fmt.Errorf("error minting NFT: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var mintResp MintResponse
 	if err := json.NewDecoder(resp.Body).Decode(&mintResp); err != nil {
+		Logger.Printf("Error parsing mint response: %v", err)
 		return fmt.Errorf("error parsing mint response: %w", err)
 	}
 
 	if len(mintResp.Errors) > 0 {
+		Logger.Printf("Mint error: %s", mintResp.Errors[0].Message)
 		return fmt.Errorf("mint error: %s", mintResp.Errors[0].Message)
 	}
 
-	// mintResp.Data now contains the transaction hash
+	Logger.Printf("Successfully minted NFT with transaction hash: %s", mintResp.Data)
 	return nil
 }
 
 // Update ListNFT to return the blob hash
 func (c *Client) ListNFT(params ListNFTParams) (string, error) {
+	Logger.Printf("Listing NFT with params: %+v", params)
+
 	// First publish the image data blob
 	blobHash, err := c.PublishDataBlob(params.ChainId, params.ImageBytes)
 	if err != nil {
+		Logger.Printf("Failed to publish data blob: %v", err)
 		return "", fmt.Errorf("failed to publish data blob: %w", err)
 	}
 
 	// Mint the NFT with the blob hash
 	if err := c.MintNFT(params, blobHash, params.ID, params.Token); err != nil {
+		Logger.Printf("Failed to mint NFT: %v", err)
 		return "", fmt.Errorf("failed to mint NFT: %w", err)
 	}
 
+	Logger.Printf("Successfully listed NFT with blob hash: %s", blobHash)
 	return blobHash, nil
 }
 
 // Add function to get all NFTs
 func (c *Client) GetAllNFTs() (map[string]NFT, error) {
+	Logger.Println("Getting all NFTs")
+
 	query := `{
 		"query": "query nfts{nfts}"
 	}`
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(query)))
 	if err != nil {
+		Logger.Printf("Error creating NFTs query request: %v", err)
 		return nil, fmt.Errorf("error creating NFTs query request: %w", err)
 	}
 
@@ -1221,18 +1291,146 @@ func (c *Client) GetAllNFTs() (map[string]NFT, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		Logger.Printf("Error executing NFTs query: %v", err)
 		return nil, fmt.Errorf("error executing NFTs query: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var nftsResp NFTsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&nftsResp); err != nil {
+		Logger.Printf("Error parsing NFTs response: %v", err)
 		return nil, fmt.Errorf("error parsing NFTs response: %w", err)
 	}
 
 	if len(nftsResp.Errors) > 0 {
+		Logger.Printf("NFTs query error: %s", nftsResp.Errors[0].Message)
 		return nil, fmt.Errorf("NFTs query error: %s", nftsResp.Errors[0].Message)
 	}
 
+	// Logger.Printf("Successfully retrieved NFTs: %+v", nftsResp.Data.NFTs)
 	return nftsResp.Data.NFTs, nil
+}
+
+// ListNftForSale executes the listNftForSale mutation and creates an Ethereum transaction
+func (c *Client) ListNftForSale(owner, chainId, tokenId, price, nftId string) (interface{}, error) {
+	Logger.Printf("Executing ListNftForSale for owner: %s, chainId: %s, tokenId: %s, price: %s",
+		owner, chainId, tokenId, price)
+
+	// Execute Ethereum transaction to list the token
+	txHash, err := c.ListToken(nftId, price)
+	if err != nil {
+		Logger.Printf("Error listing token on Ethereum: %v", err)
+		return nil, fmt.Errorf("error listing token on Ethereum: %w", err)
+	}
+
+	// First, execute the mutation to list the NFT for sale on Linera
+	mutation := fmt.Sprintf(`{
+		"query": "mutation listNftForSale{listNftForSale(tokenId:\"%s\")}"
+	}`, tokenId)
+
+	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
+	if err != nil {
+		Logger.Printf("Error creating request: %v", err)
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		Logger.Printf("Error executing mutation: %v", err)
+		return nil, fmt.Errorf("error executing mutation: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data   interface{} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors,omitempty"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		Logger.Printf("Error parsing response: %v", err)
+		return nil, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	if len(result.Errors) > 0 {
+		Logger.Printf("Mutation error: %s", result.Errors[0].Message)
+		return nil, fmt.Errorf("mutation error: %s", result.Errors[0].Message)
+	}
+
+	// Return combined response
+	response := map[string]interface{}{
+		"lineraData": result.Data,
+		"ethereumTx": txHash,
+	}
+
+	Logger.Printf("Successfully listed NFT for sale: %s", tokenId)
+	return response, nil
+}
+
+// ListToken creates an Ethereum transaction to list an NFT for sale
+func (c *Client) ListToken(tokenId string, price string) (string, error) {
+	Logger.Printf("Creating transaction to list NFT tokenId: %s for price: %s", tokenId, price)
+
+	// Use the NFT ID from the query
+	tokenIdInt, ok := new(big.Int).SetString(tokenId, 10)
+	if !ok {
+		return "", fmt.Errorf("failed to parse token ID: %s", tokenId)
+	}
+
+	// Convert amount to Wei (1 ETH = 10^18 Wei)
+	amountWei := new(big.Int)
+	amountFloat := new(big.Float).SetFloat64(parseFloat64(price))
+	amountFloat.Mul(amountFloat, new(big.Float).SetFloat64(1e18))
+	amountFloat.Int(amountWei)
+
+	// Connect to Ethereum node
+	client, err := ethclient.Dial(EthereumRPC)
+	if err != nil {
+		Logger.Printf("Failed to connect to Ethereum node: %v", err)
+		return "", fmt.Errorf("failed to connect to Ethereum node: %w", err)
+	}
+	defer client.Close()
+
+	// Create contract instance
+	contractAddress := common.HexToAddress(NFTAddress)
+	contract := bind.NewBoundContract(contractAddress, marketplaceABI, client, client, client)
+
+	// Get the listing price from the contract
+	var listPrice *big.Int
+	var result []interface{}
+	err = contract.Call(&bind.CallOpts{}, &result, "getListPrice")
+	if err != nil {
+		Logger.Printf("Failed to get listing price: %v", err)
+		return "", fmt.Errorf("failed to get listing price: %w", err)
+	}
+	if len(result) > 0 {
+		listPrice = result[0].(*big.Int)
+	}
+	// Create transaction
+	auth, err := bind.NewKeyedTransactorWithChainID(chainKeys.EthereumKey, big.NewInt(1337))
+	if err != nil {
+		Logger.Printf("Failed to create auth: %v", err)
+		return "", fmt.Errorf("failed to create auth: %w", err)
+	}
+	auth.Value = listPrice
+
+	// Execute list token transaction
+	tx, err := contract.Transact(auth, "listToken", tokenIdInt, amountWei)
+	if err != nil {
+		Logger.Printf("Failed to execute list token transaction: %v", err)
+		return "", fmt.Errorf("failed to execute list token transaction: %w", err)
+	}
+
+	// Wait for transaction to be mined
+	_, err = bind.WaitMined(context.Background(), client, tx)
+	if err != nil {
+		Logger.Printf("Failed to wait for transaction: %v", err)
+		return "", fmt.Errorf("failed to wait for transaction: %w", err)
+	}
+
+	Logger.Printf("Successfully created list token transaction: %s", tx.Hash().Hex())
+	return tx.Hash().Hex(), nil
 }

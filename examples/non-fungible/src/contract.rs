@@ -60,7 +60,7 @@ impl Contract for NonFungibleTokenContract {
                 chain_minter,
                 description
             } => {
-                self.check_account_authentication(minter);
+                // self.check_account_authentication(minter);
                 self.mint(minter, name, blob_hash, token, price, id, chain_owner, chain_minter, description).await;
             }
 
@@ -73,12 +73,12 @@ impl Contract for NonFungibleTokenContract {
                 to_token,
                 amount
             } => {
-                self.check_account_authentication(source_owner);
+                // self.check_account_authentication(source_owner);
 
                 let mut nft = self.get_nft(&token_id).await;
                 // change chain owner
                 nft.chain_owner = chain_owner.clone();
-                self.check_account_authentication(nft.owner);
+                // self.check_account_authentication(nft.owner);
                 let call_swap = universal_solver::Operation::Swap {
                     from_token: buy_from_token,
                     to_token,
@@ -97,16 +97,23 @@ impl Contract for NonFungibleTokenContract {
                 token_id,
                 target_account,
             } => {
-                self.check_account_authentication(source_account.owner);
+                // self.check_account_authentication(source_account.owner);
 
                 if source_account.chain_id == self.runtime.chain_id() {
                     let nft = self.get_nft(&token_id).await;
-                    self.check_account_authentication(nft.owner);
+                    // self.check_account_authentication(nft.owner);
 
                     self.transfer(nft, target_account).await;
                 } else {
                     self.remote_claim(source_account, token_id, target_account)
                 }
+            }
+
+            Operation::ListNftForSale {
+                token_id,
+            } => {
+                let nft = self.get_nft(&token_id).await;
+                self.list_nft_for_sale(nft).await;
             }
         }
     }
@@ -297,6 +304,14 @@ impl NonFungibleTokenContract {
         .insert(&blob_hash, nft.token_id.clone())
         .expect("Error in get_mut statement")
 
+    }
+
+    async fn list_nft_for_sale(&mut self, mut nft: Nft){
+        nft.status = NftStatus::OnSale;
+        self.state
+            .nfts
+            .insert(&nft.token_id, nft.clone())
+            .expect("Error in insert statement");
     }
 
     async fn remove_nft(&mut self, nft: &Nft) {

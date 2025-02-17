@@ -1,3 +1,5 @@
+# NFT Marketplace API
+
 ## Running the Client
 
 The client requires a seed phrase to derive chain-specific keys for transaction signing. You can run the client with:
@@ -8,6 +10,8 @@ go run main.go -seed-phrase "your twelve word seed phrase here"
 
 Additional optional flags:
 - `-solver-url`: Universal Solver service URL (default: http://localhost:8080/)
+- `-non-fungible-url`: Non-Fungible service URL (default: http://localhost:8081/)
+- `-linera-url`: Linera service URL (default: http://localhost:8080/)
 - `-solana-url`: Solana RPC endpoint (default: http://localhost:8899)
 - `-ethereum-url`: Ethereum RPC endpoint (default: http://localhost:8545)
 
@@ -16,6 +20,8 @@ Example:
 go run main.go \
   -seed-phrase "your twelve word seed phrase here" \
   -solver-url "http://custom-solver:8080" \
+  -non-fungible-url "http://custom-non-fungible:8081" \
+  -linera-url "http://custom-linera:8080" \
   -solana-url "http://custom-solana:8899" \
   -ethereum-url "http://custom-ethereum:8545"
 ```
@@ -59,9 +65,81 @@ export NFT_ADDRESS="0x1234..."
 ./client --seed-phrase="your seed phrase here"
 ```
 
-## API Endpoints
+# NFT Marketplace API
 
-### POST /faucet
+## Endpoints
+
+### POST /list_nft_for_sale
+
+This endpoint allows you to list an NFT for sale on the marketplace.
+
+#### Request Body
+
+The request body should be a JSON object with the following structure:
+
+```json
+{
+  "owner": "User:ee4d2113a5100d58758e02b7928eb71896d232cd9b6bc56a7d42a51b70a9c872",
+  "chainId": "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65",
+  "tokenId": "7R8BTQ2xOO2/dkxQdAOPEdVEnuesUyekaj1aoF/Y88c",
+  "price": "1000000000000000000"
+}
+```
+
+- `owner`: The owner of the NFT in the format `User:<user_id>`.
+- `chainId`: The ID of the blockchain where the NFT is located.
+- `tokenId`: The ID of the NFT you want to list for sale.
+- `price`: The price at which the NFT is to be listed, specified in wei (1 ETH = 10^18 wei).
+
+#### Response
+
+On success, the response will be a JSON object with the following structure:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "lineraData": {
+      // Response data from the Linera mutation
+    },
+    "ethereumTx": "0x1234567890abcdef..."
+  }
+}
+```
+
+In case of an error, the response will contain an error message:
+
+```json
+{
+  "status": "error",
+  "message": "Error message here"
+}
+```
+
+### Example Request
+
+Here’s an example of how to call the `/list_nft_for_sale` endpoint using `curl`:
+
+```bash
+curl -X POST http://localhost:3000/list_nft_for_sale \
+-H "Content-Type: application/json" \
+-d '{
+  "owner": "User:ee4d2113a5100d58758e02b7928eb71896d232cd9b6bc56a7d42a51b70a9c872",
+  "chainId": "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65",
+  "tokenId": "7R8BTQ2xOO2/dkxQdAOPEdVEnuesUyekaj1aoF/Y88c",
+  "price": "1000000000000000000"
+}'
+```
+
+### Notes
+
+- Ensure that the `owner`, `chainId`, `tokenId`, and `price` values are correctly set according to your NFT's details.
+- The server must be running and accessible at the specified URL.
+- The `price` should be specified in wei (1 ETH = 10^18 wei).
+
+### Other Endpoints
+
+#### POST /faucet
 Request tokens from the faucet for testing purposes.
 
 Parameters:
@@ -191,7 +269,9 @@ Processes a transaction hash and optionally executes a cross-chain NFT transfer.
 
 #### Example Request
 
+```bash
 curl -X POST 'http://localhost:3000/post_tx_hash?txHash=0x123...&chain=ethereum&toToken=SOL&destinationAddress=0xabc...&sourceOwner=User:123...&tokenId=xyz...&targetChainId=456...&targetOwner=User:789...' 
+```
 
 ### POST /list_nft
 Lists a new NFT by publishing the image data and minting the NFT.
@@ -211,18 +291,6 @@ Lists a new NFT by publishing the image data and minting the NFT.
     "token": "ETH"
 }
 ```
-
-**Parameters:**
-- `name` (string): Name of the NFT
-- `description` (string): Description of the NFT
-- `price` (string): Price in ETH (e.g., "0.005")
-- `imageBytes` (array): Array of integers representing the image data
-- `chainId` (string): Chain ID for publishing the data blob
-- `minter` (string): User ID of the minter
-- `chainMinter` (string): Ethereum address of the minter contract
-- `chainOwner` (string): Ethereum address of the owner
-- `id` (number): Unique identifier for the NFT
-- `token` (string): Token type (e.g., "ETH")
 
 **Response:**
 ```json

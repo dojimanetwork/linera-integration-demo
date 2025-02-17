@@ -268,4 +268,15 @@ impl MutationRoot {
         })
         .unwrap()
     }
+
+    async fn listNftForSale(
+        &self,
+        token_id: String,
+    ) -> Vec<u8> {
+        bcs::to_bytes(&Operation::ListNftForSale {
+            token_id: TokenId {
+                id: STANDARD_NO_PAD.decode(token_id).unwrap(),
+            }
+        }).unwrap()
+    }
 }

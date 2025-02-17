@@ -67,6 +67,9 @@ pub enum Operation {
         token_id: TokenId,
         target_account: Account,
     },
+    ListNftForSale {
+        token_id: TokenId,
+    }
 }
 
 /// A message.
