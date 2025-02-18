@@ -118,6 +118,7 @@ func main() {
 	http.HandleFunc("/nfts", corsMiddleware(handleGetNFTs))
 	http.HandleFunc("/publish_image", corsMiddleware(handleBlobHash))
 	http.HandleFunc("/next_nft_id", corsMiddleware(handleNextNFTID))
+	http.HandleFunc("/ws", corsMiddleware(handleWebSocket))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3000")
@@ -412,11 +413,12 @@ func handleListNFTForSale(w http.ResponseWriter, r *http.Request) {
 
 	// Parse JSON request body
 	var requestBody struct {
-		Owner   string `json:"owner"`
-		ChainId string `json:"chainId"`
-		TokenId string `json:"tokenId"`
-		Price   string `json:"price"`
-		NftId   string `json:"nftId"`
+		Owner      string `json:"owner"`
+		ChainId    string `json:"chainId"`
+		TokenId    string `json:"tokenId"`
+		Price      string `json:"price"`
+		NftId      string `json:"nftId"`
+		ChainOwner string `json:"chainOwner"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -431,6 +433,7 @@ func handleListNFTForSale(w http.ResponseWriter, r *http.Request) {
 		requestBody.TokenId,
 		requestBody.Price,
 		requestBody.NftId,
+		requestBody.ChainOwner,
 	)
 	if err != nil {
 		http.Error(w, "Error listing NFT for sale: "+err.Error(), http.StatusInternalServerError)
@@ -497,4 +500,8 @@ func handleNextNFTID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	solverClient.HandleWebSocket(w, r)
 }

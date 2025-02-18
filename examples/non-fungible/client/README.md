@@ -414,3 +414,105 @@ curl -X GET http://localhost:3000/next_nft_id
 - The endpoint returns both the current ID and the next available ID for convenience.
 - The server must be running and accessible at the specified URL.
 - The endpoint requires a connection to the Ethereum network to read the contract state.
+
+
+
+### WebSocket /ws
+
+This endpoint provides real-time updates about NFT listings and transactions.
+
+#### Connection
+
+Connect to the WebSocket endpoint:
+
+```javascript
+const ws = new WebSocket('ws://localhost:3000/ws');
+
+ws.onopen = () => {
+    console.log('Connected to WebSocket');
+};
+
+ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    console.log('Received:', message);
+};
+
+ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+};
+
+ws.onclose = () => {
+    console.log('Disconnected from WebSocket');
+};
+```
+
+#### Message Format
+
+Messages sent through the WebSocket connection follow this format:
+
+```json
+{
+    "type": "message_type",
+    "data": {
+        // Message specific data
+    },
+    "error": "Optional error message"
+}
+```
+
+#### Message Types
+
+1. **Connected**
+```json
+{
+    "type": "connected",
+    "data": "Successfully connected to WebSocket"
+}
+```
+
+2. **NFT Listed**
+```json
+{
+    "type": "nft_listed",
+    "data": {
+        "tokenId": "123",
+        "price": "1000000000000000000",
+        "owner": "0x..."
+    }
+}
+```
+
+3. **Error**
+```json
+{
+    "type": "error",
+    "error": "Error message here"
+}
+```
+
+#### Example Usage
+
+```javascript
+// Connect to WebSocket
+const ws = new WebSocket('ws://localhost:3000/ws');
+
+// Listen for NFT listings
+ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    
+    if (message.type === 'nft_listed') {
+        console.log('New NFT listed:', message.data);
+    }
+};
+
+// Send ping message
+ws.send(JSON.stringify({
+    type: 'ping'
+}));
+```
+
+### Notes
+
+- The WebSocket connection will automatically receive updates when new NFTs are listed
+- The server must be running and accessible at the specified URL
+- WebSocket connections are persistent until either the client or server closes them

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -21,6 +22,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gorilla/websocket"
 	"github.com/linera-protocol/examples/universal-solver/client/solver/keys"
 	"github.com/mr-tron/base58"
 )
@@ -64,20 +66,47 @@ func InitKeys(seedPhrase string) error {
 	return nil
 }
 
+// Add these types for WebSocket messages
+type WSMessage struct {
+	Type  string      `json:"type"`
+	Data  interface{} `json:"data"`
+	Error string      `json:"error,omitempty"`
+}
+
 type Client struct {
 	solverURL      string
 	nonFungibleURL string
 	lineraURL      string
 	http           *http.Client
+
+	// WebSocket related fields
+	upgrader    websocket.Upgrader
+	clients     map[*websocket.Conn]bool
+	clientsLock sync.RWMutex
+	broadcast   chan WSMessage
 }
 
 func NewClient(solverURL, nonFungibleURL, lineraURL string) *Client {
-	return &Client{
+	client := &Client{
 		solverURL:      solverURL,
 		nonFungibleURL: nonFungibleURL,
 		lineraURL:      lineraURL,
 		http:           &http.Client{},
+
+		// Initialize WebSocket fields
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true // Allow all origins in development
+			},
+		},
+		clients:   make(map[*websocket.Conn]bool),
+		broadcast: make(chan WSMessage),
 	}
+
+	// Start broadcast handler
+	go client.handleBroadcasts()
+
+	return client
 }
 
 // GetSolanaTransaction fetches transaction details from Solana
@@ -1043,8 +1072,8 @@ func (c *Client) ExecuteNFTContractTransaction(tokenId int, calSwapAmount float6
 	// Use the NFT ID from the query
 	tokenIdInt, ok := new(big.Int).SetString(strconv.Itoa(tokenId), 10)
 	if !ok {
-		Logger.Printf("Failed to parse token ID: %s", tokenId)
-		return "", fmt.Errorf("failed to parse token ID: %s", tokenId)
+		Logger.Printf("Failed to parse token ID: %d", tokenId)
+		return "", fmt.Errorf("failed to parse token ID: %d", tokenId)
 	}
 
 	// Execute sale transaction
@@ -1068,7 +1097,16 @@ func (c *Client) ExecuteNFTContractTransaction(tokenId int, calSwapAmount float6
 func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferResponse, string, error) {
 	Logger.Printf("Executing transfer mutation with params: %+v", params)
 	// First get the NFT details to get the ID
+	c.broadcast <- WSMessage{
+		Type: "nft_transfer_initiated",
+		Data: map[string]interface{}{
+			"status":  "initiated",
+			"message": "fetching nft detail from nft solver",
+		},
+	}
+
 	nftDetails, err := c.GetNFTDetails(params.NftId)
+
 	if err != nil {
 		Logger.Printf("Failed to get NFT details: %v", err)
 		return nil, "", fmt.Errorf("failed to get NFT details: %w", err)
@@ -1084,6 +1122,15 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 	}
 
 	// Preserve special chars while escaping / and +
+
+	c.broadcast <- WSMessage{
+		Type: "nft_transfer_pending",
+		Data: map[string]interface{}{
+			"status":  "pending",
+			"message": "Dex solver and Nft solver will be coordinated for transfer",
+		},
+	}
+
 	mutation := `{
     "query": "mutation transfer{transfer(sourceOwner:\"` + params.SourceOwner + `\", tokenId:\"` + params.TokenId + `\", targetAccount: { chainId:\"` + params.TargetChainId + `\", owner:\"` + params.TargetOwner + `\"}, chainOwner:\"` + params.ChainOwner + `\", buyFromToken:\"` + params.BuyFromToken + `\",toToken:\"` + params.ToToken + `\", amount:\"` + fmt.Sprintf("%v", params.Amount) + `\")}"
 }`
@@ -1111,6 +1158,14 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 	if len(transferResp.Errors) > 0 {
 		Logger.Printf("Transfer error: %s", transferResp.Errors[0].Message)
 		return nil, "", fmt.Errorf("transfer error: %s", transferResp.Errors[0].Message)
+	}
+
+	c.broadcast <- WSMessage{
+		Type: "nft_transfer_completed",
+		Data: map[string]interface{}{
+			"status":  "completed",
+			"message": "Successfully coordination complete between solvers and executed transfer",
+		},
 	}
 
 	// Logger.Printf("Successfully executed transfer mutation: %+v", transferResp)
@@ -1326,7 +1381,7 @@ func (c *Client) GetAllNFTs() (map[string]NFT, error) {
 }
 
 // ListNftForSale executes the listNftForSale mutation and creates an Ethereum transaction
-func (c *Client) ListNftForSale(owner, chainId, tokenId, price, nftId string) (interface{}, error) {
+func (c *Client) ListNftForSale(owner, chainId, tokenId, price, nftId, chainOwner string) (interface{}, error) {
 	Logger.Printf("Executing ListNftForSale for owner: %s, chainId: %s, tokenId: %s, price: %s",
 		owner, chainId, tokenId, price)
 
@@ -1336,14 +1391,14 @@ func (c *Client) ListNftForSale(owner, chainId, tokenId, price, nftId string) (i
 		Logger.Printf("Error listing token on Ethereum: %v", err)
 		return nil, fmt.Errorf("error listing token on Ethereum: %w", err)
 	}
-	
+
 	ethAddress := crypto.PubkeyToAddress(chainKeys.EthereumKey.PublicKey).Hex()
 	Logger.Printf("Ethereum public address: %s", ethAddress)
-	
+
 	// First, execute the mutation to list the NFT for sale on Linera
 	mutation := fmt.Sprintf(`{
 		"query": "mutation listNftForSale{listNftForSale(tokenId:\"%s\", chainOwner:\"%s\")}"
-	}`, tokenId, ethAddress)
+	}`, tokenId, chainOwner)
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
@@ -1384,6 +1439,17 @@ func (c *Client) ListNftForSale(owner, chainId, tokenId, price, nftId string) (i
 	}
 
 	Logger.Printf("Successfully listed NFT for sale: %s", tokenId)
+
+	// Broadcast the new listing
+	c.broadcast <- WSMessage{
+		Type: "nft_listed",
+		Data: map[string]interface{}{
+			"tokenId": tokenId,
+			"price":   price,
+			"owner":   owner,
+		},
+	}
+
 	return response, nil
 }
 
@@ -1483,4 +1549,74 @@ func (c *Client) GetCurrentTokenID() (uint64, error) {
 	}
 
 	return 0, fmt.Errorf("no result returned from getCurrentToken")
+}
+
+// Add these WebSocket related methods
+func (c *Client) handleBroadcasts() {
+	for msg := range c.broadcast {
+		c.clientsLock.RLock()
+		for client := range c.clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				Logger.Printf("Error broadcasting to client: %v", err)
+				client.Close()
+				delete(c.clients, client)
+			}
+		}
+		c.clientsLock.RUnlock()
+	}
+}
+
+func (c *Client) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	// Upgrade HTTP connection to WebSocket
+	conn, err := c.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		Logger.Printf("Error upgrading to WebSocket: %v", err)
+		return
+	}
+
+	// Register new client
+	c.clientsLock.Lock()
+	c.clients[conn] = true
+	c.clientsLock.Unlock()
+
+	// Clean up on disconnect
+	defer func() {
+		c.clientsLock.Lock()
+		delete(c.clients, conn)
+		c.clientsLock.Unlock()
+		conn.Close()
+	}()
+
+	// Send initial connection message
+	conn.WriteJSON(WSMessage{
+		Type: "connected",
+		Data: "Successfully connected to WebSocket",
+	})
+
+	// Handle incoming messages
+	for {
+		var msg WSMessage
+		err := conn.ReadJSON(&msg)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				Logger.Printf("WebSocket error: %v", err)
+			}
+			break
+		}
+
+		// Handle different message types
+		switch msg.Type {
+		case "ping":
+			conn.WriteJSON(WSMessage{
+				Type: "pong",
+				Data: "pong",
+			})
+		default:
+			conn.WriteJSON(WSMessage{
+				Type:  "error",
+				Error: "Unknown message type",
+			})
+		}
+	}
 }
