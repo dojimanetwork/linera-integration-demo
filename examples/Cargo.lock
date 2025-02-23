@@ -651,7 +651,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "fungible",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "matching-engine",
  "num-bigint",
  "num-traits",
@@ -1506,7 +1506,7 @@ dependencies = [
  "async-graphql",
  "bcs",
  "futures",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "serde_json",
  "tokio",
 ]
@@ -1774,7 +1774,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "fungible",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "serde",
  "serde_json",
  "tokio",
@@ -2229,6 +2229,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_filter"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "186e05a59d4c50738528153b83b0b0194d3a29507dfec16eccd4b342903397d0"
+dependencies = [
+ "log",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcaee3d8e3cfc3fd92428d477bc97fc29ec8716d180c0d74c643bb26166660e0"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "env_filter",
+ "log",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2257,7 +2278,7 @@ dependencies = [
  "alloy",
  "assert_matches",
  "async-graphql",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "serde",
  "tokio",
 ]
@@ -2459,7 +2480,7 @@ dependencies = [
  "async-graphql",
  "fungible",
  "futures",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "serde",
  "tokio",
 ]
@@ -2703,7 +2724,7 @@ dependencies = [
  "candle-transformers",
  "fungible",
  "getrandom",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "log",
  "non-fungible",
  "rand",
@@ -2956,7 +2977,7 @@ name = "hex-game"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "log",
  "serde",
  "serde_json",
@@ -3337,6 +3358,43 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "linera-base"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbb971ad3098f29bb37530e59165b87a13dc74bfa79e16f0e2ff3da026e651d4"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-derive",
+ "async-trait",
+ "base64 0.22.1",
+ "bcs",
+ "cfg-if",
+ "cfg_aliases",
+ "chrono",
+ "custom_debug_derive",
+ "ed25519-dalek",
+ "generic-array",
+ "hex",
+ "is-terminal",
+ "linera-witty 0.13.1",
+ "port-selector",
+ "prometheus",
+ "rand",
+ "ruzstd",
+ "serde",
+ "serde-name",
+ "serde_bytes",
+ "serde_json",
+ "sha3",
+ "thiserror 1.0.65",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zstd",
+]
+
+[[package]]
+name = "linera-base"
 version = "0.14.0"
 dependencies = [
  "anyhow",
@@ -3353,7 +3411,47 @@ dependencies = [
  "generic-array",
  "hex",
  "is-terminal",
- "linera-witty",
+ "linera-witty 0.14.0",
+ "port-selector",
+ "prometheus",
+ "proptest",
+ "rand",
+ "reqwest 0.11.27",
+ "ruzstd",
+ "serde",
+ "serde-name",
+ "serde_bytes",
+ "serde_json",
+ "sha3",
+ "test-strategy",
+ "thiserror 1.0.65",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "tracing-subscriber",
+ "zstd",
+]
+
+[[package]]
+name = "linera-base"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-derive",
+ "async-trait",
+ "bcs",
+ "cfg-if",
+ "cfg_aliases",
+ "chrono",
+ "custom_debug_derive",
+ "ed25519-dalek",
+ "futures",
+ "generic-array",
+ "hex",
+ "is-terminal",
+ "linera-witty 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "port-selector",
  "prometheus",
  "proptest",
@@ -3384,9 +3482,33 @@ dependencies = [
  "custom_debug_derive",
  "futures",
  "hex",
- "linera-base",
- "linera-execution",
- "linera-views",
+ "linera-base 0.14.0",
+ "linera-execution 0.14.0",
+ "linera-views 0.14.0",
+ "prometheus",
+ "rand_chacha",
+ "rand_distr",
+ "serde",
+ "serde_bytes",
+ "thiserror 1.0.65",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "linera-chain"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "async-graphql",
+ "async-trait",
+ "cfg_aliases",
+ "custom_debug_derive",
+ "futures",
+ "hex",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-execution 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "prometheus",
  "rand_chacha",
  "rand_distr",
@@ -3410,13 +3532,50 @@ dependencies = [
  "custom_debug_derive",
  "dashmap 5.5.3",
  "futures",
- "linera-base",
- "linera-chain",
- "linera-execution",
- "linera-storage",
- "linera-storage-service",
- "linera-version",
- "linera-views",
+ "linera-base 0.14.0",
+ "linera-chain 0.14.0",
+ "linera-execution 0.14.0",
+ "linera-storage 0.14.0",
+ "linera-storage-service 0.14.0",
+ "linera-version 0.14.0",
+ "linera-views 0.14.0",
+ "lru",
+ "prometheus",
+ "proptest",
+ "rand",
+ "serde",
+ "serde_json",
+ "test-log",
+ "test-strategy",
+ "thiserror 1.0.65",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tracing",
+ "trait-variant",
+]
+
+[[package]]
+name = "linera-core"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-trait",
+ "bcs",
+ "cfg_aliases",
+ "clap",
+ "custom_debug_derive",
+ "dashmap 5.5.3",
+ "futures",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-chain 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-execution 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-storage 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-storage-service 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-version 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "lru",
  "prometheus",
  "proptest",
@@ -3443,7 +3602,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "cfg_aliases",
- "linera-base",
+ "linera-base 0.14.0",
  "num-bigint",
  "num-traits",
  "serde",
@@ -3469,12 +3628,51 @@ dependencies = [
  "derive_more",
  "dyn-clone",
  "futures",
- "linera-base",
- "linera-views",
- "linera-views-derive",
+ "linera-base 0.14.0",
+ "linera-views 0.14.0",
+ "linera-views-derive 0.14.0",
  "linera-wasmer",
  "linera-wasmer-compiler-singlepass",
- "linera-witty",
+ "linera-witty 0.14.0",
+ "lru",
+ "oneshot",
+ "prometheus",
+ "proptest",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "thiserror 1.0.65",
+ "tokio",
+ "tracing",
+ "wasm-encoder 0.24.1",
+ "wasm-instrument",
+ "wasmparser 0.101.1",
+]
+
+[[package]]
+name = "linera-execution"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-trait",
+ "bcs",
+ "cfg-if",
+ "cfg_aliases",
+ "clap",
+ "custom_debug_derive",
+ "dashmap 5.5.3",
+ "derive_more",
+ "dyn-clone",
+ "futures",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views-derive 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-wasmer",
+ "linera-wasmer-compiler-singlepass",
+ "linera-witty 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "lru",
  "oneshot",
  "prometheus",
@@ -3504,15 +3702,45 @@ dependencies = [
  "clap",
  "dashmap 5.5.3",
  "futures",
- "linera-base",
- "linera-chain",
- "linera-core",
+ "linera-base 0.14.0",
+ "linera-chain 0.14.0",
+ "linera-core 0.14.0",
  "linera-ethereum",
- "linera-execution",
- "linera-sdk-derive",
- "linera-storage",
- "linera-views",
- "linera-witty",
+ "linera-execution 0.14.0",
+ "linera-sdk-derive 0.14.0",
+ "linera-storage 0.14.0",
+ "linera-views 0.14.0",
+ "linera-witty 0.14.0",
+ "log",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.65",
+ "tokio",
+ "wasmtime",
+ "wit-bindgen",
+]
+
+[[package]]
+name = "linera-sdk"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "bcs",
+ "cargo_toml",
+ "cfg_aliases",
+ "clap",
+ "dashmap 5.5.3",
+ "futures",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-chain 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-core 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-execution 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-sdk-derive 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-storage 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-witty 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "log",
  "serde",
  "serde_json",
@@ -3532,6 +3760,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "linera-sdk-derive"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "convert_case",
+ "proc-macro2",
+ "syn 2.0.95",
+]
+
+[[package]]
 name = "linera-storage"
 version = "0.14.0"
 dependencies = [
@@ -3540,10 +3778,28 @@ dependencies = [
  "cfg_aliases",
  "dashmap 5.5.3",
  "futures",
- "linera-base",
- "linera-chain",
- "linera-execution",
- "linera-views",
+ "linera-base 0.14.0",
+ "linera-chain 0.14.0",
+ "linera-execution 0.14.0",
+ "linera-views 0.14.0",
+ "prometheus",
+ "serde",
+]
+
+[[package]]
+name = "linera-storage"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "async-trait",
+ "bcs",
+ "cfg_aliases",
+ "dashmap 5.5.3",
+ "futures",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-chain 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-execution 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "prometheus",
  "serde",
 ]
@@ -3557,9 +3813,32 @@ dependencies = [
  "bcs",
  "cfg_aliases",
  "clap",
- "linera-base",
- "linera-version",
- "linera-views",
+ "linera-base 0.14.0",
+ "linera-version 0.14.0",
+ "linera-views 0.14.0",
+ "prost",
+ "serde",
+ "thiserror 1.0.65",
+ "tokio",
+ "tonic",
+ "tonic-build",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "linera-storage-service"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-lock",
+ "bcs",
+ "cfg_aliases",
+ "clap",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-version 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "prost",
  "serde",
  "thiserror 1.0.65",
@@ -3591,6 +3870,59 @@ dependencies = [
 ]
 
 [[package]]
+name = "linera-version"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-graphql-derive",
+ "base64 0.22.1",
+ "cargo_metadata",
+ "fs-err",
+ "glob",
+ "quote",
+ "semver 1.0.23",
+ "serde",
+ "serde_json",
+ "sha3",
+ "thiserror 1.0.65",
+ "tracing",
+]
+
+[[package]]
+name = "linera-views"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5aaafee07481aed9686fa832155956fd1b81260e2ed9bfb133eab814226b4f2c"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-lock",
+ "async-trait",
+ "bcs",
+ "cfg_aliases",
+ "convert_case",
+ "futures",
+ "generic-array",
+ "linera-base 0.13.1",
+ "linera-views-derive 0.13.1",
+ "linera-witty 0.13.1",
+ "linked-hash-map",
+ "prometheus",
+ "rand",
+ "serde",
+ "sha3",
+ "static_assertions",
+ "tempfile",
+ "thiserror 1.0.65",
+ "tokio",
+ "tracing",
+ "trait-variant",
+ "web-sys",
+]
+
+[[package]]
 name = "linera-views"
 version = "0.14.0"
 dependencies = [
@@ -3604,9 +3936,41 @@ dependencies = [
  "futures",
  "generic-array",
  "hex",
- "linera-base",
- "linera-views-derive",
- "linera-witty",
+ "linera-base 0.14.0",
+ "linera-views-derive 0.14.0",
+ "linera-witty 0.14.0",
+ "linked-hash-map",
+ "prometheus",
+ "rand",
+ "serde",
+ "sha3",
+ "static_assertions",
+ "tempfile",
+ "thiserror 1.0.65",
+ "tokio",
+ "tracing",
+ "trait-variant",
+ "web-sys",
+]
+
+[[package]]
+name = "linera-views"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "async-graphql",
+ "async-lock",
+ "async-trait",
+ "bcs",
+ "cfg_aliases",
+ "convert_case",
+ "futures",
+ "generic-array",
+ "hex",
+ "linera-base 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views-derive 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-witty 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "linked-hash-map",
  "prometheus",
  "rand",
@@ -3623,7 +3987,30 @@ dependencies = [
 
 [[package]]
 name = "linera-views-derive"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56b1a72a87909f04dca6b18c1a95f14b1bb803d9b7052298de74db2982581c92"
+dependencies = [
+ "cfg_aliases",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.95",
+]
+
+[[package]]
+name = "linera-views-derive"
 version = "0.14.0"
+dependencies = [
+ "cfg_aliases",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.95",
+]
+
+[[package]]
+name = "linera-views-derive"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
 dependencies = [
  "cfg_aliases",
  "proc-macro2",
@@ -3761,6 +4148,21 @@ dependencies = [
 
 [[package]]
 name = "linera-witty"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3cc51610b5670720d192d8bfd56ec0d743ef3d3ca76ca8f058679f8ec7a6026d"
+dependencies = [
+ "anyhow",
+ "cfg_aliases",
+ "either",
+ "frunk",
+ "genawaiter",
+ "linera-witty-macros 0.13.1",
+ "thiserror 1.0.65",
+]
+
+[[package]]
+name = "linera-witty"
 version = "0.14.0"
 dependencies = [
  "anyhow",
@@ -3769,14 +4171,57 @@ dependencies = [
  "frunk",
  "genawaiter",
  "linera-wasmer",
- "linera-witty-macros",
+ "linera-witty-macros 0.14.0",
+ "log",
+ "thiserror 1.0.65",
+]
+
+[[package]]
+name = "linera-witty"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
+dependencies = [
+ "anyhow",
+ "cfg_aliases",
+ "either",
+ "frunk",
+ "genawaiter",
+ "linera-wasmer",
+ "linera-witty-macros 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "log",
  "thiserror 1.0.65",
 ]
 
 [[package]]
 name = "linera-witty-macros"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8fa0b8205ad55ba1a9132534bd479ea3a77e22ab5bd6dbbf8b70d7de566625c"
+dependencies = [
+ "cfg_aliases",
+ "heck 0.4.1",
+ "proc-macro-error 1.0.4",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.95",
+]
+
+[[package]]
+name = "linera-witty-macros"
 version = "0.14.0"
+dependencies = [
+ "cfg_aliases",
+ "heck 0.4.1",
+ "proc-macro-error 1.0.4",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.95",
+]
+
+[[package]]
+name = "linera-witty-macros"
+version = "0.14.0"
+source = "git+https://github.com/jvff/linera-protocol?rev=26a5299#26a529960fa1a0a3823422f94de229ffb9da48db"
 dependencies = [
  "cfg_aliases",
  "heck 0.4.1",
@@ -3806,7 +4251,7 @@ dependencies = [
  "candle-core",
  "candle-transformers",
  "getrandom",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "log",
  "rand",
  "sha3",
@@ -3880,7 +4325,7 @@ dependencies = [
  "async-graphql",
  "bcs",
  "fungible",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "serde",
  "tokio",
 ]
@@ -3961,7 +4406,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "counter",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "log",
  "serde",
 ]
@@ -4055,7 +4500,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "fungible",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "native-fungible",
  "serde",
  "tokio",
@@ -4079,7 +4524,7 @@ dependencies = [
  "base64 0.22.1",
  "bcs",
  "fungible",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "non-fungible",
  "serde",
  "sha3",
@@ -5284,9 +5729,9 @@ checksum = "a3f0bf26fd526d2a95683cd0f87bf103b8539e2ca1ef48ce002d67aad59aa0b4"
 
 [[package]]
 name = "serde"
-version = "1.0.210"
+version = "1.0.218"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8e3592472072e6e22e0a54d5904d9febf8508f65fb8552499a1abc7d1078c3a"
+checksum = "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60"
 dependencies = [
  "serde_derive",
 ]
@@ -5323,9 +5768,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.210"
+version = "1.0.218"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "243902eda00fad750862fc144cea25caca5e20d615af0a81bee94ca738f1df1f"
+checksum = "f09503e191f4e797cb8aac08e9a4a4695c5edf6a2e70e376d961ddd5c969f82b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5334,9 +5779,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.128"
+version = "1.0.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ff5456707a1de34e7e37f2a6fd3d3f808c318259cbd01ab6377795054b483d8"
+checksum = "44f86c3acccc9c65b153fe1b85a3be07fe5515274ec9f0653b4a0875731c72a6"
 dependencies = [
  "itoa",
  "memchr",
@@ -5485,7 +5930,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "bcs",
- "linera-sdk",
+ "linera-sdk 0.14.0",
  "serde",
  "tokio",
 ]
@@ -5792,6 +6237,7 @@ version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dffced63c2b5c7be278154d76b479f9f9920ed34e7574201407f0b14e2bbb93"
 dependencies = [
+ "env_logger",
  "test-log-macros",
  "tracing-subscriber",
 ]
@@ -6165,6 +6611,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tracing-log"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
+dependencies = [
+ "log",
+ "once_cell",
+ "tracing-core",
+]
+
+[[package]]
 name = "tracing-serde"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6190,6 +6647,7 @@ dependencies = [
  "thread_local",
  "tracing",
  "tracing-core",
+ "tracing-log",
  "tracing-serde",
 ]
 
@@ -6304,12 +6762,12 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "base64 0.21.7",
- "linera-sdk",
- "linera-views",
- "log",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.13.1",
  "serde",
  "serde_json",
  "sha3",
+ "test-log",
  "tokio",
 ]
 
