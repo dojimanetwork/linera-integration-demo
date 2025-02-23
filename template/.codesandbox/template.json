@@ -1,0 +1,12 @@
+{
+
+  "setupTasks": [],
+
+  "tasks": {
+    "cargo watch -x run": {
+      "name": "cargo watch -x run",
+      "command": "cargo watch -x run",
+      "runAtStart": true
+    }
+  }
+}
