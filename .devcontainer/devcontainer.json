@@ -1,0 +1,11 @@
+{
+  "name": "Devcontainer",
+  "build": {
+    "dockerfile": "../docker/Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["rust-lang.rust-analyzer"]
+    }
+  }
+}
