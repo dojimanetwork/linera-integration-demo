@@ -15,7 +15,7 @@ README-secret.md
 .github/
 scripts/target
 examples/target
-Dockerfile
+template/.devcontainer/Dockerfile
 .dockerignore
 .gitignore
 .gcloudignore
