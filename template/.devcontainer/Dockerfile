@@ -104,12 +104,3 @@ COPY --from=binaries \
     linera-server \
     linera-proxy \
     ./
-
-COPY --chmod=755 \
-    docker/server-entrypoint.sh \
-    docker/server-init.sh \
-    docker/proxy-init.sh \
-    docker/compose-server-entrypoint.sh \
-    docker/compose-proxy-entrypoint.sh \
-    docker/compose-server-init.sh \
-    ./
