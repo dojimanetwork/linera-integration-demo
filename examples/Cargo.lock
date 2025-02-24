@@ -3358,43 +3358,6 @@ checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "linera-base"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbb971ad3098f29bb37530e59165b87a13dc74bfa79e16f0e2ff3da026e651d4"
-dependencies = [
- "anyhow",
- "async-graphql",
- "async-graphql-derive",
- "async-trait",
- "base64 0.22.1",
- "bcs",
- "cfg-if",
- "cfg_aliases",
- "chrono",
- "custom_debug_derive",
- "ed25519-dalek",
- "generic-array",
- "hex",
- "is-terminal",
- "linera-witty 0.13.1",
- "port-selector",
- "prometheus",
- "rand",
- "ruzstd",
- "serde",
- "serde-name",
- "serde_bytes",
- "serde_json",
- "sha3",
- "thiserror 1.0.65",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "zstd",
-]
-
-[[package]]
-name = "linera-base"
 version = "0.14.0"
 dependencies = [
  "anyhow",
@@ -3892,38 +3855,6 @@ dependencies = [
 
 [[package]]
 name = "linera-views"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aaafee07481aed9686fa832155956fd1b81260e2ed9bfb133eab814226b4f2c"
-dependencies = [
- "anyhow",
- "async-graphql",
- "async-lock",
- "async-trait",
- "bcs",
- "cfg_aliases",
- "convert_case",
- "futures",
- "generic-array",
- "linera-base 0.13.1",
- "linera-views-derive 0.13.1",
- "linera-witty 0.13.1",
- "linked-hash-map",
- "prometheus",
- "rand",
- "serde",
- "sha3",
- "static_assertions",
- "tempfile",
- "thiserror 1.0.65",
- "tokio",
- "tracing",
- "trait-variant",
- "web-sys",
-]
-
-[[package]]
-name = "linera-views"
 version = "0.14.0"
 dependencies = [
  "anyhow",
@@ -3983,18 +3914,6 @@ dependencies = [
  "tracing",
  "trait-variant",
  "web-sys",
-]
-
-[[package]]
-name = "linera-views-derive"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56b1a72a87909f04dca6b18c1a95f14b1bb803d9b7052298de74db2982581c92"
-dependencies = [
- "cfg_aliases",
- "proc-macro2",
- "quote",
- "syn 2.0.95",
 ]
 
 [[package]]
@@ -4148,21 +4067,6 @@ dependencies = [
 
 [[package]]
 name = "linera-witty"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cc51610b5670720d192d8bfd56ec0d743ef3d3ca76ca8f058679f8ec7a6026d"
-dependencies = [
- "anyhow",
- "cfg_aliases",
- "either",
- "frunk",
- "genawaiter",
- "linera-witty-macros 0.13.1",
- "thiserror 1.0.65",
-]
-
-[[package]]
-name = "linera-witty"
 version = "0.14.0"
 dependencies = [
  "anyhow",
@@ -4190,20 +4094,6 @@ dependencies = [
  "linera-witty-macros 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "log",
  "thiserror 1.0.65",
-]
-
-[[package]]
-name = "linera-witty-macros"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8fa0b8205ad55ba1a9132534bd479ea3a77e22ab5bd6dbbf8b70d7de566625c"
-dependencies = [
- "cfg_aliases",
- "heck 0.4.1",
- "proc-macro-error 1.0.4",
- "proc-macro2",
- "quote",
- "syn 2.0.95",
 ]
 
 [[package]]
@@ -6763,7 +6653,7 @@ dependencies = [
  "async-graphql",
  "base64 0.21.7",
  "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
- "linera-views 0.13.1",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "serde",
  "serde_json",
  "sha3",
