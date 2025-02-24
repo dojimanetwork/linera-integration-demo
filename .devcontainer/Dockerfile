@@ -52,7 +52,7 @@ COPY linera-views linera-views
 COPY linera-views-derive linera-views-derive
 COPY linera-witty linera-witty
 COPY linera-witty-macros linera-witty-macros
-#COPY scripts scripts
+COPY scripts scripts
 COPY rust-toolchain* Cargo.* ./
 
 ENV GIT_COMMIT=${git_commit}
@@ -103,4 +103,13 @@ COPY --from=binaries \
     linera \
     linera-server \
     linera-proxy \
+    ./
+
+COPY --chmod=755 \
+    docker/server-entrypoint.sh \
+    docker/server-init.sh \
+    docker/proxy-init.sh \
+    docker/compose-server-entrypoint.sh \
+    docker/compose-proxy-entrypoint.sh \
+    docker/compose-server-init.sh \
     ./
