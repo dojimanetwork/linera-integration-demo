@@ -1,13 +1,18 @@
 package solver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -18,6 +23,7 @@ import (
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gorilla/websocket"
 	"github.com/linera-protocol/examples/universal-solver/client/solver/keys"
 	"github.com/mr-tron/base58"
 )
@@ -27,14 +33,22 @@ var (
 	// RPC endpoints
 	EthereumRPC string
 	SolanaRPC   string
+	DojimaRPC   string
 	// Chain keys
 	chainKeys *keys.ChainKeys
+	// Linera service management
+	activeService *LineraService
+	serviceMutex  sync.Mutex
+	// Linera configuration
+	lineraConfig *LineraConfig
 )
 
 // Add a function to initialize RPC URLs
-func InitRPCEndpoints(ethereumURL, solanaURL string) {
+func InitRPCEndpoints(ethereumURL, solanaURL, dojimaURL string) {
 	EthereumRPC = ethereumURL
 	SolanaRPC = solanaURL
+	DojimaRPC = dojimaURL
+	Logger.Printf("Initialized RPC endpoints - Ethereum: %s, Solana: %s", ethereumURL, solanaURL)
 }
 
 // InitKeys initializes the private keys from a seed phrase
@@ -42,21 +56,47 @@ func InitKeys(seedPhrase string) error {
 	var err error
 	chainKeys, err = keys.DeriveKeysFromSeedPhrase(seedPhrase)
 	if err != nil {
+		Logger.Printf("Failed to derive keys: %v", err)
 		return fmt.Errorf("failed to derive keys: %w", err)
 	}
+	Logger.Printf("Successfully initialized chain keys")
 	return nil
+}
+
+type WSMessage struct {
+	Type  string      `json:"type"`
+	Data  interface{} `json:"data"`
+	Error string      `json:"error,omitempty"`
 }
 
 type Client struct {
 	baseURL string
 	http    *http.Client
+
+	// WebSocket related fields
+	upgrader    websocket.Upgrader
+	clients     map[*websocket.Conn]bool
+	clientsLock sync.RWMutex
+	broadcast   chan WSMessage
 }
 
 func NewClient(baseURL string) *Client {
-	return &Client{
-		baseURL: baseURL,
-		http:    &http.Client{},
+	client := &Client{
+		baseURL:   baseURL,
+		http:      &http.Client{},
+		clients:   make(map[*websocket.Conn]bool),
+		broadcast: make(chan WSMessage),
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true // Allow all origins for development/testing
+			},
+		},
 	}
+
+	// Start broadcast handler
+	go client.handleBroadcasts()
+
+	return client
 }
 
 // GetSolanaTransaction fetches transaction details from Solana
@@ -78,7 +118,7 @@ func (c *Client) GetSolanaTransaction(_, txHash string) (interface{}, error) {
 	// Make the request with retries
 	var response interface{}
 	var err error
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		response, err = c.makeRPCRequest(SolanaRPC, requestBody)
 		if responseMap, ok := response.(map[string]interface{}); ok {
 			if responseMap["result"] == nil {
@@ -248,7 +288,7 @@ func (c *Client) CalculateSwap(fromToken, toToken string, amount float64) (*Swap
 		Data struct {
 			CalculateSwap struct {
 				FromToken    string  `json:"fromToken"`
-				ToToken      string  `json:"toToken"` 
+				ToToken      string  `json:"toToken"`
 				FromAmount   float64 `json:"fromAmount"`
 				ToAmount     float64 `json:"toAmount"`
 				ExchangeRate float64 `json:"exchangeRate"`
@@ -282,6 +322,14 @@ func (c *Client) ExecuteSwap(fromToken, toToken string, amount float64, destinat
 	swapResult, err := c.CalculateSwap(fromToken, toToken, amount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate swap: %w", err)
+	}
+
+	c.broadcast <- WSMessage{
+		Type: "swap_calculate",
+		Data: map[string]interface{}{
+			"status":      "calculating_swap",
+			"description": fmt.Sprintf("from %s to %s", fromToken, toToken),
+		},
 	}
 
 	// Execute the swap mutation
@@ -340,14 +388,38 @@ func (c *Client) ExecuteSwap(fromToken, toToken string, amount float64, destinat
 		return nil, fmt.Errorf("failed to prepare transaction: %w", err)
 	}
 
+	c.broadcast <- WSMessage{
+		Type: "swap_prepare",
+		Data: map[string]interface{}{
+			"status":      "prepare",
+			"description": fmt.Sprintf("preparing transaction for signing"),
+		},
+	}
+
 	// Sign the prepared transaction
 	if err := c.SignTransaction(swapResponse); err != nil {
 		return nil, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
+	c.broadcast <- WSMessage{
+		Type: "swap_sign",
+		Data: map[string]interface{}{
+			"status":      "sign",
+			"description": fmt.Sprintf("signing transaction for submission"),
+		},
+	}
+
 	// Submit the signed transaction
 	if err := c.SubmitTransaction(swapResponse); err != nil {
 		return nil, fmt.Errorf("failed to submit transaction: %w", err)
+	}
+
+	c.broadcast <- WSMessage{
+		Type: "swap_complete",
+		Data: map[string]interface{}{
+			"status":      "complete",
+			"description": fmt.Sprintf("successfully signed transaction for submission"),
+		},
 	}
 
 	return swapResponse, nil
@@ -766,6 +838,14 @@ func (c *Client) RequestSolanaAirdrop(address string) (map[string]interface{}, e
 		return nil, fmt.Errorf("invalid Solana address: %w", err)
 	}
 
+	c.broadcast <- WSMessage{
+		Type: "faucet_start",
+		Data: map[string]interface{}{
+			"status":      "requested",
+			"description": fmt.Sprintf("faucet request is initiated"),
+		},
+	}
+
 	// Request airdrop (2 SOL)
 	sig, err := client.RequestAirdrop(
 		context.Background(),
@@ -773,8 +853,17 @@ func (c *Client) RequestSolanaAirdrop(address string) (map[string]interface{}, e
 		2*solana.LAMPORTS_PER_SOL,
 		rpc.CommitmentFinalized,
 	)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to request airdrop: %w", err)
+	}
+
+	c.broadcast <- WSMessage{
+		Type: "faucet_complete",
+		Data: map[string]interface{}{
+			"status":      "completed",
+			"description": fmt.Sprintf("successfully faucet is completed"),
+		},
 	}
 
 	// Wait for confirmation
@@ -792,64 +881,198 @@ func (c *Client) RequestSolanaAirdrop(address string) (map[string]interface{}, e
 	}, nil
 }
 
-func (c *Client) RequestEthereumFaucet(address string) (map[string]interface{}, error) {
+// RequestEthereumFaucet sends a fixed amount of ETH to the specified address
+func (c *Client) RequestEthereumFaucet(address, chain string) (map[string]interface{}, error) {
 	// For testnet/local network only
 	if !common.IsHexAddress(address) {
 		return nil, fmt.Errorf("invalid Ethereum address")
 	}
+	c.broadcast <- WSMessage{
+		Type: "faucet_start",
+		Data: map[string]interface{}{
+			"status":      "requested",
+			"description": fmt.Sprintf("faucet request is initiated"),
+		},
+	}
 
-	client, err := ethclient.Dial(EthereumRPC)
+	// Select appropriate RPC URL
+	var rpcURL string
+	if chain == "dojima" {
+		rpcURL = DojimaRPC
+	} else {
+		rpcURL = EthereumRPC
+	}
+
+	// Connect to the network
+	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
+		return nil, fmt.Errorf("failed to connect to node: %w", err)
 	}
 	defer client.Close()
 
 	// Get the faucet's private key
-	if chainKeys == nil || chainKeys.EthereumKey == nil {
-		return nil, fmt.Errorf("ethereum faucet key not initialized")
+	faucetKey := chainKeys.EthereumKey
+	if faucetKey == nil {
+		return nil, fmt.Errorf("faucet private key not initialized")
 	}
 
-	// Create transaction
-	nonce, err := client.PendingNonceAt(context.Background(), crypto.PubkeyToAddress(chainKeys.EthereumKey.PublicKey))
+	// Get the faucet's address
+	faucetAddress := crypto.PubkeyToAddress(faucetKey.PublicKey)
+
+	// Get the latest nonce for the faucet account
+	nonce, err := client.PendingNonceAt(context.Background(), faucetAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nonce: %w", err)
 	}
 
-	value := big.NewInt(1000000000000000000) // 1 ETH
-	gasLimit := uint64(21000)
+	// Get the current gas price
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get gas price: %w", err)
 	}
 
+	// Create transaction data
+	value := big.NewInt(1000000000000000000) // 1 ETH in wei
+	toAddress := common.HexToAddress(address)
+	gasLimit := uint64(21000) // Standard gas limit for ETH transfers
+
+	// Create the transaction
 	tx := types.NewTransaction(
 		nonce,
-		common.HexToAddress(address),
+		toAddress,
 		value,
 		gasLimit,
 		gasPrice,
-		nil,
+		nil, // No data for simple transfers
 	)
 
-	chainID, err := client.NetworkID(context.Background())
+	// Get the chain ID
+	chainID, err := client.ChainID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get chain id: %w", err)
+		return nil, fmt.Errorf("failed to get chain ID: %w", err)
 	}
 
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), chainKeys.EthereumKey)
+	// Sign the transaction
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), faucetKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
+	// Send the transaction
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send transaction: %w", err)
 	}
 
+	c.broadcast <- WSMessage{
+		Type: "faucet_complete",
+		Data: map[string]interface{}{
+			"status":      "completed",
+			"description": fmt.Sprintf("successfully faucet is completed"),
+		},
+	}
+
+	// Return the transaction details
 	return map[string]interface{}{
-		"txHash":  signedTx.Hash().String(),
-		"amount":  "1 ETH",
-		"address": address,
+		"txHash":   signedTx.Hash().Hex(),
+		"from":     faucetAddress.Hex(),
+		"to":       address,
+		"value":    value.String(),
+		"chain":    chain,
+		"gasPrice": gasPrice.String(),
+		"gasLimit": gasLimit,
+	}, nil
+}
+
+// RequestEthereumFaucetWithAmount sends a specified amount of ETH
+func (c *Client) RequestEthereumFaucetWithAmount(address string, amount float64, chain string) (map[string]interface{}, error) {
+	// For testnet/local network only
+	if !common.IsHexAddress(address) {
+		return nil, fmt.Errorf("invalid Ethereum address")
+	}
+
+	// Select appropriate RPC URL
+	var rpcURL string
+	if chain == "dojima" {
+		rpcURL = DojimaRPC
+	} else {
+		rpcURL = EthereumRPC
+	}
+
+	// Connect to the network
+	client, err := ethclient.Dial(rpcURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to node: %w", err)
+	}
+	defer client.Close()
+
+	// Get the faucet's private key
+	faucetKey := chainKeys.EthereumKey
+	if faucetKey == nil {
+		return nil, fmt.Errorf("faucet private key not initialized")
+	}
+
+	// Get the faucet's address
+	faucetAddress := crypto.PubkeyToAddress(faucetKey.PublicKey)
+
+	// Get the latest nonce for the faucet account
+	nonce, err := client.PendingNonceAt(context.Background(), faucetAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nonce: %w", err)
+	}
+
+	// Get the current gas price
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gas price: %w", err)
+	}
+
+	// Convert amount to wei
+	amountInWei := new(big.Float).Mul(big.NewFloat(amount), big.NewFloat(1e18))
+	value := new(big.Int)
+	amountInWei.Int(value)
+
+	// Create transaction data
+	toAddress := common.HexToAddress(address)
+	gasLimit := uint64(21000) // Standard gas limit for ETH transfers
+
+	// Create the transaction
+	tx := types.NewTransaction(
+		nonce,
+		toAddress,
+		value,
+		gasLimit,
+		gasPrice,
+		nil, // No data for simple transfers
+	)
+
+	// Get the chain ID
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chain ID: %w", err)
+	}
+
+	// Sign the transaction
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), faucetKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+	}
+
+	// Send the transaction
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send transaction: %w", err)
+	}
+
+	// Return the transaction details
+	return map[string]interface{}{
+		"txHash":   signedTx.Hash().Hex(),
+		"from":     faucetAddress.Hex(),
+		"to":       address,
+		"value":    value.String(),
+		"chain":    chain,
+		"gasPrice": gasPrice.String(),
+		"gasLimit": gasLimit,
 	}, nil
 }
 
@@ -863,7 +1086,13 @@ func (c *Client) GetSolanaBalance(address string) (*Balance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid Solana address: %w", err)
 	}
-
+	c.broadcast <- WSMessage{
+		Type: "balance_started",
+		Data: map[string]interface{}{
+			"status":      "balance_started",
+			"description": fmt.Sprintf("balance fetch initiated"),
+		},
+	}
 	// Get balance
 	balance, err := client.GetBalance(
 		context.Background(),
@@ -876,7 +1105,13 @@ func (c *Client) GetSolanaBalance(address string) (*Balance, error) {
 
 	// Convert lamports to SOL
 	solBalance := float64(balance.Value) / float64(solana.LAMPORTS_PER_SOL)
-
+	c.broadcast <- WSMessage{
+		Type: "balance_completed",
+		Data: map[string]interface{}{
+			"status":      "balance_completed",
+			"description": fmt.Sprintf("successfully balance is fetched"),
+		},
+	}
 	return &Balance{
 		Address: address,
 		Amount:  solBalance,
@@ -885,14 +1120,31 @@ func (c *Client) GetSolanaBalance(address string) (*Balance, error) {
 }
 
 // GetEthereumBalance fetches ETH balance for an address
-func (c *Client) GetEthereumBalance(address string) (*Balance, error) {
+func (c *Client) GetEthereumBalance(address, chain string) (*Balance, error) {
 	// Validate address
 	if !common.IsHexAddress(address) {
 		return nil, fmt.Errorf("invalid Ethereum address")
 	}
 
+	c.broadcast <- WSMessage{
+		Type: "balance_started",
+		Data: map[string]interface{}{
+			"status":      "balance_started",
+			"description": fmt.Sprintf("balance fetch initiated"),
+		},
+	}
+
+	var rpcURL string
+	var symbol string
 	// Connect to Ethereum node
-	client, err := ethclient.Dial(EthereumRPC)
+	if chain == "dojima" {
+		rpcURL = DojimaRPC
+		symbol = "DOJ"
+	} else {
+		rpcURL = EthereumRPC
+		symbol = "ETH"
+	}
+	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
 	}
@@ -910,11 +1162,18 @@ func (c *Client) GetEthereumBalance(address string) (*Balance, error) {
 	fbalance.SetString(balance.String())
 	ethValue := new(big.Float).Quo(fbalance, big.NewFloat(1e18))
 	amount, _ := ethValue.Float64()
+	c.broadcast <- WSMessage{
+		Type: "balance_completed",
+		Data: map[string]interface{}{
+			"status":      "balance_completed",
+			"description": fmt.Sprintf("successfully balance is fetched"),
+		},
+	}
 
 	return &Balance{
 		Address: address,
 		Amount:  amount,
-		Symbol:  "ETH",
+		Symbol:  symbol,
 	}, nil
 }
 
@@ -946,61 +1205,382 @@ func (c *Client) RequestSolanaAirdropWithAmount(address string, amount float64) 
 	}, nil
 }
 
-func (c *Client) RequestEthereumFaucetWithAmount(address string, amount float64) (map[string]interface{}, error) {
-	client, err := ethclient.Dial(EthereumRPC)
+// ApplicationResponse represents the response from creating an application
+type ApplicationResponse struct {
+	ApplicationID string `json:"application_id"`
+	ChainID       string `json:"chain_id"`
+	URL           string `json:"url"`
+}
+
+// Helper function to execute command and capture both stdout and stderr
+func executeCommand(cmd *exec.Cmd) (string, error) {
+	// Create pipes for both stdout and stderr
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to Ethereum node: %w", err)
-	}
-	defer client.Close()
-
-	// Convert amount to wei (1 ETH = 1e18 wei)
-	weiAmount := new(big.Int)
-	weiAmount.SetString(fmt.Sprintf("%.0f", amount*1e18), 10)
-
-	// Get the faucet's private key
-	privateKey := chainKeys.EthereumKey
-
-	// Get the faucet's nonce
-	nonce, err := client.PendingNonceAt(context.Background(), crypto.PubkeyToAddress(privateKey.PublicKey))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get nonce: %w", err)
+		return "", fmt.Errorf("failed to create stdout pipe: %v", err)
 	}
 
-	// Create transaction
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get gas price: %w", err)
+		return "", fmt.Errorf("failed to create stderr pipe: %v", err)
 	}
 
-	tx := types.NewTransaction(
-		nonce,
-		common.HexToAddress(address),
-		weiAmount,
-		21000,
-		gasPrice,
-		nil,
-	)
-
-	// Sign transaction
-	chainID, err := client.NetworkID(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get chain ID: %w", err)
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		return "", fmt.Errorf("failed to start command: %v", err)
 	}
 
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	// Read both stdout and stderr
+	var stdoutBuilder, stderrBuilder strings.Builder
+	var wg sync.WaitGroup
+
+	// Read stdout
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			line := scanner.Text()
+			stdoutBuilder.WriteString(line + "\n")
+			Logger.Printf("[Command Output] %s", line)
+		}
+	}()
+
+	// Read stderr
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			line := scanner.Text()
+			stderrBuilder.WriteString(line + "\n")
+			Logger.Printf("[Command Error] %s", line)
+		}
+	}()
+
+	// Wait for both readers to finish
+	wg.Wait()
+
+	// Wait for command to complete
+	err = cmd.Wait()
 	if err != nil {
-		return nil, fmt.Errorf("failed to sign transaction: %w", err)
+		// Include stderr in error message if available
+		if errOutput := strings.TrimSpace(stderrBuilder.String()); errOutput != "" {
+			return "", fmt.Errorf("command failed: %v\nError output:\n%s", err, errOutput)
+		}
+		return "", fmt.Errorf("command failed: %v", err)
 	}
 
-	// Send transaction
-	err = client.SendTransaction(context.Background(), signedTx)
+	return stdoutBuilder.String(), nil
+}
+
+// LineraConfig holds common configuration for Linera services
+type LineraConfig struct {
+	WalletPath  string
+	StoragePath string
+	Chain1      string
+	Owner1      string
+	Chain2      string
+	Owner2      string
+}
+
+// InitLineraConfig initializes the Linera configuration
+func InitLineraConfig() error {
+	// Create temp directory for Linera files
+	// tmpDir, err := os.MkdirTemp("", "linera_*")
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create temp directory: %v", err)
+	// }
+
+	// Initialize config
+	lineraConfig = &LineraConfig{
+		WalletPath:  "/var/folders/3_/ty3nbwgs5cv30xhjxd1s0_3r0000gn/T/.tmpZDLGXh/wallet_0.json",
+		StoragePath: "rocksdb:/var/folders/3_/ty3nbwgs5cv30xhjxd1s0_3r0000gn/T/.tmpZDLGXh/client_0.db",
+		Chain1:      "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65",
+		Owner1:      "50f88cc5591fa8f086c83c29a356cabf117b87cccf02ae55fb882b8cb3176d3d",
+		Chain2:      "69705f85ac4c9fef6c02b4d83426aaaf05154c645ec1c61665f8e450f0468bc0",
+		Owner2:      "3962447ee7f3b49cbbb5c17051df26ef996c1cf1704f6bce63bbbaeeaa3adfee",
+	}
+
+	// Create wallet file
+	// if err := createWalletFile(lineraConfig.WalletPath); err != nil {
+	// 	return fmt.Errorf("failed to create wallet file: %v", err)
+	// }
+	//
+	// // Create storage directory
+	// if err := os.MkdirAll(lineraConfig.StoragePath, 0755); err != nil {
+	// 	return fmt.Errorf("failed to create storage directory: %v", err)
+	// }
+
+	// Logger.Printf("Initialized Linera configuration in %s", tmpDir)
+	return nil
+}
+
+// createWalletFile creates an empty wallet file
+func createWalletFile(path string) error {
+	// Create an empty JSON wallet file
+	walletData := []byte("{}")
+	if err := os.WriteFile(path, walletData, 0644); err != nil {
+		return fmt.Errorf("failed to write wallet file: %v", err)
+	}
+	return nil
+}
+
+// GetLineraEnv returns the environment variables for Linera commands
+func GetLineraEnv() []string {
+	if lineraConfig == nil {
+		Logger.Printf("Warning: Linera configuration not initialized")
+		return nil
+	}
+	return []string{
+		fmt.Sprintf("LINERA_WALLET=%s", lineraConfig.WalletPath),
+		fmt.Sprintf("LINERA_STORAGE=%s", lineraConfig.StoragePath),
+		fmt.Sprintf("CHAIN_1=%s", lineraConfig.Chain1),
+		fmt.Sprintf("OWNER_1=%s", lineraConfig.Owner1),
+		fmt.Sprintf("CHAIN_2=%s", lineraConfig.Chain2),
+		fmt.Sprintf("OWNER_2=%s", lineraConfig.Owner2),
+	}
+}
+
+// Update PublishBytecodeFromFiles to use the common configuration
+func (c *Client) PublishBytecodeFromFiles(contractPath, servicePath string) (string, error) {
+	Logger.Printf("Publishing bytecode from files: %s, %s", contractPath, servicePath)
+
+	// Verify files exist
+	if _, err := os.Stat(contractPath); err != nil {
+		return "", fmt.Errorf("contract file not found: %v", err)
+	}
+	if _, err := os.Stat(servicePath); err != nil {
+		return "", fmt.Errorf("service file not found: %v", err)
+	}
+
+	// Prepare and execute command
+	cmd := exec.Command("linera", "publish-bytecode", contractPath, servicePath)
+	cmd.Env = append(os.Environ(), GetLineraEnv()...)
+
+	// Execute command and capture output
+	output, err := executeCommand(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send transaction: %w", err)
+		return "", fmt.Errorf("failed to publish bytecode: %w", err)
+	}
+
+	bytecodeID := strings.TrimSpace(output)
+	if len(bytecodeID) == 0 {
+		return "", fmt.Errorf("failed to extract bytecode ID from output: %s", output)
+	}
+	Logger.Printf("Successfully published bytecode with ID: %s", bytecodeID)
+	return bytecodeID, nil
+}
+
+// CreateApplication executes the Linera create-application command with the provided bytecode ID
+func (c *Client) CreateApplication(bytecodeID string) (*ApplicationResponse, error) {
+	Logger.Printf("Creating application with bytecode ID: %s", bytecodeID)
+
+	bytecodeIDs := strings.Fields(bytecodeID)
+	strs := []string{
+		"create-application",
+	}
+	strs = append(strs, bytecodeIDs...)
+	cmd := exec.Command("linera", strs...) // Assuming bytecodeIDs has at least one element
+	cmd.Env = append(os.Environ(), GetLineraEnv()...)
+
+	// Execute command and capture output
+	output, err := executeCommand(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the output to get the application ID
+	appID := strings.TrimSpace(output)
+	chainID := "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65" // Using Chain1 as default
+
+	// Construct the application URL
+	appURL := fmt.Sprintf("https://linera-api.ngrok.io/chains/%s/applications/%s", chainID, appID)
+
+	response := &ApplicationResponse{
+		ApplicationID: appID,
+		ChainID:       chainID,
+		URL:           appURL,
+	}
+
+	Logger.Printf("Successfully created application with ID: %s, URL: %s", appID, appURL)
+	return response, nil
+}
+
+// LineraService represents a running Linera service instance
+type LineraService struct {
+	Process *exec.Cmd
+	Port    int
+}
+
+// StartLineraService starts a new Linera service on the specified port
+func (c *Client) StartLineraService(port int) error {
+	serviceMutex.Lock()
+	defer serviceMutex.Unlock()
+
+	if activeService != nil {
+		return fmt.Errorf("linera service is already running on port %d", activeService.Port)
+	}
+
+	Logger.Printf("Starting Linera service on port %d", port)
+
+	// Prepare the command
+	cmd := exec.Command("linera", "service", "--port", strconv.Itoa(port))
+	cmd.Env = append(os.Environ(), GetLineraEnv()...)
+
+	// Set up logging
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdout pipe: %v", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stderr pipe: %v", err)
+	}
+
+	// Start the service
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start linera service: %v", err)
+	}
+
+	// Create new service instance
+	activeService = &LineraService{
+		Process: cmd,
+		Port:    port,
+	}
+
+	// Handle output in background
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			Logger.Printf("[Linera Service] %s", scanner.Text())
+		}
+	}()
+
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			Logger.Printf("[Linera Service Error] %s", scanner.Text())
+		}
+	}()
+
+	// Wait for service to be ready
+	time.Sleep(2 * time.Second)
+
+	Logger.Printf("Linera service started successfully on port %d", port)
+	return nil
+}
+
+// StopLineraService stops the running Linera service
+func (c *Client) StopLineraService() error {
+	serviceMutex.Lock()
+	defer serviceMutex.Unlock()
+
+	if activeService == nil {
+		return fmt.Errorf("no linera service is running")
+	}
+
+	Logger.Printf("Stopping Linera service on port %d", activeService.Port)
+
+	// Send interrupt signal
+	if err := activeService.Process.Process.Signal(os.Interrupt); err != nil {
+		return fmt.Errorf("failed to send interrupt signal: %v", err)
+	}
+
+	// Wait for process to exit
+	if err := activeService.Process.Wait(); err != nil {
+		Logger.Printf("Service exited with error: %v", err)
+	}
+
+	activeService = nil
+	Logger.Printf("Linera service stopped successfully")
+	return nil
+}
+
+// GetServiceStatus returns the current status of the Linera service
+func (c *Client) GetServiceStatus() map[string]interface{} {
+	serviceMutex.Lock()
+	defer serviceMutex.Unlock()
+
+	if activeService == nil {
+		return map[string]interface{}{
+			"status": "stopped",
+		}
 	}
 
 	return map[string]interface{}{
-		"hash":    signedTx.Hash().String(),
-		"amount":  fmt.Sprintf("%f ETH", amount),
-		"address": address,
-	}, nil
+		"status": "running",
+		"port":   activeService.Port,
+	}
+}
+
+// HandleWebSocket manages WebSocket connections
+func (c *Client) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := c.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println("Error upgrading to WebSocket:", err)
+		return
+	}
+	defer conn.Close()
+
+	// Register new client
+	c.clientsLock.Lock()
+	c.clients[conn] = true
+	c.clientsLock.Unlock()
+
+	// Clean up on disconnect
+	defer func() {
+		c.clientsLock.Lock()
+		delete(c.clients, conn)
+		c.clientsLock.Unlock()
+		conn.Close()
+	}()
+
+	// Send initial connection message
+	err = conn.WriteJSON(WSMessage{
+		Type: "connected",
+		Data: "Successfully connected to WebSocket",
+	})
+	if err != nil {
+		fmt.Println("Error sending initial message:", err)
+		return
+	}
+
+	// Message handling loop
+	for {
+		var msg WSMessage
+		err := conn.ReadJSON(&msg)
+		if err != nil {
+			fmt.Println("WebSocket error:", err)
+			break
+		}
+
+		// Handle different message types
+		switch msg.Type {
+		case "ping":
+			conn.WriteJSON(WSMessage{
+				Type: "pong",
+				Data: "pong",
+			})
+		default:
+			fmt.Println("Unknown message type:", msg.Type)
+		}
+	}
+}
+
+// handleBroadcasts sends messages to all connected clients
+func (c *Client) handleBroadcasts() {
+	for msg := range c.broadcast {
+		c.clientsLock.RLock()
+		for client := range c.clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				fmt.Println("Error broadcasting to client:", err)
+				client.Close()
+				delete(c.clients, client)
+			}
+		}
+		c.clientsLock.RUnlock()
+	}
 }
