@@ -27,7 +27,7 @@ impl WithContractAbi for CounterContract {
 
 impl Contract for CounterContract {
     type Message = ();
-    type InstantiationArgument = u64;
+    type InstantiationArgument = ();
     type Parameters = ();
 
     async fn load(runtime: ContractRuntime<Self>) -> Self {
@@ -37,11 +37,11 @@ impl Contract for CounterContract {
         CounterContract { state, runtime }
     }
 
-    async fn instantiate(&mut self, value: u64) {
+    async fn instantiate(&mut self, _argument: Self::InstantiationArgument) {
         // Validate that the application parameters were configured correctly.
         self.runtime.application_parameters();
 
-        self.state.value.set(value);
+        self.state.value.set(1);
     }
 
     async fn execute_operation(&mut self, operation: u64) -> u64 {
@@ -114,7 +114,7 @@ mod tests {
         assert_eq!(*counter.state.value.get(), expected_value);
     }
 
-    fn create_and_instantiate_counter(initial_value: u64) -> CounterContract {
+    fn create_and_instantiate_counter() -> CounterContract {
         let runtime = ContractRuntime::new().with_application_parameters(());
         let mut contract = CounterContract {
             state: CounterState::load(runtime.root_view_storage_context())
@@ -124,11 +124,11 @@ mod tests {
         };
 
         contract
-            .instantiate(initial_value)
+            .instantiate()
             .now_or_never()
             .expect("Initialization of counter state should not await anything");
 
-        assert_eq!(*contract.state.value.get(), initial_value);
+        assert_eq!(*contract.state.value.get(), 1);
 
         contract
     }
