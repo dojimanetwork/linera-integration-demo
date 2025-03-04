@@ -8,15 +8,15 @@ edition = "2021"
 test = []
 
 [dependencies]
-async-graphql.workspace = true
-futures.workspace = true
-linera-sdk.workspace = true
-serde.workspace = true
+async-graphql = { version = "=7.0.2", default-features = false }
+futures = "0.3.24"
+linera-sdk = { git = "https://github.com/jvff/linera-protocol", rev = "26a5299" }
+serde = { version = "1.0.217", features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-fungible = { workspace = true, features = ["test"] }
-linera-sdk = { workspace = true, features = ["test", "wasmer"] }
-tokio.workspace = true
+fungible = { path = "." }  # Updated revision to a known working one
+linera-sdk = { git = "https://github.com/jvff/linera-protocol", rev = "26a5299", features = ["test", "wasmer"] }
+tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread"] }
 
 [[bin]]
 name = "fungible_contract"

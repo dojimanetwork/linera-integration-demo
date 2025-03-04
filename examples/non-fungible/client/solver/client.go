@@ -128,7 +128,7 @@ func (c *Client) GetSolanaTransaction(_, txHash string) (interface{}, error) {
 	// Make the request with retries
 	var response interface{}
 	var err error
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		response, err = c.makeRPCRequest(SolanaRPC, requestBody)
 		if responseMap, ok := response.(map[string]interface{}); ok {
 			if responseMap["result"] == nil {

@@ -650,7 +650,7 @@ name = "amm"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "matching-engine",
  "num-bigint",
@@ -1773,7 +1773,7 @@ name = "crowd-funding"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "serde",
  "serde_json",
@@ -2478,11 +2478,22 @@ name = "fungible"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "futures",
- "linera-sdk 0.14.0",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "serde",
  "tokio",
+]
+
+[[package]]
+name = "fungible"
+version = "0.1.0"
+source = "git+https://github.com/bhaagiKenpachi/linera-fungible?rev=e93272c#e93272c4f92f287c291804fe49b7ceb562e599b8"
+dependencies = [
+ "async-graphql",
+ "futures",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "serde",
 ]
 
 [[package]]
@@ -2722,7 +2733,7 @@ dependencies = [
  "bcs",
  "candle-core",
  "candle-transformers",
- "fungible",
+ "fungible 0.1.0",
  "getrandom",
  "linera-sdk 0.14.0",
  "log",
@@ -4214,7 +4225,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "bcs",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "serde",
  "tokio",
@@ -4389,7 +4400,7 @@ name = "native-fungible"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "native-fungible",
  "serde",
@@ -4413,13 +4424,13 @@ dependencies = [
  "async-graphql",
  "base64 0.22.1",
  "bcs",
- "fungible",
- "linera-sdk 0.14.0",
+ "fungible 0.1.0 (git+https://github.com/bhaagiKenpachi/linera-fungible?rev=e93272c)",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "non-fungible",
  "serde",
  "sha3",
  "tokio",
- "universal-solver",
+ "universal-solver 0.1.0 (git+https://github.com/bhaagiKenpachi/universal-solver-linera?rev=7ccd4c6)",
 ]
 
 [[package]]
@@ -6659,6 +6670,20 @@ dependencies = [
  "sha3",
  "test-log",
  "tokio",
+]
+
+[[package]]
+name = "universal-solver"
+version = "0.1.0"
+source = "git+https://github.com/bhaagiKenpachi/universal-solver-linera?rev=7ccd4c6#7ccd4c6cc7631e8edbdc76813a02264eabfd4c6a"
+dependencies = [
+ "async-graphql",
+ "base64 0.21.7",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "linera-views 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "serde",
+ "serde_json",
+ "sha3",
 ]
 
 [[package]]

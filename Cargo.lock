@@ -663,7 +663,7 @@ name = "amm"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "matching-engine",
  "num-bigint",
@@ -2382,7 +2382,7 @@ name = "crowd-funding"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "serde",
  "serde_json",
@@ -3086,7 +3086,18 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "futures",
- "linera-sdk 0.14.0",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
+ "serde",
+]
+
+[[package]]
+name = "fungible"
+version = "0.1.0"
+source = "git+https://github.com/bhaagiKenpachi/linera-fungible?rev=e93272c#e93272c4f92f287c291804fe49b7ceb562e599b8"
+dependencies = [
+ "async-graphql",
+ "futures",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "serde",
 ]
 
@@ -4509,7 +4520,7 @@ dependencies = [
  "flarch",
  "fs-err",
  "fs4",
- "fungible",
+ "fungible 0.1.0",
  "futures",
  "gloo-utils",
  "indexed_db_futures",
@@ -4564,7 +4575,7 @@ dependencies = [
  "criterion",
  "custom_debug_derive",
  "dashmap 5.5.3",
- "fungible",
+ "fungible 0.1.0",
  "futures",
  "linera-base 0.14.0",
  "linera-chain 0.14.0",
@@ -4999,7 +5010,7 @@ dependencies = [
  "ethereum-tracker",
  "fs-err",
  "fs_extra",
- "fungible",
+ "fungible 0.1.0",
  "futures",
  "hex",
  "http 1.2.0",
@@ -5054,7 +5065,7 @@ dependencies = [
 name = "linera-service-graphql-client"
 version = "0.14.0"
 dependencies = [
- "fungible",
+ "fungible 0.1.0",
  "graphql_client",
  "linera-base 0.14.0",
  "linera-chain 0.14.0",
@@ -5625,7 +5636,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "bcs",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "serde",
 ]
@@ -5787,7 +5798,7 @@ name = "native-fungible"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible",
+ "fungible 0.1.0",
  "linera-sdk 0.14.0",
  "serde",
 ]
@@ -5809,8 +5820,8 @@ dependencies = [
  "async-graphql",
  "base64 0.22.1",
  "bcs",
- "fungible",
- "linera-sdk 0.14.0",
+ "fungible 0.1.0 (git+https://github.com/bhaagiKenpachi/linera-fungible?rev=e93272c)",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "serde",
  "sha3",
  "universal-solver",
@@ -8771,6 +8782,7 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 [[package]]
 name = "universal-solver"
 version = "0.1.0"
+source = "git+https://github.com/bhaagiKenpachi/universal-solver-linera?rev=7ccd4c6#7ccd4c6cc7631e8edbdc76813a02264eabfd4c6a"
 dependencies = [
  "async-graphql",
  "base64 0.21.7",

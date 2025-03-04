@@ -29,3 +29,22 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     protobuf-compiler \
     clang
+
+
+
+ENV GIT_COMMIT=${git_commit}
+
+RUN cargo build --release \
+    --target "$target" \
+    --bin linera \
+    --bin linera-proxy \
+    --bin linera-server \
+    --features scylladb,metrics
+
+RUN mv \
+    target/"$target"/release/linera \
+    target/"$target"/release/linera-proxy \
+    target/"$target"/release/linera-server \
+    ./
+
+RUN strip linera linera-proxy linera-server
