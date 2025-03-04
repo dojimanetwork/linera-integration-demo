@@ -1291,15 +1291,14 @@ func InitLineraConfig() error {
 	// if err != nil {
 	// 	return fmt.Errorf("failed to create temp directory: %v", err)
 	// }
-
-	// Initialize config
+	
 	lineraConfig = &LineraConfig{
-		WalletPath:  "/var/folders/3_/ty3nbwgs5cv30xhjxd1s0_3r0000gn/T/.tmpZDLGXh/wallet_0.json",
-		StoragePath: "rocksdb:/var/folders/3_/ty3nbwgs5cv30xhjxd1s0_3r0000gn/T/.tmpZDLGXh/client_0.db",
-		Chain1:      "e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65",
-		Owner1:      "50f88cc5591fa8f086c83c29a356cabf117b87cccf02ae55fb882b8cb3176d3d",
-		Chain2:      "69705f85ac4c9fef6c02b4d83426aaaf05154c645ec1c61665f8e450f0468bc0",
-		Owner2:      "3962447ee7f3b49cbbb5c17051df26ef996c1cf1704f6bce63bbbaeeaa3adfee",
+		WalletPath:  os.Getenv("LINERA_WALLET"),
+		StoragePath: os.Getenv("LINERA_STORAGE"),
+		Chain1:      os.Getenv("CHAIN_1"),
+		Owner1:      os.Getenv("OWNER_1"),
+		Chain2:      os.Getenv("CHAIN_2"),
+		Owner2:      os.Getenv("OWNER_2"),
 	}
 
 	// Create wallet file
