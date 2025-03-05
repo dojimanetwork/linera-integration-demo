@@ -41,6 +41,8 @@ var (
 	serviceMutex  sync.Mutex
 	// Linera configuration
 	lineraConfig *LineraConfig
+	// Linera executable path
+	lineraPath string // New variable to hold the Linera executable path
 )
 
 // Add a function to initialize RPC URLs
@@ -80,7 +82,9 @@ type Client struct {
 	broadcast   chan WSMessage
 }
 
-func NewClient(baseURL string) *Client {
+func NewClient(baseURL, lineraExecutablePath string) *Client {
+	lineraPath = lineraExecutablePath // Set the Linera path
+
 	client := &Client{
 		baseURL:   baseURL,
 		http:      &http.Client{},
@@ -1291,7 +1295,8 @@ func InitLineraConfig() error {
 	// if err != nil {
 	// 	return fmt.Errorf("failed to create temp directory: %v", err)
 	// }
-	
+
+	// Initialize config
 	lineraConfig = &LineraConfig{
 		WalletPath:  os.Getenv("LINERA_WALLET"),
 		StoragePath: os.Getenv("LINERA_STORAGE"),
@@ -1341,7 +1346,7 @@ func GetLineraEnv() []string {
 	}
 }
 
-// Update PublishBytecodeFromFiles to use the common configuration
+// PublishBytecodeFromFiles publishes bytecode using the Linera executable
 func (c *Client) PublishBytecodeFromFiles(contractPath, servicePath string) (string, error) {
 	Logger.Printf("Publishing bytecode from files: %s, %s", contractPath, servicePath)
 
@@ -1354,7 +1359,7 @@ func (c *Client) PublishBytecodeFromFiles(contractPath, servicePath string) (str
 	}
 
 	// Prepare and execute command
-	cmd := exec.Command("linera", "publish-bytecode", contractPath, servicePath)
+	cmd := exec.Command(lineraPath, "publish-bytecode", contractPath, servicePath) // Use lineraPath here
 	cmd.Env = append(os.Environ(), GetLineraEnv()...)
 
 	// Execute command and capture output
@@ -1380,7 +1385,7 @@ func (c *Client) CreateApplication(bytecodeID string) (*ApplicationResponse, err
 		"create-application",
 	}
 	strs = append(strs, bytecodeIDs...)
-	cmd := exec.Command("linera", strs...) // Assuming bytecodeIDs has at least one element
+	cmd := exec.Command(lineraPath, strs...) // Assuming bytecodeIDs has at least one element
 	cmd.Env = append(os.Environ(), GetLineraEnv()...)
 
 	// Execute command and capture output
@@ -1424,7 +1429,7 @@ func (c *Client) StartLineraService(port int) error {
 	Logger.Printf("Starting Linera service on port %d", port)
 
 	// Prepare the command
-	cmd := exec.Command("linera", "service", "--port", strconv.Itoa(port))
+	cmd := exec.Command(lineraPath, "service", "--port", strconv.Itoa(port))
 	cmd.Env = append(os.Environ(), GetLineraEnv()...)
 
 	// Set up logging

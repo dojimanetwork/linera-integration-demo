@@ -28,6 +28,7 @@ var (
 		"ethereum": "ETH",
 		"solana":   "SOL",
 	}
+	lineraPath string // Variable to hold the Linera execution path
 )
 
 var upgrader = websocket.Upgrader{
@@ -57,6 +58,7 @@ func initFlags() {
 	dojimaRPCURL := flag.String("dojima-url", getEnvOrDefault("DOJIMA_RPC", "http://localhost:8545"), "Dojima RPC endpoint")
 	seedPhrase := flag.String("seed-phrase", "", "Seed phrase for deriving chain keys (required)")
 	githubToken := flag.String("github-token", getEnvOrDefault("GITHUB_TOKEN", ""), "GitHub token for accessing example repositories")
+	lineraPath := flag.String("linera-path", getEnvOrDefault("LINERA_PATH", ""), "Path to the Linera executable") // New flag for Linera path
 
 	// Only parse flags if not running tests
 	if !testing.Testing() {
@@ -75,7 +77,14 @@ func initFlags() {
 			fmt.Println("        Seed phrase for deriving chain keys (required)")
 			fmt.Println("  -github-token string")
 			fmt.Println("        GitHub token for accessing example repositories")
+			fmt.Println("  -linera-path string")
+			fmt.Println("        Path to the Linera executable (required)")
 			os.Exit(1)
+		}
+
+		// Validate Linera path
+		if *lineraPath == "" {
+			log.Fatal("Linera path must be provided")
 		}
 
 		// Validate GitHub token
@@ -84,8 +93,8 @@ func initFlags() {
 		}
 	}
 
-	// Initialize solver client with provided URL
-	solverClient = solver.NewClient(*solverURL)
+	// Initialize solver client with provided URL and Linera path
+	solverClient = solver.NewClient(*solverURL, *lineraPath)
 
 	githubClient = solver.NewGithubClient(
 		os.Getenv("GITHUB_CLIENT_ID"),
@@ -107,8 +116,8 @@ func initFlags() {
 	solver.Logger.Printf("  Solver URL: %s", *solverURL)
 	solver.Logger.Printf("  Solana RPC: %s", *solanaRPCURL)
 	solver.Logger.Printf("  Ethereum RPC: %s", *ethereumRPCURL)
+	solver.Logger.Printf("  Linera Path: %s", *lineraPath)
 	solver.Logger.Printf("  Keys: Initialized successfully")
-	solver.Logger.Printf("  GitHub Token: %v", *githubToken != "")
 }
 
 func getEnvOrDefault(key, defaultValue string) string {
