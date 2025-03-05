@@ -978,7 +978,7 @@ where
             .run(Arc::clone(&self.context), self.storage.clone())
             .await;
         let serve_fut = axum::serve(
-            tokio::net::TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port))).await?,
+            tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], port))).await?,
             app,
         );
         serve_fut.await?;
