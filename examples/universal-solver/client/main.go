@@ -587,7 +587,7 @@ func handleDeployBytecode(w http.ResponseWriter, r *http.Request) {
 		contractSize, serviceSize)
 
 	// Create temporary files with buffered writers
-	contractFile, err := os.CreateTemp("/Users/luffybhaagi/RustroverProjects/linera-protocol-jvff/examples/universal-solver", "contract.wasm")
+	contractFile, err := os.CreateTemp("", "contract.wasm")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating temp file: %v", err), http.StatusInternalServerError)
 		return
@@ -595,7 +595,7 @@ func handleDeployBytecode(w http.ResponseWriter, r *http.Request) {
 	defer os.Remove(contractFile.Name())
 	defer contractFile.Close()
 
-	serviceFile, err := os.CreateTemp("/Users/luffybhaagi/RustroverProjects/linera-protocol-jvff/examples/universal-solver", "service.wasm")
+	serviceFile, err := os.CreateTemp("", "service.wasm")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating temp file: %v", err), http.StatusInternalServerError)
 		return
