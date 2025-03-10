@@ -72,7 +72,7 @@ var ExampleRepos = []ExampleRepo{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-non-fungible",
 		Type:  "wasm", // Specify the language type
-		Args:  "",
+		Args:  "--required-application-ids 3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 --json-parameters '3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000'",
 	},
 	{
 		Owner: "bhaagiKenpachi",
@@ -90,7 +90,7 @@ var ExampleRepos = []ExampleRepo{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-fungible",
 		Type:  "wasm", // Specify the language type
-		Args:  "--json-argument {\\\"accounts\\\":{\\\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\\\":\\\"100\\\"}} --json-parameters {\\\"ticker_symbol\\\":\\\"FUN\\\"}",
+		Args:  "--json-argument {'accounts:{'User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9': '100'}} --json-parameters {'ticker_symbol':'FUN'}",
 	},
 	{
 		Owner: "bhaagiKenpachi",
@@ -102,7 +102,7 @@ var ExampleRepos = []ExampleRepo{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-crowd-funding",
 		Type:  "wasm",
-		Args:  "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {\\\"owner\\\":\\\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\\\",\\\"deadline\\\":4102473600000000,\\\"target\\\":\\\"100\\\"} --json-parameters \\\"c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000\\\"",
+		Args:  "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {'owner':'User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9','deadline':4102473600000000,'target':'100'} --json-parameters 'c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000'",
 	},
 	// Add more example repos as needed
 }
