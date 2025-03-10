@@ -200,6 +200,7 @@ func main() {
 	http.HandleFunc("/service/stop", corsMiddleware(loggingMiddleware(handleStopService)))
 	http.HandleFunc("/service/status", corsMiddleware(loggingMiddleware(handleServiceStatus)))
 	http.HandleFunc("/example_repos", corsMiddleware(loggingMiddleware(handleExampleRepos)))
+	http.HandleFunc("/linera_owners", corsMiddleware(loggingMiddleware(handleLineraOwners)))
 	http.HandleFunc("/ws", handleWebSocket) // WebSocket endpoint
 
 	// Start server
@@ -1081,4 +1082,29 @@ func handleExampleRepos(w http.ResponseWriter, r *http.Request) {
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	log.Printf("WebSocket connection attempt from %s", r.RemoteAddr)
 	solverClient.HandleWebSocket(w, r)
+}
+
+func handleLineraOwners(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	solver.Logger.Printf("Received request for Linera owners")
+
+	if r.Method != http.MethodGet {
+		solver.Logger.Printf("Invalid method %s for linera owners", r.Method)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	owners := solver.GetLineraOwners()
+
+	// Return response
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"status": "success",
+		"data": map[string]interface{}{
+			"owners": owners,
+		},
+	}
+	json.NewEncoder(w).Encode(response)
+
+	solver.Logger.Printf("Successfully returned Linera owners (took %v)", time.Since(start))
 }

@@ -1346,6 +1346,13 @@ func GetLineraEnv() []string {
 	}
 }
 
+func GetLineraOwners() []string {
+	return []string{
+		lineraConfig.Owner1,
+		lineraConfig.Owner2,
+	}
+}
+
 // PublishBytecodeFromFiles publishes bytecode using the Linera executable
 func (c *Client) PublishBytecodeFromFiles(contractPath, servicePath string) (string, error) {
 	Logger.Printf("Publishing bytecode from files: %s, %s", contractPath, servicePath)
