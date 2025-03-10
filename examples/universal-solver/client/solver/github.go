@@ -17,6 +17,7 @@ type GithubRepo struct {
 	HTMLURL     string `json:"html_url"`
 	Private     bool   `json:"private"`
 	Owner       Owner  `json:"owner"`
+	Args        string `json:"args"`
 }
 
 type Owner struct {
@@ -56,6 +57,7 @@ type ExampleRepo struct {
 	Owner string
 	Repo  string
 	Type  string // New field to specify the language type
+	Args  string
 }
 
 // Update the ExampleRepos variable to include the type for each repository
@@ -64,36 +66,43 @@ var ExampleRepos = []ExampleRepo{
 		Owner: "bhaagiKenpachi",
 		Repo:  "universal-solver-linera",
 		Type:  "wasm", // Specify the language type
+		Args:  "",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-non-fungible",
 		Type:  "wasm", // Specify the language type
+		Args:  "",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "non-fungile-client",
 		Type:  "go", // Specify the language type
+		Args:  "",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "universal-solver-client",
 		Type:  "go", // Specify the language type
+		Args:  "",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-fungible",
 		Type:  "wasm", // Specify the language type
+		Args:  "--json-argument {\\\"accounts\\\":{\\\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\\\":\\\"100\\\"}} --json-parameters {\\\"ticker_symbol\\\":\\\"FUN\\\"}",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-counter",
 		Type:  "wasm",
+		Args:  "--json-argument 1",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-crowd-funding",
 		Type:  "wasm",
+		Args:  "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {\\\"owner\\\":\\\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\\\",\\\"deadline\\\":4102473600000000,\\\"target\\\":\\\"100\\\"} --json-parameters \\\"c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000\\\"",
 	},
 	// Add more example repos as needed
 }
@@ -311,6 +320,8 @@ func (c *GithubAuthConfig) FetchExampleRepos(lang string) ([]GithubRepo, error) 
 		if err := json.NewDecoder(resp.Body).Decode(&repo); err != nil {
 			return nil, fmt.Errorf("error parsing response for %s/%s: %v", example.Owner, example.Repo, err)
 		}
+
+		repo.Args = example.Args
 
 		allRepos = append(allRepos, repo)
 		Logger.Printf("Successfully fetched repo: %s/%s", example.Owner, example.Repo)
