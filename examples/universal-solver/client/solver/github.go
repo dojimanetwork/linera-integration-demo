@@ -90,7 +90,7 @@ var ExampleRepos = []ExampleRepo{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-fungible",
 		Type:  "wasm", // Specify the language type
-		Args:  "--json-argument {\"accounts\":{\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\": \"100\"}} --json-parameters {\"ticker_symbol\":\"FUN\"}",
+		Args:  "--json-argument {\"accounts\":{\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\":\"100\"}} --json-parameters {\"ticker_symbol\":\"FUN\"}",
 	},
 	{
 		Owner: "bhaagiKenpachi",
