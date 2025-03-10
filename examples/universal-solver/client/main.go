@@ -1048,9 +1048,11 @@ func handleExampleRepos(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	// Get lang parameter
+	lang := r.URL.Query().Get("lang")
 
 	// Fetch example repositories
-	repos, err := githubClient.FetchExampleRepos()
+	repos, err := githubClient.FetchExampleRepos(lang)
 	if err != nil {
 		solver.Logger.Printf("Error fetching example repos: %v", err)
 		http.Error(w, fmt.Sprintf("Error fetching example repos: %v", err), http.StatusInternalServerError)

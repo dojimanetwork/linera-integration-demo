@@ -51,30 +51,39 @@ type RepoFile struct {
 	SHA     string `json:"sha"`
 }
 
-// ExampleRepo contains the fixed list of example repositories
-var ExampleRepos = []struct {
+// Update the ExampleRepo struct to include a Type field
+type ExampleRepo struct {
 	Owner string
 	Repo  string
-}{
+	Type  string // New field to specify the language type
+}
+
+// Update the ExampleRepos variable to include the type for each repository
+var ExampleRepos = []ExampleRepo{
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "universal-solver-linera",
+		Type:  "wasm", // Specify the language type
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-non-fungible",
+		Type:  "wasm", // Specify the language type
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "non-fungile-client",
+		Type:  "go", // Specify the language type
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "universal-solver-client",
+		Type:  "go", // Specify the language type
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "linera-fungible",
+		Type:  "wasm", // Specify the language type
 	},
 	// Add more example repos as needed
 }
@@ -248,7 +257,7 @@ func (c *GithubAuthConfig) fetchDirectoryContents(token, owner, repo, path strin
 }
 
 // FetchExampleRepos fetches the predefined list of example repositories
-func (c *GithubAuthConfig) FetchExampleRepos() ([]GithubRepo, error) {
+func (c *GithubAuthConfig) FetchExampleRepos(lang string) ([]GithubRepo, error) {
 	if c.FixedToken == "" {
 		return nil, fmt.Errorf("GitHub token not configured")
 	}
@@ -256,6 +265,11 @@ func (c *GithubAuthConfig) FetchExampleRepos() ([]GithubRepo, error) {
 	var allRepos []GithubRepo
 
 	for _, example := range ExampleRepos {
+		
+		if example.Type != lang {
+			continue
+		}
+
 		// Create API URL for the specific repository
 		apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", example.Owner, example.Repo)
 
