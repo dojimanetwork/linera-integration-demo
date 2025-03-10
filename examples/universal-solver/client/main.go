@@ -1051,6 +1051,11 @@ func handleExampleRepos(w http.ResponseWriter, r *http.Request) {
 	// Get lang parameter
 	lang := r.URL.Query().Get("lang")
 
+	if lang == "" {
+		http.Error(w, "Language parameter is required", http.StatusBadRequest)
+		solver.Logger.Printf("Language parameter is missing")
+		return
+	}
 	// Fetch example repositories
 	repos, err := githubClient.FetchExampleRepos(lang)
 	if err != nil {
