@@ -85,6 +85,16 @@ var ExampleRepos = []ExampleRepo{
 		Repo:  "linera-fungible",
 		Type:  "wasm", // Specify the language type
 	},
+	{
+		Owner: "bhaagiKenpachi",
+		Repo:  "linera-counter",
+		Type:  "wasm",
+	},
+	{
+		Owner: "bhaagiKenpachi",
+		Repo:  "linera-crowd-funding",
+		Type:  "wasm",
+	},
 	// Add more example repos as needed
 }
 
@@ -265,7 +275,7 @@ func (c *GithubAuthConfig) FetchExampleRepos(lang string) ([]GithubRepo, error) 
 	var allRepos []GithubRepo
 
 	for _, example := range ExampleRepos {
-		
+
 		if example.Type != lang {
 			continue
 		}
