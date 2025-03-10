@@ -78,13 +78,13 @@ var ExampleRepos = []ExampleRepo{
 		Owner: "bhaagiKenpachi",
 		Repo:  "non-fungile-client",
 		Type:  "go",
-		Args:  "",
+		Args:  "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url  https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/249979fb024ea93cd229bd36b4940ee0451156bdf8f379e61947673566fb3c1aaaf5aa0e834e1fdf7321a32a6257e5b7728b71a67c4f28d98b5d5fddfb455687e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65050000000000000000000000 -solana-url \"https://sol-test.dojima.network\" -ethereum-url \"https://eth-test.dojima.network\" --non-fungible-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/923fa4bfb37c9aae3fb6901a6230cbcfb675de2cd07c709ea18d209912ac69116c4302192e50d455e7d5c8e554c69177d509ad28228e8c29fb6abd478fbd6abee476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65070000000000000000000000 --nft-address 0x335Fe1De453F85cFAa8B1d0c902E2d89F461f3E",
 	},
 	{
 		Owner: "bhaagiKenpachi",
 		Repo:  "universal-solver-client",
 		Type:  "go", // Specify the language type
-		Args:  "",
+		Args:  "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
 	},
 	{
 		Owner: "bhaagiKenpachi",
