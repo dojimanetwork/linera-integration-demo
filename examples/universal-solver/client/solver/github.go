@@ -18,6 +18,7 @@ type GithubRepo struct {
 	Private     bool        `json:"private"`
 	Owner       Owner       `json:"owner"`
 	Args        interface{} `json:"args"`
+	PortNo      int64       `json:"port_no"`
 }
 
 type Owner struct {
@@ -54,55 +55,63 @@ type RepoFile struct {
 
 // Update the ExampleRepo struct to include a Type field
 type ExampleRepo struct {
-	Owner string
-	Repo  string
-	Type  string // New field to specify the language type
-	Args  string
+	Owner  string
+	Repo   string
+	Type   string // New field to specify the language type
+	Args   string
+	PortNo int64
 }
 
 // Update the ExampleRepos variable to include the type for each repository
 var ExampleRepos = []ExampleRepo{
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "universal-solver-linera",
-		Type:  "wasm",
-		Args:  "",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "universal-solver-linera",
+		Type:   "wasm",
+		Args:   "",
+		PortNo: 0,
 	},
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "linera-non-fungible",
-		Type:  "wasm",
-		Args:  "--required-application-ids 3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 --json-parameters \"3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000\"",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "linera-non-fungible",
+		Type:   "wasm",
+		Args:   "--required-application-ids 3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 --json-parameters \"3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000\"",
+		PortNo: 0,
 	},
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "non-fungile-client",
-		Type:  "go",
-		Args:  "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url  https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/249979fb024ea93cd229bd36b4940ee0451156bdf8f379e61947673566fb3c1aaaf5aa0e834e1fdf7321a32a6257e5b7728b71a67c4f28d98b5d5fddfb455687e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65050000000000000000000000 -solana-url \"https://sol-test.dojima.network\" -ethereum-url \"https://eth-test.dojima.network\" --non-fungible-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/923fa4bfb37c9aae3fb6901a6230cbcfb675de2cd07c709ea18d209912ac69116c4302192e50d455e7d5c8e554c69177d509ad28228e8c29fb6abd478fbd6abee476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65070000000000000000000000 --nft-address 0x335Fe1De453F85cFAa8B1d0c902E2d89F461f3E",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "non-fungile-client",
+		Type:   "go",
+		Args:   "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url  https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/249979fb024ea93cd229bd36b4940ee0451156bdf8f379e61947673566fb3c1aaaf5aa0e834e1fdf7321a32a6257e5b7728b71a67c4f28d98b5d5fddfb455687e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65050000000000000000000000 -solana-url \"https://sol-test.dojima.network\" -ethereum-url \"https://eth-test.dojima.network\" --non-fungible-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/923fa4bfb37c9aae3fb6901a6230cbcfb675de2cd07c709ea18d209912ac69116c4302192e50d455e7d5c8e554c69177d509ad28228e8c29fb6abd478fbd6abee476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65070000000000000000000000 --nft-address 0x335Fe1De453F85cFAa8B1d0c902E2d89F461f3E",
+		PortNo: 3000,
 	},
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "universal-solver-client",
-		Type:  "go", // Specify the language type
-		Args:  "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "universal-solver-client",
+		Type:   "go", // Specify the language type
+		Args:   "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
+		PortNo: 3001,
 	},
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "linera-fungible",
-		Type:  "wasm", // Specify the language type
-		Args:  "--json-argument {\"accounts\":{\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\":\"100\"}} --json-parameters {\"ticker_symbol\":\"FUN\"}",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "linera-fungible",
+		Type:   "wasm", // Specify the language type
+		Args:   "--json-argument {\"accounts\":{\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\":\"100\"}} --json-parameters {\"ticker_symbol\":\"FUN\"}",
+		PortNo: 0,
 	},
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "linera-counter",
-		Type:  "wasm",
-		Args:  "--json-argument 1",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "linera-counter",
+		Type:   "wasm",
+		Args:   "--json-argument 1",
+		PortNo: 0,
 	},
 	{
-		Owner: "bhaagiKenpachi",
-		Repo:  "linera-crowd-funding",
-		Type:  "wasm",
-		Args:  "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {\"owner\":\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\",\"deadline\":4102473600000000,\"target\":\"100\"} --json-parameters \"c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000\"",
+		Owner:  "bhaagiKenpachi",
+		Repo:   "linera-crowd-funding",
+		Type:   "wasm",
+		Args:   "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {\"owner\":\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\",\"deadline\":4102473600000000,\"target\":\"100\"} --json-parameters \"c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000\"",
+		PortNo: 0,
 	},
 	// Add more example repos as needed
 }
@@ -322,6 +331,7 @@ func (c *GithubAuthConfig) FetchExampleRepos(lang string) ([]GithubRepo, error) 
 		}
 
 		repo.Args = example.Args
+		repo.PortNo = example.PortNo
 
 		allRepos = append(allRepos, repo)
 		Logger.Printf("Successfully fetched repo: %s/%s", example.Owner, example.Repo)
