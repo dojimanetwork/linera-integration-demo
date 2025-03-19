@@ -108,24 +108,26 @@ pub struct AppSandboxDataType {
 #[serde(rename_all = "camelCase")]
 pub struct AppDeployedApiDataType {
     pub name: String,
-    pub functions: Vec<ApiDataInterface>
+    pub functions: Vec<SApiDataInterface>
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, SimpleObject, InputObject)]
-#[graphql(input_name = "ApiDataInterface")]
+#[graphql(input_name = "SApiDataInterface")]
 #[serde(rename_all = "camelCase")]
-pub struct ApiDataInterface {
+pub struct SApiDataInterface {
     pub api_name: String,
-    pub data: ApiRequest,
-    pub inputs: Vec<ApiInput>,
+    pub data: SApiRequest,
+    pub inputs: Vec<SApiInput>,
     pub outputs: OutDataInterface
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, SimpleObject, InputObject)]
-pub struct ApiRequest {
+#[graphql(input_name = "SApiRequest")]
+#[serde(rename_all = "camelCase")]
+pub struct SApiRequest {
     pub url: String,
     pub request_type: RequestType,
-    pub inputs: Vec<ApiInput>,
+    pub inputs: Vec<SApiInput>,
     pub imports: Vec<String>
 }
 
@@ -153,7 +155,9 @@ pub enum RequestType {
 }
 
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, SimpleObject, InputObject)]
-pub struct ApiInput {
+#[graphql(input_name = "SApiInput")]
+#[serde(rename_all = "camelCase")]
+pub struct SApiInput {
     pub _key: String,
     pub _type: String
 }

@@ -5,7 +5,7 @@ use async_graphql::{EmptySubscription, Object, Request, Response, Schema};
 use linera_sdk::abi::WithServiceAbi;
 use linera_sdk::{Service, ServiceRuntime};
 use linera_sdk::views::View;
-use solver_flows::{AppNodesDataType, AppSandboxDataType, AppType, AuthUserType, Operation, SolverFlowsAbi};
+use solver_flows::{AppDeployedApiDataType, AppNodesDataType, AppSandboxDataType, AppType, AuthUserType, Operation, SolverFlowsAbi};
 use crate::state::SolverFlowsState;
 
 mod state;
@@ -97,7 +97,21 @@ impl MutationRoot {
         }).unwrap()
     }
 
+    async fn update_deployed_api_details(&self, auth_id: String, app_id: String, deployed_api_details: AppDeployedApiDataType) -> Vec<u8> {
+        bcs::to_bytes(&Operation::UpdateDeployedApiDetails {
+            auth_id,
+            app_id,
+            deployed_api_details,
+        }).unwrap()
+    }
 
+    async fn update_is_public(&self, auth_id: String, app_id: String, is_public: bool) -> Vec<u8> {
+        bcs::to_bytes(&Operation::UpdateIsPublic {
+            auth_id,
+            app_id,
+            is_public,
+        }).unwrap()
+    }
 
 }
 
