@@ -66,6 +66,13 @@ type ExampleRepo struct {
 var ExampleRepos = []ExampleRepo{
 	{
 		Owner:  "bhaagiKenpachi",
+		Repo:   "linera-solver-flows",
+		Type:   "wasm",
+		Args:   "",
+		PortNo: 0,
+	},
+	{
+		Owner:  "bhaagiKenpachi",
 		Repo:   "universal-solver-linera",
 		Type:   "wasm",
 		Args:   "",
@@ -113,6 +120,7 @@ var ExampleRepos = []ExampleRepo{
 		Args:   "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {\"owner\":\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\",\"deadline\":4102473600000000,\"target\":\"100\"} --json-parameters \"c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000\"",
 		PortNo: 0,
 	},
+
 	// Add more example repos as needed
 }
 
