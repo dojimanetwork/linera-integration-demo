@@ -121,7 +121,8 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// Set CORS headers
 		origin := r.Header.Get("Origin")
 		allowedOrigins := map[string]bool{
-			"http://localhost:3002": true,
+			"http://localhost:3002":         true,
+			"https://market-place.ngrok.io": true,
 		}
 
 		if allowedOrigins[origin] {
