@@ -29,7 +29,60 @@ var (
 	httpClient = &http.Client{}
 )
 
+// Logger represents a custom logger with levels and formatting
+type Logger struct {
+	*log.Logger
+}
+
+// LogLevel represents different logging levels
+type LogLevel string
+
+const (
+	INFO  LogLevel = "INFO"
+	ERROR LogLevel = "ERROR"
+	DEBUG LogLevel = "DEBUG"
+	WARN  LogLevel = "WARN"
+)
+
+var logger *Logger
+
+// NewLogger creates a new logger instance
+func NewLogger() *Logger {
+	return &Logger{
+		Logger: log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds),
+	}
+}
+
+// log formats and writes the log message with the specified level
+func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	l.Printf("[%s] %s", level, msg)
+}
+
+// Info logs an info level message
+func (l *Logger) Info(format string, v ...interface{}) {
+	l.log(INFO, format, v...)
+}
+
+// Error logs an error level message
+func (l *Logger) Error(format string, v ...interface{}) {
+	l.log(ERROR, format, v...)
+}
+
+// Debug logs a debug level message
+func (l *Logger) Debug(format string, v ...interface{}) {
+	l.log(DEBUG, format, v...)
+}
+
+// Warn logs a warning level message
+func (l *Logger) Warn(format string, v ...interface{}) {
+	l.log(WARN, format, v...)
+}
+
 func init() {
+	// Initialize the logger
+	logger = NewLogger()
+	logger.Info("Initializing application...")
 	initFlags()
 }
 
@@ -48,10 +101,10 @@ func initFlags() {
 	CrowdSolver = *crowdSolverURL
 
 	// Log configuration
-	log.Printf("Initialized with:")
-	log.Printf("  Solana RPC: %s", SolanaRPC)
-	log.Printf("  Ethereum RPC: %s", EthereumRPC)
-	log.Printf("  Crowd Solver URL: %s", CrowdSolver)
+	logger.Info("Configuration:")
+	logger.Info("  Solana RPC: %s", SolanaRPC)
+	logger.Info("  Ethereum RPC: %s", EthereumRPC)
+	logger.Info("  Crowd Solver URL: %s", CrowdSolver)
 }
 
 func getEnvOrDefault(key, defaultValue string) string {
@@ -92,14 +145,16 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 func loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		log.Printf("Started %s %s", r.Method, r.URL.Path)
+		logger.Info("Request started - Method: %s, Path: %s, RemoteAddr: %s",
+			r.Method, r.URL.Path, r.RemoteAddr)
 
 		// Create a custom response writer to capture status code
 		rw := &responseWriter{w, http.StatusOK}
 		next(rw, r)
 
-		log.Printf("Completed %s %s with status %d in %v",
-			r.Method, r.URL.Path, rw.status, time.Since(start))
+		duration := time.Since(start)
+		logger.Info("Request completed - Method: %s, Path: %s, Status: %d, Duration: %v",
+			r.Method, r.URL.Path, rw.status, duration)
 	}
 }
 
@@ -684,6 +739,7 @@ func extractFromAddress(tx interface{}, chain string) (string, error) {
 
 func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		logger.Error("Invalid method %s for /post_tx_hash", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -692,13 +748,17 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	txHash := r.URL.Query().Get("txHash")
 	chain := r.URL.Query().Get("chain")
 
+	logger.Debug("Processing transaction - Hash: %s, Chain: %s", txHash, chain)
+
 	// Validate required parameters
 	if txHash == "" {
+		logger.Error("Missing txHash parameter")
 		http.Error(w, "txHash parameter is required", http.StatusBadRequest)
 		return
 	}
 
 	if chain == "" {
+		logger.Error("Missing chain parameter")
 		http.Error(w, "chain parameter is required", http.StatusBadRequest)
 		return
 	}
@@ -711,15 +771,19 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Get transaction details based on chain
 	switch chain {
 	case "solana":
+		logger.Debug("Fetching Solana transaction: %s", txHash)
 		tx, err = GetSolanaTransaction(txHash)
 	case "ethereum":
+		logger.Debug("Fetching Ethereum transaction: %s", txHash)
 		tx, err = GetEthereumTransaction(txHash)
 	default:
+		logger.Error("Invalid chain parameter: %s", chain)
 		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
 		return
 	}
 
 	if err != nil {
+		logger.Error("Error getting transaction: %v", err)
 		http.Error(w, "Error getting transaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -727,6 +791,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Extract from address
 	fromAddress, err := extractFromAddress(tx, chain)
 	if err != nil {
+		logger.Error("Error extracting from address: %v", err)
 		http.Error(w, "Error extracting from address: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -734,6 +799,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Get the from token based on chain
 	fromToken, err := getTokenForChain(chain)
 	if err != nil {
+		logger.Error("Error getting token for chain: %v", err)
 		http.Error(w, "Error getting token for chain: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -741,25 +807,27 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Extract amount from transaction
 	amount, err := extractAmountFromTx(tx)
 	if err != nil {
+		logger.Error("Error extracting amount from transaction: %v", err)
 		http.Error(w, "Error extracting amount from transaction: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Log transaction details
-	log.Printf("Transaction details - Hash: %s, Chain: %s, From: %s, Amount: %f",
-		txHash, chain, fromAddress, amount)
 	// Convert amount to string
 	amountStr := fmt.Sprintf("%f", amount)
 
-	// Log the fund request details
-	log.Printf("Processing fund request - Chain: %s, From Address: %s, Token: %s, Amount: %s",
-		chain, fromAddress, fromToken, amountStr)
+	logger.Info("Transaction processed successfully - Hash: %s, Chain: %s, From: %s, Amount: %s %s",
+		txHash, chain, fromAddress, amountStr, fromToken)
+
 	// Build GraphQL mutation
-	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`, fromToken, fromAddress, amountStr)
+	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`,
+		fromToken, fromAddress, amountStr)
+
+	logger.Debug("Sending GraphQL mutation: %s", mutation)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
+		logger.Error("Error creating GraphQL request: %v", err)
 		http.Error(w, "Error creating request: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -769,6 +837,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Send request
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		logger.Error("Error sending GraphQL request: %v", err)
 		http.Error(w, "Error sending request: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -776,9 +845,13 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
+		logger.Error("Error response from GraphQL endpoint: %d", resp.StatusCode)
 		http.Error(w, "Error from GraphQL endpoint", resp.StatusCode)
 		return
 	}
+
+	logger.Info("Successfully processed fund request - Chain: %s, From: %s, Amount: %s %s",
+		chain, fromAddress, amountStr, fromToken)
 
 	response := map[string]interface{}{
 		"status":      "success",
