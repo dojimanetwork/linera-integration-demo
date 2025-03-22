@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/types"
 	"log"
 	"math/big"
 	"net/http"
@@ -642,6 +643,12 @@ func GetEthereumTransaction(txHash string) (interface{}, error) {
 		return nil, fmt.Errorf("failed to get Ethereum transaction: %w", err)
 	}
 
+	// Get the sender address
+	from, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sender address: %w", err)
+	}
+
 	// Convert transaction to map for consistent response format
 	return map[string]interface{}{
 		"hash":      tx.Hash().Hex(),
@@ -650,6 +657,7 @@ func GetEthereumTransaction(txHash string) (interface{}, error) {
 		"gasPrice":  tx.GasPrice().String(),
 		"nonce":     tx.Nonce(),
 		"isPending": isPending,
+		"from":      from.Hex(), // Add the from address
 	}, nil
 }
 
@@ -695,7 +703,17 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 						if preBalance > postBalance {
 							// Convert from lamports to SOL (divide by 10^9)
 							lamports := preBalance - postBalance
-							solValue := float64(lamports) / 1e9
+
+							// Extract fee
+							fee := uint64(0)
+							if feeVal, ok := meta["fee"].(float64); ok {
+								fee = uint64(feeVal)
+							}
+
+							// Subtract fee from total amount
+							actualLamports := lamports - fee
+							solValue := float64(actualLamports) / 1e9
+
 							if solValue > float64(^uint64(0)) {
 								return 0, fmt.Errorf("converted SOL value exceeds uint64 range: %f", solValue)
 							}
