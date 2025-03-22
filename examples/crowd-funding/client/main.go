@@ -551,7 +551,7 @@ func getTokenForChain(chain string) (string, error) {
 }
 
 // Helper function to extract amount from transaction
-func extractAmountFromTx(tx interface{}) (uint64, error) {
+func extractAmountFromTx(tx interface{}) (float64, error) {
 	switch v := tx.(type) {
 	case map[string]interface{}:
 		// For Ethereum
@@ -567,7 +567,9 @@ func extractAmountFromTx(tx interface{}) (uint64, error) {
 			if !ethValue.IsUint64() {
 				return 0, fmt.Errorf("converted ETH value exceeds uint64 range: %s", ethValue.String())
 			}
-			return ethValue.Uint64(), nil
+
+			flval, _ := ethValue.Float64()
+			return flval, nil
 		}
 		// For Solana
 		if result, ok := v["result"].(map[string]interface{}); ok {
@@ -585,7 +587,7 @@ func extractAmountFromTx(tx interface{}) (uint64, error) {
 							if solValue > float64(^uint64(0)) {
 								return 0, fmt.Errorf("converted SOL value exceeds uint64 range: %f", solValue)
 							}
-							return uint64(solValue), nil
+							return solValue, nil
 						}
 					}
 				}
@@ -687,7 +689,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert amount to string
-	amountStr := fmt.Sprintf("%d", amount)
+	amountStr := fmt.Sprintf("%f", amount)
 
 	// Build GraphQL mutation
 	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`, fromToken, fromAddress, amountStr)
