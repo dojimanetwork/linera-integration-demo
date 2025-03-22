@@ -18,8 +18,8 @@ import (
 
 var (
 	chainToToken = map[string]string{
-		"ETH": "ethereum",
-		"SOL": "solana",
+		"ethereum": "ETH",
+		"solana":   "SOL",
 	}
 	// RPC endpoints
 	EthereumRPC string
@@ -690,7 +690,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	amountStr := fmt.Sprintf("%d", amount)
 
 	// Build GraphQL mutation
-	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`, chainToToken[chain], fromAddress, amountStr)
+	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`, fromToken, fromAddress, amountStr)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
