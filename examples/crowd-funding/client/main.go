@@ -745,9 +745,15 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log transaction details
+	log.Printf("Transaction details - Hash: %s, Chain: %s, From: %s, Amount: %f",
+		txHash, chain, fromAddress, amount)
 	// Convert amount to string
 	amountStr := fmt.Sprintf("%f", amount)
 
+	// Log the fund request details
+	log.Printf("Processing fund request - Chain: %s, From Address: %s, Token: %s, Amount: %s",
+		chain, fromAddress, fromToken, amountStr)
 	// Build GraphQL mutation
 	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`, fromToken, fromAddress, amountStr)
 
