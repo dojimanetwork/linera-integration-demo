@@ -169,6 +169,13 @@ type CollectResponse struct {
 	} `json:"data"`
 }
 
+// TotalPledgeInUsdResponse represents the response structure from the GraphQL query
+type TotalPledgeInUsdResponse struct {
+	Data struct {
+		TotalPledgeInUsd string `json:"totalPledgeInUsd"`
+	} `json:"data"`
+}
+
 func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -432,6 +439,55 @@ func handleCollect(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func handleTotalPledgeInUsd(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Build GraphQL query
+	query := `{"query":"query totalPledgeInUsd { totalPledgeInUsd }"}`
+
+	// Create request
+	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		http.Error(w, "Error creating request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		http.Error(w, "Error sending request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Parse response
+	var graphqlResp TotalPledgeInUsdResponse
+	if err := json.NewDecoder(resp.Body).Decode(&graphqlResp); err != nil {
+		http.Error(w, "Error parsing response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Convert string amount to float for formatting
+	amount := 0.0
+	fmt.Sscanf(graphqlResp.Data.TotalPledgeInUsd, "%f", &amount)
+
+	// Prepare response
+	response := map[string]interface{}{
+		"status":   "success",
+		"message":  "Total pledge in USD retrieved successfully",
+		"amount":   fmt.Sprintf("%f", amount),
+		"currency": "USD",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func main() {
 	// Define routes with CORS and logging middleware
 	http.HandleFunc("/post_tx_hash", corsMiddleware(loggingMiddleware(handlePostTxHash)))
@@ -440,6 +496,7 @@ func main() {
 	http.HandleFunc("/chain_pledges", corsMiddleware(loggingMiddleware(handleGetChainPledges)))
 	http.HandleFunc("/total_pledges", corsMiddleware(loggingMiddleware(handleTotalPledges)))
 	http.HandleFunc("/collect", corsMiddleware(loggingMiddleware(handleCollect)))
+	http.HandleFunc("/pledge_in_usd", corsMiddleware(loggingMiddleware(handleTotalPledgeInUsd)))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3003")
