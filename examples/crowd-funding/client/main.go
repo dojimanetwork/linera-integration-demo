@@ -126,7 +126,7 @@ var chainAddresses []ChainAddress
 // ChainAddressBalance represents a chain address with its balance
 type ChainAddressBalance struct {
 	Address string `json:"address"`
-	Balance string `json:"balance"`
+	Chain   string `json:"chain"`
 }
 
 // GraphQLResponse represents the response structure from the GraphQL query
