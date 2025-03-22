@@ -67,7 +67,7 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// Set CORS headers
 		origin := r.Header.Get("Origin")
 		allowedOrigins := map[string]bool{
-			"http://localhost:3000": true,
+			"http://localhost:3002": true,
 		}
 
 		if allowedOrigins[origin] {
