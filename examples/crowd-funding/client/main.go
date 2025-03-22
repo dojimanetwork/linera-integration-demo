@@ -255,7 +255,7 @@ func handleGetChainAddresses(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build GraphQL query
-	query := `{"query":"query chainAddresses { getChainAddresses { address balance } }"}`
+	query := `{"query":"query chainAddresses { getChainAddresses { address chain } }"}`
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
