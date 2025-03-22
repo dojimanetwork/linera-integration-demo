@@ -682,15 +682,16 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 			if _, success := bigValue.SetString(value, 10); !success {
 				return 0, fmt.Errorf("failed to parse decimal value: %s", value)
 			}
-			// Convert from wei to ETH (divide by 10^18) and check if result fits uint64
+			
+			// Convert from wei to ETH by dividing by 10^18
 			weiPerEth := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
-			ethValue := new(big.Int).Div(bigValue, weiPerEth)
-			if !ethValue.IsUint64() {
-				return 0, fmt.Errorf("converted ETH value exceeds uint64 range: %s", ethValue.String())
-			}
-
-			flval, _ := ethValue.Float64()
-			return flval, nil
+			
+			// Convert to float64 before division to preserve decimal places
+			fValue, _ := new(big.Float).SetInt(bigValue).Float64()
+			fWeiPerEth, _ := new(big.Float).SetInt(weiPerEth).Float64()
+			
+			ethValue := fValue / fWeiPerEth
+			return ethValue, nil
 		}
 		// For Solana
 		if result, ok := v["result"].(map[string]interface{}); ok {
