@@ -275,7 +275,7 @@ func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Build GraphQL mutation
-		mutation := fmt.Sprintf(`{"query":"mutation{addChain(chainName:\"%s\",address:\"%s\")}"}`, chainAddr.Chain, chainAddr.Address)
+		mutation := fmt.Sprintf(`{"query":"mutation{addChain(chainName:\"%s\",address:\"%s\")}"}`, chainToToken[chainAddr.Chain], chainAddr.Address)
 
 		// Create request
 		req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
@@ -682,14 +682,14 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 			if _, success := bigValue.SetString(value, 10); !success {
 				return 0, fmt.Errorf("failed to parse decimal value: %s", value)
 			}
-			
+
 			// Convert from wei to ETH by dividing by 10^18
 			weiPerEth := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
-			
+
 			// Convert to float64 before division to preserve decimal places
 			fValue, _ := new(big.Float).SetInt(bigValue).Float64()
 			fWeiPerEth, _ := new(big.Float).SetInt(weiPerEth).Float64()
-			
+
 			ethValue := fValue / fWeiPerEth
 			return ethValue, nil
 		}
