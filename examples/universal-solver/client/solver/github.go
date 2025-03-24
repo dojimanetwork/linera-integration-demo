@@ -103,7 +103,7 @@ var ExampleRepos = []ExampleRepo{
 		Owner:  "bhaagiKenpachi",
 		Repo:   "crowd-funding-client",
 		Type:   "go", // Specify the language type
-		Args:   "-crowd-solver http://localhost:8080/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/bc83a19980996b842a6436a8916a51fc46dfe4d81575293e055de8a183732f241ba79c4cff0fb646b9b10c0150cfab069910680e685d17586e6d03d0784cc0f1e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a657a0000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
+		Args:   "-crowd-solver https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/bc83a19980996b842a6436a8916a51fc46dfe4d81575293e055de8a183732f241ba79c4cff0fb646b9b10c0150cfab069910680e685d17586e6d03d0784cc0f1e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a657a0000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
 		PortNo: 3003,
 	},
 	{
