@@ -1,0 +1,614 @@
+2025/03/25 11:45:38 INFO: Starting token exchange with code: VTRwZFR0UmU5ZndDOXNORVZIdXVscnJWRENVZHJIUHVSV1dsU3pDRXQ5VV9fOjE3NDI4ODMzMzAwNjk6MTowOmFjOjE
+2025/03/25 11:45:38 DEBUG: Token exchange request data: map[code:[VTRwZFR0UmU5ZndDOXNORVZIdXVscnJWRENVZHJIUHVSV1dsU3pDRXQ5VV9fOjE3NDI4ODMzMzAwNjk6MTowOmFjOjE] code_verifier:[sbjYqwr6DOPu72UrF0nM4EW-0z4CGas2Tc9K4B8h2Rg] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 11:45:38 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 11:45:38 INFO: Starting token exchange with code: VTRwZFR0UmU5ZndDOXNORVZIdXVscnJWRENVZHJIUHVSV1dsU3pDRXQ5VV9fOjE3NDI4ODMzMzAwNjk6MTowOmFjOjE
+2025/03/25 11:45:38 DEBUG: Token exchange request data: map[code:[VTRwZFR0UmU5ZndDOXNORVZIdXVscnJWRENVZHJIUHVSV1dsU3pDRXQ5VV9fOjE3NDI4ODMzMzAwNjk6MTowOmFjOjE] code_verifier:[sbjYqwr6DOPu72UrF0nM4EW-0z4CGas2Tc9K4B8h2Rg] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 11:45:38 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 11:45:38 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the code verifier did not match the code challenge."}
+2025/03/25 11:45:38 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the code verifier did not match the code challenge."}
+2025/03/25 11:45:55 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the code verifier did not match the code challenge."}
+2025/03/25 11:45:55 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the code verifier did not match the code challenge."}
+2025/03/25 11:53:05 DEBUG: Generated PKCE - Verifier: du3K_iZVnOehhp7eGIPdumjMl4hd5KDn7x29v_JhDr8, Challenge: E99LGCnG4LV9MH60KuUB4v8Jz5DoBujPeNx3INEpyT8, State: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 11:53:42 INFO: Stored code verifier for state: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 11:53:54 INFO: Received callback with state: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 11:54:09 INFO: Found code verifier for state: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 11:54:11 INFO: Received callback with state: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 11:54:14 INFO: Starting token exchange with code: SkhIcVp5MXJVcDUzRGRDVU5pY1VMNVYzd3A0ZTlRVndvSW1Za19lclMwcWVyOjE3NDI4ODM4Mjc0NjQ6MTowOmFjOjE
+2025/03/25 11:54:14 INFO: Found code verifier for state: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 11:54:18 DEBUG: Token exchange request data: map[code:[SkhIcVp5MXJVcDUzRGRDVU5pY1VMNVYzd3A0ZTlRVndvSW1Za19lclMwcWVyOjE3NDI4ODM4Mjc0NjQ6MTowOmFjOjE] code_verifier:[du3K_iZVnOehhp7eGIPdumjMl4hd5KDn7x29v_JhDr8] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 11:54:19 INFO: Starting token exchange with code: SkhIcVp5MXJVcDUzRGRDVU5pY1VMNVYzd3A0ZTlRVndvSW1Za19lclMwcWVyOjE3NDI4ODM4Mjc0NjQ6MTowOmFjOjE
+2025/03/25 11:54:40 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 11:54:41 DEBUG: Token exchange request data: map[code:[SkhIcVp5MXJVcDUzRGRDVU5pY1VMNVYzd3A0ZTlRVndvSW1Za19lclMwcWVyOjE3NDI4ODM4Mjc0NjQ6MTowOmFjOjE] code_verifier:[du3K_iZVnOehhp7eGIPdumjMl4hd5KDn7x29v_JhDr8] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 11:54:41 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 11:54:50 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 11:54:50 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 11:54:55 ERROR: Failed to exchange code for token: token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 11:55:26 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 11:55:28 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 11:55:28 ERROR: Failed to exchange code for token: token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 11:58:43 INFO: Cleaned up code verifier for state: aPk4xsepmYnOeeL74oPp64typ0SWfkChDdRaJN0nE8Y
+2025/03/25 13:47:42 DEBUG: Generated PKCE - Verifier: -Ocag6_ciJaxTAOhSIaxC0EGG9JVZMlZ5jDzPbcIWkg, Challenge: VoX56y_JtJTUch_9SPcaXmY7Gh6CX8rT2gAePKFOBgA, State: W0B6cEWX_W8UaaJjT4kB0AoWe3nexgqAwzM5LgIidZY
+2025/03/25 13:47:42 INFO: Stored code verifier for state: W0B6cEWX_W8UaaJjT4kB0AoWe3nexgqAwzM5LgIidZY
+2025/03/25 13:48:05 INFO: Received callback with state: W0B6cEWX_W8UaaJjT4kB0AoWe3nexgqAwzM5LgIidZY
+2025/03/25 13:48:37 INFO: Found code verifier for state: W0B6cEWX_W8UaaJjT4kB0AoWe3nexgqAwzM5LgIidZY
+2025/03/25 13:48:51 INFO: Starting token exchange with code: am12QWgxUHdueE1JT3BzQVgzN1FQRVljd2N0UkROcDZoQ0lzWnk4d0ZRVkotOjE3NDI4OTA2NjM2MTY6MToxOmFjOjE
+2025/03/25 13:48:51 DEBUG: Token exchange request data: map[code_verifier:[-Ocag6_ciJaxTAOhSIaxC0EGG9JVZMlZ5jDzPbcIWkg] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 13:48:51 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 13:50:43 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Missing required parameter [code]."}
+2025/03/25 13:50:43 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Missing required parameter [code]."}
+2025/03/25 13:50:43 ERROR: Failed to exchange code for token: token exchange failed with status 400: {"error":"invalid_request","error_description":"Missing required parameter [code]."}
+2025/03/25 13:51:59 DEBUG: Generated PKCE - Verifier: 6P2lcRIWM9x62UmzvCn7YnJLy9ilD4iNzECQ7HAWWSs, Challenge: tl9gbCrT7jdcFZJgTy1HalA7TzyOTBWRXxS5xizEbCE, State: Y6fBtb8Q8Tx7rYXNluis0_KMNxVIho3-S4U64VWzlGs
+2025/03/25 13:51:59 INFO: Stored code verifier for state: Y6fBtb8Q8Tx7rYXNluis0_KMNxVIho3-S4U64VWzlGs
+2025/03/25 13:52:06 INFO: Received callback with state: Y6fBtb8Q8Tx7rYXNluis0_KMNxVIho3-S4U64VWzlGs
+2025/03/25 13:52:06 INFO: Found code verifier for state: Y6fBtb8Q8Tx7rYXNluis0_KMNxVIho3-S4U64VWzlGs
+2025/03/25 13:52:06 INFO: Starting token exchange with code: MGVZREpDZ29TdTVFSzFLUkNQWDJfNjNHY2lTTmZkazlkdzdvSmQtcDJGeUNCOjE3NDI4OTA5MjEwOTg6MTowOmFjOjE
+2025/03/25 13:52:06 DEBUG: Token exchange request data: map[code:[MGVZREpDZ29TdTVFSzFLUkNQWDJfNjNHY2lTTmZkazlkdzdvSmQtcDJGeUNCOjE3NDI4OTA5MjEwOTg6MTowOmFjOjE] code_verifier:[6P2lcRIWM9x62UmzvCn7YnJLy9ilD4iNzECQ7HAWWSs] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 13:52:06 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 13:53:58 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 13:53:58 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 13:53:59 ERROR: Failed to exchange code for token: token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 13:56:59 INFO: Cleaned up code verifier for state: Y6fBtb8Q8Tx7rYXNluis0_KMNxVIho3-S4U64VWzlGs
+2025/03/25 14:01:46 DEBUG: Generated PKCE - Verifier: I3fvhwhDmvaTUve36nxtf0lkH-GEQRc1JNZYpoM6uu4, Challenge: Pojj6wxBTPTyFUoMLwTC7kFdvFFoRYIE9LmrQ_w-edU, State: aZq_YTyGqv00zaow0iuPwtUDr2cGz3AVRN8kYxW3niM
+2025/03/25 14:01:46 INFO: Stored code verifier for state: aZq_YTyGqv00zaow0iuPwtUDr2cGz3AVRN8kYxW3niM
+2025/03/25 14:03:22 DEBUG: Generated PKCE - Verifier: walu9l76b9kRk-E9_w3sVSDQT3OWwLehZEPwSgkgdBI, Challenge: CSibk14l3lGsN_JeIFAulgeISoZSVqvNr2XZG0heltw, State: 6K2ghzVZKVghErHQXaUGqhjcu4XU9mg5F0sg6OkGJ4I
+2025/03/25 14:03:22 INFO: Stored code verifier for state: 6K2ghzVZKVghErHQXaUGqhjcu4XU9mg5F0sg6OkGJ4I
+2025/03/25 14:03:52 INFO: Received callback with state: 6K2ghzVZKVghErHQXaUGqhjcu4XU9mg5F0sg6OkGJ4I
+2025/03/25 14:03:52 INFO: Found code verifier for state: 6K2ghzVZKVghErHQXaUGqhjcu4XU9mg5F0sg6OkGJ4I
+2025/03/25 14:03:52 INFO: Starting token exchange with code: TDYxSkcwZV80TGUwaVlrS1JkVU9CRVA5X1IwOEcwbW9ub0JsSTVHWTR1ZU9DOjE3NDI4OTE2MDM5OTg6MToxOmFjOjE
+2025/03/25 14:03:52 DEBUG: Token exchange request data: map[code:[TDYxSkcwZV80TGUwaVlrS1JkVU9CRVA5X1IwOEcwbW9ub0JsSTVHWTR1ZU9DOjE3NDI4OTE2MDM5OTg6MToxOmFjOjE] code_verifier:[walu9l76b9kRk-E9_w3sVSDQT3OWwLehZEPwSgkgdBI] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:03:52 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:03:53 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"T1R0OUFTODdzRjEwZjZDWHZEdzRHNlpLdmI2dGVfN21yNzQtUjB3ang2SDA0OjE3NDI4OTE2MzM3MjM6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 14:03:53 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 14:03:53 INFO: Successfully exchanged code for token and cleaned up state: 6K2ghzVZKVghErHQXaUGqhjcu4XU9mg5F0sg6OkGJ4I
+2025/03/25 14:05:09 DEBUG: Generated PKCE - Verifier: PPxCQarChU2mp4CRPldmvvZuunRFvsd1ubAEjdImTk8, Challenge: WawunnGb4-o-Uz8ocFLETMqj5DQbYma_sUX7XPM1REM, State: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:09 INFO: Stored code verifier for state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:18 INFO: Received callback with state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:18 INFO: Found code verifier for state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:18 INFO: Starting token exchange with code: Uk41T0c5MTktMHFhMWk3OFlUd3FPWTFYcGhZMDRialNSYm5yN0hxUmgyWU90OjE3NDI4OTE3MTExMjA6MTowOmFjOjE
+2025/03/25 14:05:18 DEBUG: Token exchange request data: map[code:[Uk41T0c5MTktMHFhMWk3OFlUd3FPWTFYcGhZMDRialNSYm5yN0hxUmgyWU90OjE3NDI4OTE3MTExMjA6MTowOmFjOjE] code_verifier:[PPxCQarChU2mp4CRPldmvvZuunRFvsd1ubAEjdImTk8] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:05:18 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:05:20 INFO: Received callback with state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:23 INFO: Found code verifier for state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:23 INFO: Starting token exchange with code: Uk41T0c5MTktMHFhMWk3OFlUd3FPWTFYcGhZMDRialNSYm5yN0hxUmgyWU90OjE3NDI4OTE3MTExMjA6MTowOmFjOjE
+2025/03/25 14:05:23 DEBUG: Token exchange request data: map[code:[Uk41T0c5MTktMHFhMWk3OFlUd3FPWTFYcGhZMDRialNSYm5yN0hxUmgyWU90OjE3NDI4OTE3MTExMjA6MTowOmFjOjE] code_verifier:[PPxCQarChU2mp4CRPldmvvZuunRFvsd1ubAEjdImTk8] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:05:23 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:05:25 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"ZDY3VHJlMHhJaUN2UlBtOWFvM3BUOFpfMmctc3FzUWRZYzI5STBNS05hZUpLOjE3NDI4OTE3MjQ1MjI6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 14:05:25 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 14:05:25 INFO: Successfully exchanged code for token and cleaned up state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:05:42 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 14:05:42 ERROR: Token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 14:05:42 ERROR: Failed to exchange code for token: token exchange failed with status 400: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 14:06:46 INFO: Cleaned up code verifier for state: aZq_YTyGqv00zaow0iuPwtUDr2cGz3AVRN8kYxW3niM
+2025/03/25 14:08:22 INFO: Cleaned up code verifier for state: 6K2ghzVZKVghErHQXaUGqhjcu4XU9mg5F0sg6OkGJ4I
+2025/03/25 14:10:09 INFO: Cleaned up code verifier for state: BQ-WkrEyM78UdaOsm_S016V9wqhcTs7iMZbnzlNXw2w
+2025/03/25 14:12:51 DEBUG: Generated PKCE - Verifier: kEME69iqOC0jXR7-i7MCpJVle6QV5mNiddqZYi0ig8g, Challenge: GmAbC-h4Cau8K8Aj5tfEwFoDZAg0Q5bC7kNYbaPEccA, State: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc
+2025/03/25 14:12:51 INFO: Stored code verifier for state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc
+2025/03/25 14:13:00 INFO: Received callback with state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc, code length: 91
+2025/03/25 14:13:00 INFO: Found code verifier for state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc
+2025/03/25 14:13:00 INFO: Starting token exchange with code length: 91
+2025/03/25 14:13:00 DEBUG: Token exchange request data: map[code:[NjFaVEJUQ3kyNUVXX0xCRXlCTkJONmkyckRsNmhET3dRY0R2UzJ2NVhRZ0hpOjE3NDI4OTIxNzI3MTE6MTowOmFjOjE] code_verifier:[kEME69iqOC0jXR7-i7MCpJVle6QV5mNiddqZYi0ig8g] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:13:00 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:13:04 INFO: Received callback with state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc, code length: 91
+2025/03/25 14:13:04 INFO: Found code verifier for state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc
+2025/03/25 14:13:04 INFO: Starting token exchange with code length: 91
+2025/03/25 14:13:04 DEBUG: Token exchange request data: map[code:[NjFaVEJUQ3kyNUVXX0xCRXlCTkJONmkyckRsNmhET3dRY0R2UzJ2NVhRZ0hpOjE3NDI4OTIxNzI3MTE6MTowOmFjOjE] code_verifier:[kEME69iqOC0jXR7-i7MCpJVle6QV5mNiddqZYi0ig8g] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:13:04 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:13:05 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 14:13:05 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 14:13:05 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 14:13:05 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"QmdmV01nS3lRelFfbzdMVHJYa3FaWFY2eFVNWk1UN0liaUNKTk5rT2pDS3kxOjE3NDI4OTIxODU4Njg6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 14:13:05 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 14:13:05 INFO: Successfully exchanged code for token and cleaned up state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc
+2025/03/25 14:17:51 INFO: Cleaned up code verifier for state: P4l6RYzh5JMZRiIqAv9-o-VFB3FO0XCLi5JqlwxHBEc
+2025/03/25 14:24:15 INFO: Twitter solver URL: 
+2025/03/25 14:24:15 INFO: Linera path: 
+2025/03/25 14:24:15 INFO: Starting server on :8080
+2025/03/25 14:24:25 DEBUG: Generated PKCE - Verifier: EofXiUNKJzfrAOFMHleRX9hOq637jhKF288rpg-XIaU, Challenge: 8dheSonYzMEPlU3cfv732pEiu1EN9FT8qMu45XvWgYI, State: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo
+2025/03/25 14:24:26 INFO: Stored code verifier for state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo
+2025/03/25 14:24:26 INFO: GET /twitter/auth 200 3.64514375s
+2025/03/25 14:24:34 INFO: Received callback with state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo, code length: 91
+2025/03/25 14:24:41 INFO: Found code verifier for state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo
+2025/03/25 14:24:41 INFO: Starting token exchange with code length: 91
+2025/03/25 14:24:41 INFO: Received callback with state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo, code length: 91
+2025/03/25 14:24:41 INFO: Found code verifier for state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo
+2025/03/25 14:24:41 INFO: Starting token exchange with code length: 91
+2025/03/25 14:24:41 DEBUG: Token exchange request data: map[code:[WG5scmZMT1lTZk9RYWJDTm42M203eFJBcEx2ZU1VdXRGaUVpNmw0aFg2RkRTOjE3NDI4OTI4NjgwOTE6MTowOmFjOjE] code_verifier:[EofXiUNKJzfrAOFMHleRX9hOq637jhKF288rpg-XIaU] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:24:41 DEBUG: Token exchange request data: map[code:[WG5scmZMT1lTZk9RYWJDTm42M203eFJBcEx2ZU1VdXRGaUVpNmw0aFg2RkRTOjE3NDI4OTI4NjgwOTE6MTowOmFjOjE] code_verifier:[EofXiUNKJzfrAOFMHleRX9hOq637jhKF288rpg-XIaU] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:24:41 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:24:41 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:24:53 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 14:24:53 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 14:24:53 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"aFpjdjZReW9JR1REMjJTcGd6dno1NDhURGVSVWgxMlNCYk5ENW93QlA2ZzZiOjE3NDI4OTI4ODQwMzA6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 14:24:53 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 14:24:53 INFO: GET /twitter/callback 500 22.17913375s
+2025/03/25 14:24:53 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 14:24:53 INFO: Successfully exchanged code for token and cleaned up state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo
+2025/03/25 14:24:53 INFO: GET /twitter/callback 200 19.110242875s
+2025/03/25 14:29:26 INFO: Cleaned up code verifier for state: naS70WpRf4nssSm0HRU4rxUUMaGog9eleDwkp3bOxlo
+2025/03/25 14:52:17 INFO: Twitter solver URL: 
+2025/03/25 14:52:17 INFO: Linera path: 
+2025/03/25 14:52:17 INFO: Starting server on :8080
+2025/03/25 14:52:28 DEBUG: Generated PKCE - Verifier: TQlBk9_FwEEB-J2PqY0jvGK1e9qr0Jk2EGbEoAhx8Oo, Challenge: 9NTP_UzmiQvi-89niUhBdiJYqxyB9WELfc2uxgB2VVw, State: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ
+2025/03/25 14:52:28 INFO: Stored code verifier for state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ
+2025/03/25 14:52:28 INFO: GET /twitter/auth 200 1.985892s
+2025/03/25 14:52:38 INFO: Received callback with state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ, code length: 91
+2025/03/25 14:52:38 INFO: Found code verifier for state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ
+2025/03/25 14:52:38 INFO: Starting token exchange with code length: 91
+2025/03/25 14:52:38 DEBUG: Token exchange request data: map[code:[OWdtWHBoZWV3X3pHd2ZlQ1k4Q1BWbXR5Q3dOLVlVX2V3Zm5MNzVYT2UyOTV1OjE3NDI4OTQ1NTMyNTI6MToxOmFjOjE] code_verifier:[TQlBk9_FwEEB-J2PqY0jvGK1e9qr0Jk2EGbEoAhx8Oo] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:52:38 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:52:41 INFO: Received callback with state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ, code length: 91
+2025/03/25 14:52:41 INFO: Found code verifier for state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ
+2025/03/25 14:52:41 INFO: Starting token exchange with code length: 91
+2025/03/25 14:52:41 DEBUG: Token exchange request data: map[code:[OWdtWHBoZWV3X3pHd2ZlQ1k4Q1BWbXR5Q3dOLVlVX2V3Zm5MNzVYT2UyOTV1OjE3NDI4OTQ1NTMyNTI6MToxOmFjOjE] code_verifier:[TQlBk9_FwEEB-J2PqY0jvGK1e9qr0Jk2EGbEoAhx8Oo] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 14:52:41 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 14:52:42 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 14:52:42 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 14:52:42 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 14:52:42 INFO: GET /twitter/callback 500 1.080811084s
+2025/03/25 14:52:44 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"eFRQanhtQUo2UVF0ajFMcFl2b3NGanFnZENKQ0I5d3hvVDloTzRPZ3JaaW1yOjE3NDI4OTQ1NjI1NTY6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 14:52:44 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 14:52:44 INFO: Successfully exchanged code for token and cleaned up state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ
+2025/03/25 14:52:44 INFO: GET /twitter/callback 200 9.283040417s
+2025/03/25 14:57:28 INFO: Cleaned up code verifier for state: EIFlvBzQJbR3rdhbnu6aZdfM9p3G0dIjfvtQmwaorwQ
+2025/03/25 15:45:38 INFO: Twitter solver URL: 
+2025/03/25 15:45:38 INFO: Linera path: 
+2025/03/25 15:45:38 INFO: Starting server on :8080
+2025/03/25 15:49:55 DEBUG: Generated PKCE - Verifier: 2lXu2qUHtsqr_CNadkzlTtxtnvNdZQb4Xt6tgu49SKo, Challenge: A9lP8Eh_CiDLPbKKBVCs3ZoUiUCqTeOZcS9-gKzlgKs, State: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk
+2025/03/25 15:49:55 INFO: Stored code verifier for state: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk
+2025/03/25 15:49:55 INFO: GET /twitter/auth 200 6.586313375s
+2025/03/25 15:50:09 INFO: Received callback with state: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk, code length: 91
+2025/03/25 15:50:18 INFO: Found code verifier for state: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk
+2025/03/25 15:50:18 INFO: Starting token exchange with code length: 91
+2025/03/25 15:50:18 INFO: Received callback with state: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk, code length: 91
+2025/03/25 15:50:18 DEBUG: Token exchange request data: map[code:[NC1WUkdkZnNZSE5XaTdtd2V5d3M4TlZ5MnJmVEtaQ3BESUp0T21aaTRWWXU1OjE3NDI4OTc5OTc0NjI6MToxOmFjOjE] code_verifier:[2lXu2qUHtsqr_CNadkzlTtxtnvNdZQb4Xt6tgu49SKo] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 15:50:18 INFO: Found code verifier for state: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk
+2025/03/25 15:50:18 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 15:50:18 INFO: Starting token exchange with code length: 91
+2025/03/25 15:50:40 DEBUG: Token exchange request data: map[code:[NC1WUkdkZnNZSE5XaTdtd2V5d3M4TlZ5MnJmVEtaQ3BESUp0T21aaTRWWXU1OjE3NDI4OTc5OTc0NjI6MToxOmFjOjE] code_verifier:[2lXu2qUHtsqr_CNadkzlTtxtnvNdZQb4Xt6tgu49SKo] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 15:50:40 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 15:50:55 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 15:50:57 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 15:50:57 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 15:50:58 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 15:51:00 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 15:51:00 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 15:51:03 INFO: GET /twitter/callback 500 57.9299635s
+2025/03/25 15:51:03 INFO: GET /twitter/callback 500 53.17365925s
+2025/03/25 15:53:21 DEBUG: Generated PKCE - Verifier: WKIwBQklDKrMWwBsY-iSe_b2xKTCaAGLs5J-N7rLQUE, Challenge: SUoFA6ZU-8Ua3deZc0QjDfqkh1xBuGV7WDTfJ5TaQqo, State: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo
+2025/03/25 15:53:21 INFO: Stored code verifier for state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo
+2025/03/25 15:53:21 INFO: GET /twitter/auth 200 1.884195958s
+2025/03/25 15:53:28 INFO: Received callback with state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo, code length: 91
+2025/03/25 15:53:29 INFO: Received callback with state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo, code length: 91
+2025/03/25 15:53:29 INFO: Found code verifier for state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo
+2025/03/25 15:53:29 INFO: Found code verifier for state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo
+2025/03/25 15:53:29 INFO: Starting token exchange with code length: 91
+2025/03/25 15:53:29 INFO: Starting token exchange with code length: 91
+2025/03/25 15:53:29 DEBUG: Token exchange request data: map[code:[RUh3dEFxa1VBR0xHSjg0X01RcVVHQXk2blpfOV94VlRfUWNZbnF1ZDUwcmdvOjE3NDI4OTgyMDI1NDg6MTowOmFjOjE] code_verifier:[WKIwBQklDKrMWwBsY-iSe_b2xKTCaAGLs5J-N7rLQUE] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 15:53:29 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 15:53:29 DEBUG: Token exchange request data: map[code:[RUh3dEFxa1VBR0xHSjg0X01RcVVHQXk2blpfOV94VlRfUWNZbnF1ZDUwcmdvOjE3NDI4OTgyMDI1NDg6MTowOmFjOjE] code_verifier:[WKIwBQklDKrMWwBsY-iSe_b2xKTCaAGLs5J-N7rLQUE] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 15:53:30 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 15:53:32 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 15:53:32 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 15:53:32 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 15:53:32 INFO: GET /twitter/callback 500 4.778439875s
+2025/03/25 15:53:32 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"eGpwblU1V0QyQk5vQ3N0ZXYwZjdVZTZIZ3Zqck9iUVVYZWhoYS1kV2VkdmNrOjE3NDI4OTgyMTIwNTU6MTowOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 15:53:32 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 15:53:32 INFO: Successfully exchanged code for token and cleaned up state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo
+2025/03/25 15:53:32 INFO: GET /twitter/callback 200 4.072563083s
+2025/03/25 15:54:55 INFO: Cleaned up code verifier for state: dkgUWBDdKz8lHp1LVD83ogNNXT8kmcshCF633_oNyFk
+2025/03/25 15:58:21 INFO: Cleaned up code verifier for state: YzKb0s8uI32wpjJWwe3GaNwhL9HSGKMBGYrDMb8bVYo
+2025/03/25 16:07:43 DEBUG: Generated PKCE - Verifier: CopMaVRa8x6CJmBncmt_gidQe0BWcSa3O9He7mVxGBo, Challenge: jOwwARc9IKOGBosfp_lCPUbRzE62GRuV1IsJQgf8hCA, State: qasMCmVE2mL2BxLTdKzCa0bdmr8-JLdkQlB5p9LWoXA
+2025/03/25 16:07:43 INFO: Stored code verifier for state: qasMCmVE2mL2BxLTdKzCa0bdmr8-JLdkQlB5p9LWoXA
+2025/03/25 16:07:43 INFO: GET /twitter/auth 200 3.706345417s
+2025/03/25 16:12:43 INFO: Cleaned up code verifier for state: qasMCmVE2mL2BxLTdKzCa0bdmr8-JLdkQlB5p9LWoXA
+2025/03/25 16:17:15 DEBUG: Generated PKCE - Verifier: o_RtiDfAfI96RttSrfgOACF8kMTyjeBWoaygIrYVQ_E, Challenge: CFooS0oCn2hu77FBwJUxPr5iYPiBSNbzlXTw78tEA0E, State: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8
+2025/03/25 16:17:15 INFO: Stored code verifier for state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8
+2025/03/25 16:17:15 INFO: GET /twitter/auth 200 332.583µs
+2025/03/25 16:19:09 INFO: Received callback with state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8, code length: 91
+2025/03/25 16:19:09 INFO: Found code verifier for state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8
+2025/03/25 16:19:09 INFO: Starting token exchange with code length: 91
+2025/03/25 16:19:09 DEBUG: Token exchange request data: map[code:[NFA2a3RCckpmeVpIRWdKRnhPdmFUWm04SURvOVh1WWtsYnZGNFZLQjI1X0ItOjE3NDI4OTk2MzY2OTM6MTowOmFjOjE] code_verifier:[o_RtiDfAfI96RttSrfgOACF8kMTyjeBWoaygIrYVQ_E] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:19:09 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:19:10 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:19:10 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:19:10 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:19:10 INFO: GET /twitter/callback 500 386.342459ms
+2025/03/25 16:19:19 INFO: Received callback with state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8, code length: 91
+2025/03/25 16:19:19 INFO: Found code verifier for state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8
+2025/03/25 16:19:19 INFO: Starting token exchange with code length: 91
+2025/03/25 16:19:19 DEBUG: Token exchange request data: map[code:[NFA2a3RCckpmeVpIRWdKRnhPdmFUWm04SURvOVh1WWtsYnZGNFZLQjI1X0ItOjE3NDI4OTk2MzY2OTM6MTowOmFjOjE] code_verifier:[o_RtiDfAfI96RttSrfgOACF8kMTyjeBWoaygIrYVQ_E] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:19:19 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:19:19 INFO: Received callback with state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8, code length: 91
+2025/03/25 16:19:19 INFO: Found code verifier for state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8
+2025/03/25 16:19:19 INFO: Starting token exchange with code length: 91
+2025/03/25 16:19:19 DEBUG: Token exchange request data: map[code:[NFA2a3RCckpmeVpIRWdKRnhPdmFUWm04SURvOVh1WWtsYnZGNFZLQjI1X0ItOjE3NDI4OTk2MzY2OTM6MTowOmFjOjE] code_verifier:[o_RtiDfAfI96RttSrfgOACF8kMTyjeBWoaygIrYVQ_E] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:19:19 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:19:19 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:19:19 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:19:19 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:19:19 INFO: GET /twitter/callback 500 333.630542ms
+2025/03/25 16:19:19 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:19:19 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:19:19 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:19:19 INFO: GET /twitter/callback 500 343.988583ms
+2025/03/25 16:20:46 DEBUG: Generated PKCE - Verifier: 0eJuf5V-kPlbJiuvTgh5u8WB_1AtwRsfBCa9l6t6blE, Challenge: 2vbo030-8bpXjjjfJyfTv1ypL2-MJd3jx39ONdFAZUA, State: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ
+2025/03/25 16:20:46 INFO: Stored code verifier for state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ
+2025/03/25 16:20:46 INFO: GET /twitter/auth 200 514.167µs
+2025/03/25 16:20:49 INFO: Received callback with state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ, code length: 91
+2025/03/25 16:20:49 INFO: Found code verifier for state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ
+2025/03/25 16:20:49 INFO: Starting token exchange with code length: 91
+2025/03/25 16:20:49 DEBUG: Token exchange request data: map[code:[SHpSWW9JS1EzSmJ1OVUxU1JncGdrTTFCeUtwY1ZrSzA1cHZVQ1ZPeXA2YXhrOjE3NDI4OTk4NDc1ODQ6MTowOmFjOjE] code_verifier:[0eJuf5V-kPlbJiuvTgh5u8WB_1AtwRsfBCa9l6t6blE] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:20:49 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:20:49 INFO: Received callback with state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ, code length: 91
+2025/03/25 16:20:49 INFO: Found code verifier for state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ
+2025/03/25 16:20:49 INFO: Starting token exchange with code length: 91
+2025/03/25 16:20:49 DEBUG: Token exchange request data: map[code:[SHpSWW9JS1EzSmJ1OVUxU1JncGdrTTFCeUtwY1ZrSzA1cHZVQ1ZPeXA2YXhrOjE3NDI4OTk4NDc1ODQ6MTowOmFjOjE] code_verifier:[0eJuf5V-kPlbJiuvTgh5u8WB_1AtwRsfBCa9l6t6blE] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:20:49 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:20:50 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:20:50 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:20:50 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:20:50 INFO: GET /twitter/callback 500 713.8675ms
+2025/03/25 16:20:50 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"eE5YM2VCTW9MV1NmeWN2Sm9WOGRmRXo3UHZIOTZFVUlBeVA2bmNpOWNYMHRZOjE3NDI4OTk4NTAyNzA6MTowOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 16:20:50 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 16:20:50 INFO: Successfully exchanged code for token and cleaned up state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ
+2025/03/25 16:20:50 INFO: GET /twitter/callback 200 871.491541ms
+2025/03/25 16:20:50 INFO: OPTIONS /latest_tweet 404 136.875µs
+2025/03/25 16:20:50 INFO: GET /latest_tweet 404 10.834µs
+2025/03/25 16:22:15 INFO: Cleaned up code verifier for state: 5hbRTRSvPHmZajcLJhMa6nDSeKcuXYnBfpB8Q3A91j8
+2025/03/25 16:23:10 DEBUG: Generated PKCE - Verifier: NAfgapTDcjhnvBN0asN77_N6YRkGja0U8GtcHTe7QVc, Challenge: EeID1rqjQSHgOz5h-BLOmyCcGlu34vZixcR30Ljx91o, State: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo
+2025/03/25 16:23:10 INFO: Stored code verifier for state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo
+2025/03/25 16:23:10 INFO: GET /twitter/auth 200 501.5µs
+2025/03/25 16:23:13 INFO: Received callback with state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo, code length: 91
+2025/03/25 16:23:13 INFO: Found code verifier for state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo
+2025/03/25 16:23:13 INFO: Starting token exchange with code length: 91
+2025/03/25 16:23:13 DEBUG: Token exchange request data: map[code:[RGpFU29naWlMM2Q2T0tJWU1fZmVlV3JNTFgwRVYtQzcwaTB0dndmV0tYUmV1OjE3NDI4OTk5OTE2OTY6MToxOmFjOjE] code_verifier:[NAfgapTDcjhnvBN0asN77_N6YRkGja0U8GtcHTe7QVc] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:23:13 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:23:13 INFO: Received callback with state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo, code length: 91
+2025/03/25 16:23:13 INFO: Found code verifier for state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo
+2025/03/25 16:23:13 INFO: Starting token exchange with code length: 91
+2025/03/25 16:23:13 DEBUG: Token exchange request data: map[code:[RGpFU29naWlMM2Q2T0tJWU1fZmVlV3JNTFgwRVYtQzcwaTB0dndmV0tYUmV1OjE3NDI4OTk5OTE2OTY6MToxOmFjOjE] code_verifier:[NAfgapTDcjhnvBN0asN77_N6YRkGja0U8GtcHTe7QVc] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:23:13 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:23:14 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:23:14 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:23:14 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:23:14 INFO: GET /twitter/callback 500 775.436041ms
+2025/03/25 16:23:14 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"alFMeWF0SnNDLTdycGJWeFNVaXZWbzFSYjNXcFFVMFpyeW1aODZkdmY3M2JGOjE3NDI4OTk5OTQ2ODQ6MTowOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 16:23:14 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 16:23:14 INFO: Successfully exchanged code for token and cleaned up state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo
+2025/03/25 16:23:14 INFO: GET /twitter/callback 200 880.652083ms
+2025/03/25 16:23:14 INFO: OPTIONS /latest_tweet 404 88.625µs
+2025/03/25 16:23:14 INFO: GET /latest_tweet 404 18.833µs
+2025/03/25 16:25:46 INFO: Cleaned up code verifier for state: b0Qzr5ARiDV7rNeeo3BB0U1VNQf3jyYCXaaYUcEgBSQ
+2025/03/25 16:28:10 INFO: Cleaned up code verifier for state: 2BBKUw2J8ohG3DzL6_w52qHjhjMayw0GQPl4mvBmdGo
+2025/03/25 16:31:32 DEBUG: Generated PKCE - Verifier: 0vyI9zCfhKHWWroEPUVLIbGdmmTXSsDtPTwNZnKZfco, Challenge: ajgA8m7gY3Rm_uhwNERVwspiiKoOW_K3PTLF6itOp5U, State: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8
+2025/03/25 16:31:32 INFO: Stored code verifier for state: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8
+2025/03/25 16:31:32 INFO: GET /twitter/auth 200 783.542µs
+2025/03/25 16:31:36 INFO: Received callback with state: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8, code length: 91
+2025/03/25 16:31:36 INFO: Found code verifier for state: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8
+2025/03/25 16:31:36 INFO: Starting token exchange with code length: 91
+2025/03/25 16:31:36 DEBUG: Token exchange request data: map[code:[SVgzN25idFhNYUxvaHppMk5zZTZ2NHJpM2ZmN1pIVk9obFprc2xSOXQxLUExOjE3NDI5MDA0OTQyNjU6MTowOmFjOjE] code_verifier:[0vyI9zCfhKHWWroEPUVLIbGdmmTXSsDtPTwNZnKZfco] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:31:36 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:31:39 INFO: Received callback with state: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8, code length: 91
+2025/03/25 16:31:39 INFO: Found code verifier for state: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8
+2025/03/25 16:31:39 INFO: Starting token exchange with code length: 91
+2025/03/25 16:31:39 DEBUG: Token exchange request data: map[code:[SVgzN25idFhNYUxvaHppMk5zZTZ2NHJpM2ZmN1pIVk9obFprc2xSOXQxLUExOjE3NDI5MDA0OTQyNjU6MTowOmFjOjE] code_verifier:[0vyI9zCfhKHWWroEPUVLIbGdmmTXSsDtPTwNZnKZfco] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:31:39 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:31:40 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:31:40 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:31:40 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:31:40 INFO: GET /twitter/callback 500 3.689156042s
+2025/03/25 16:31:40 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"SG5BUWlGWEZLby1DSTEzVlNqaEdPR0UzVktLWWxNajBURVhSTWlzUDBFOE5MOjE3NDI5MDA1MDAyMjk6MTowOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 16:31:40 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 16:31:40 INFO: Successfully exchanged code for token and cleaned up state: 10_NhV6I8_Bi08obBNEFmDSPkVim-3rviIIzZCA13g8
+2025/03/25 16:31:40 INFO: GET /twitter/callback 200 894.907667ms
+2025/03/25 16:31:40 INFO: OPTIONS /latest_tweet 404 88.625µs
+2025/03/25 16:31:40 INFO: GET /latest_tweet 404 47.708µs
+2025/03/25 16:31:58 INFO: Twitter solver URL: 
+2025/03/25 16:31:58 INFO: Linera path: 
+2025/03/25 16:31:58 INFO: Starting server on :8080
+2025/03/25 16:32:14 DEBUG: Generated PKCE - Verifier: bAKoEBfa6Ivdyj2zWumtEjEX8Kglkzy6U2PFIkvxPrE, Challenge: rC8GmQvi2ubZmvb0_82kFceLHD6eoJP9ZTZPRcedzws, State: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM
+2025/03/25 16:32:14 INFO: Stored code verifier for state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM
+2025/03/25 16:32:14 INFO: GET /twitter/auth 200 857.25µs
+2025/03/25 16:32:17 INFO: Received callback with state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM, code length: 91
+2025/03/25 16:32:17 INFO: Found code verifier for state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM
+2025/03/25 16:32:17 INFO: Starting token exchange with code length: 91
+2025/03/25 16:32:17 DEBUG: Token exchange request data: map[code:[aTVHdDI5cUgwVUtlWkFXUk9vUWhpRDFjeThLbTl5eWVYNERWM2JlXzVvSmxkOjE3NDI5MDA1MzUzNDg6MToxOmFjOjE] code_verifier:[bAKoEBfa6Ivdyj2zWumtEjEX8Kglkzy6U2PFIkvxPrE] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:32:17 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:32:17 INFO: Received callback with state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM, code length: 91
+2025/03/25 16:32:17 INFO: Found code verifier for state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM
+2025/03/25 16:32:17 INFO: Starting token exchange with code length: 91
+2025/03/25 16:32:17 DEBUG: Token exchange request data: map[code:[aTVHdDI5cUgwVUtlWkFXUk9vUWhpRDFjeThLbTl5eWVYNERWM2JlXzVvSmxkOjE3NDI5MDA1MzUzNDg6MToxOmFjOjE] code_verifier:[bAKoEBfa6Ivdyj2zWumtEjEX8Kglkzy6U2PFIkvxPrE] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:32:17 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:32:17 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:32:17 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:32:17 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:32:17 INFO: GET /twitter/callback 500 571.331875ms
+2025/03/25 16:32:17 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"d04ybGVDTVgzRmR2cGVWT3RycWlhbkY2VWhwcU4yRjlZM2paTHViMC1PZ2UxOjE3NDI5MDA1Mzc1Njk6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 16:32:17 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 16:32:17 INFO: Successfully exchanged code for token and cleaned up state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM
+2025/03/25 16:32:17 INFO: GET /twitter/callback 200 651.669792ms
+2025/03/25 16:32:17 INFO: OPTIONS /latest_tweet 405 175.333µs
+2025/03/25 16:32:29 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 16:32:32 INFO: GET /latest_tweet 500 14.399120583s
+2025/03/25 16:37:14 INFO: Cleaned up code verifier for state: K8UwTg2tjd55500XCEx0IMZV4trZq8Ce1KshYkn3PSM
+2025/03/25 16:38:01 DEBUG: Generated PKCE - Verifier: HxVniMHYCROt_ipjiIs-m0GSvFCH_zuLlgE5B9j0ed0, Challenge: K2T6EBB8qIHfea-nMbjuwxVdUTBG7zgZNyAw4WIdSX0, State: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U
+2025/03/25 16:38:01 INFO: Stored code verifier for state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U
+2025/03/25 16:38:01 INFO: GET /twitter/auth 200 1.155625ms
+2025/03/25 16:38:05 INFO: Received callback with state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U, code length: 91
+2025/03/25 16:38:05 INFO: Found code verifier for state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U
+2025/03/25 16:38:05 INFO: Starting token exchange with code length: 91
+2025/03/25 16:38:05 DEBUG: Token exchange request data: map[code:[SkdGQk5RdlBBcDN3b1A5Q3NqV3AxU1VYbThSX25reURxR3ZYMVNNamdkaWcxOjE3NDI5MDA4ODI2MDc6MTowOmFjOjE] code_verifier:[HxVniMHYCROt_ipjiIs-m0GSvFCH_zuLlgE5B9j0ed0] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:38:05 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:38:05 INFO: Received callback with state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U, code length: 91
+2025/03/25 16:38:05 INFO: Found code verifier for state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U
+2025/03/25 16:38:05 INFO: Starting token exchange with code length: 91
+2025/03/25 16:38:05 DEBUG: Token exchange request data: map[code:[SkdGQk5RdlBBcDN3b1A5Q3NqV3AxU1VYbThSX25reURxR3ZYMVNNamdkaWcxOjE3NDI5MDA4ODI2MDc6MTowOmFjOjE] code_verifier:[HxVniMHYCROt_ipjiIs-m0GSvFCH_zuLlgE5B9j0ed0] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 16:38:05 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 16:38:05 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 16:38:05 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:38:05 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 16:38:05 INFO: GET /twitter/callback 500 531.525916ms
+2025/03/25 16:38:05 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"UjFtNzdPQlpEcHhFaW9OOEZIRmRZREdzR2Q3Z1JOUG1iU3lSeFBHTTFhVFpCOjE3NDI5MDA4ODU1ODA6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 16:38:05 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 16:38:05 INFO: Successfully exchanged code for token and cleaned up state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U
+2025/03/25 16:38:05 INFO: GET /twitter/callback 200 600.599ms
+2025/03/25 16:38:05 INFO: OPTIONS /latest_tweet 405 74.541µs
+2025/03/25 16:39:31 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 16:39:31 INFO: GET /latest_tweet 500 1m26.093604042s
+2025/03/25 16:43:01 INFO: Cleaned up code verifier for state: f-wEm2hnoE_oIukWCYLPN8emGdqoiOL3BBoLbCHc41U
+2025/03/25 17:04:40 DEBUG: Generated PKCE - Verifier: in8PNwwWAlM-THMD6qKNKdQKOX7gNuogR6Qh1xV1Cd0, Challenge: MT1aTpeHDBYO21ygKrx0O0Tk5_jLfsmpL4HZ0bqz2js, State: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw
+2025/03/25 17:04:40 INFO: Stored code verifier for state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw
+2025/03/25 17:04:40 INFO: GET /twitter/auth 200 788.166µs
+2025/03/25 17:04:43 INFO: Received callback with state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw, code length: 91
+2025/03/25 17:04:43 INFO: Found code verifier for state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw
+2025/03/25 17:04:43 INFO: Starting token exchange with code length: 91
+2025/03/25 17:04:43 DEBUG: Token exchange request data: map[code:[WS1zUEE5UVJmVVdQY3F2WWZNYzIwSTE0MGxNYS1YOXVnOWd0TTBZQ0RtMEQwOjE3NDI5MDI0ODIyNTg6MTowOmFjOjE] code_verifier:[in8PNwwWAlM-THMD6qKNKdQKOX7gNuogR6Qh1xV1Cd0] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:04:43 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:04:43 INFO: Received callback with state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw, code length: 91
+2025/03/25 17:04:43 INFO: Found code verifier for state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw
+2025/03/25 17:04:43 INFO: Starting token exchange with code length: 91
+2025/03/25 17:04:43 DEBUG: Token exchange request data: map[code:[WS1zUEE5UVJmVVdQY3F2WWZNYzIwSTE0MGxNYS1YOXVnOWd0TTBZQ0RtMEQwOjE3NDI5MDI0ODIyNTg6MTowOmFjOjE] code_verifier:[in8PNwwWAlM-THMD6qKNKdQKOX7gNuogR6Qh1xV1Cd0] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:04:43 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:04:44 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:04:44 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:04:44 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:04:44 INFO: GET /twitter/callback 500 567.017792ms
+2025/03/25 17:04:44 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"cS1PY0hkVFVyNTFLZ3JNdVZySjFHcGd0Nkg3SHBFMzl6Mi0xYzdkOXVZZlpHOjE3NDI5MDI0ODQ0NzM6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 17:04:44 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 17:04:44 INFO: Successfully exchanged code for token and cleaned up state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw
+2025/03/25 17:04:44 INFO: GET /twitter/callback 200 645.641083ms
+2025/03/25 17:04:44 INFO: OPTIONS /latest_tweet 405 459.25µs
+2025/03/25 17:04:45 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 17:04:45 INFO: GET /latest_tweet 500 570.201ms
+2025/03/25 17:09:40 INFO: Cleaned up code verifier for state: YthW3ZudgBJahdiNqS5Heu2qmoRNWu6vEei61LsGAhw
+2025/03/25 17:25:32 DEBUG: Generated PKCE - Verifier: zjWv8iGUpUo1SVO4iKPOhpZTaunhmlkHfN5xZaESX1s, Challenge: o93pSSiqpwD7qfohtTyAZsVmiQubeDnbMjerYAvBHEs, State: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM
+2025/03/25 17:25:32 INFO: Stored code verifier for state: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM
+2025/03/25 17:25:32 INFO: GET /twitter/auth 200 6.229875ms
+2025/03/25 17:25:36 INFO: Received callback with state: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM, code length: 91
+2025/03/25 17:25:36 INFO: Found code verifier for state: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM
+2025/03/25 17:25:36 INFO: Starting token exchange with code length: 91
+2025/03/25 17:25:36 DEBUG: Token exchange request data: map[code:[akFpczRiek0zanIyMUxHVWVuYThoeGk4MlRQVWlOYTdCWXN3bjNUWWNob1ptOjE3NDI5MDM3MzM5NjM6MTowOmFjOjE] code_verifier:[zjWv8iGUpUo1SVO4iKPOhpZTaunhmlkHfN5xZaESX1s] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:25:36 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:25:36 INFO: Received callback with state: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM, code length: 91
+2025/03/25 17:25:36 INFO: Found code verifier for state: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM
+2025/03/25 17:25:36 INFO: Starting token exchange with code length: 91
+2025/03/25 17:25:36 DEBUG: Token exchange request data: map[code:[akFpczRiek0zanIyMUxHVWVuYThoeGk4MlRQVWlOYTdCWXN3bjNUWWNob1ptOjE3NDI5MDM3MzM5NjM6MTowOmFjOjE] code_verifier:[zjWv8iGUpUo1SVO4iKPOhpZTaunhmlkHfN5xZaESX1s] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:25:36 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:25:36 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:25:36 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:25:36 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:25:36 INFO: GET /twitter/callback 500 600.428042ms
+2025/03/25 17:25:36 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"N2NXOUk5WU9RQTZFcDZYTWpyNWcxUVNKSnFKNFJFcHVKYUhQWHVZRWNvWXF4OjE3NDI5MDM3MzY0NzA6MTowOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 17:25:36 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 17:25:36 INFO: Successfully exchanged code for token and cleaned up state: 8xtAeH3SM81M0NKroWxhrDLkuQm49qlMMhvr9pF4zMM
+2025/03/25 17:25:36 INFO: GET /twitter/callback 200 602.977292ms
+2025/03/25 17:25:36 INFO: OPTIONS /latest_tweet 405 57.25µs
+2025/03/25 17:25:37 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 17:25:37 INFO: GET /latest_tweet 500 588.059666ms
+2025/03/25 17:26:46 DEBUG: Generated PKCE - Verifier: WaHS8BpNvwz2SVHuyM3Cz0tKzImOt23zmM54tfNfNMM, Challenge: pr9PSG6g7Wh14xsMn6UwZcrEYd9_MXW4Qk8n-fo4-ds, State: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74
+2025/03/25 17:26:46 INFO: Stored code verifier for state: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74
+2025/03/25 17:26:46 INFO: GET /twitter/auth 200 613.416µs
+2025/03/25 17:26:52 INFO: Received callback with state: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74, code length: 91
+2025/03/25 17:26:52 INFO: Found code verifier for state: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74
+2025/03/25 17:26:52 INFO: Starting token exchange with code length: 91
+2025/03/25 17:26:52 DEBUG: Token exchange request data: map[code:[M3JSelhuQ28yc1ZUcmFLdi0wU3RsTzV2VkdnQlhZRWJDS3ZqTkYxSl9MOFYyOjE3NDI5MDM4MDgzNTI6MTowOmFjOjE] code_verifier:[WaHS8BpNvwz2SVHuyM3Cz0tKzImOt23zmM54tfNfNMM] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:26:52 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:26:52 INFO: Received callback with state: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74, code length: 91
+2025/03/25 17:26:52 INFO: Found code verifier for state: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74
+2025/03/25 17:26:52 INFO: Starting token exchange with code length: 91
+2025/03/25 17:26:52 DEBUG: Token exchange request data: map[code:[M3JSelhuQ28yc1ZUcmFLdi0wU3RsTzV2VkdnQlhZRWJDS3ZqTkYxSl9MOFYyOjE3NDI5MDM4MDgzNTI6MTowOmFjOjE] code_verifier:[WaHS8BpNvwz2SVHuyM3Cz0tKzImOt23zmM54tfNfNMM] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:26:52 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:26:52 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:26:52 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:26:52 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:26:52 INFO: GET /twitter/callback 500 502.054209ms
+2025/03/25 17:26:52 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"YnNlcTVOaEJvanowcks0eDFyVEZRbWZLRl9QTUVxdGVVRC1teU1TOXI1YVlZOjE3NDI5MDM4MTI4MjQ6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 17:26:52 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 17:26:52 INFO: Successfully exchanged code for token and cleaned up state: E2xlIGkufMDHV5IdG-ZvDocnNhCN1hY7J6cMZiHVu74
+2025/03/25 17:26:52 INFO: GET /twitter/callback 200 568.5095ms
+2025/03/25 17:26:52 INFO: OPTIONS /latest_tweet 405 43.667µs
+2025/03/25 17:26:58 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 17:26:58 INFO: GET /latest_tweet 500 5.93110525s
+2025/03/25 17:27:18 INFO: Twitter solver URL: 
+2025/03/25 17:27:18 INFO: Linera path: 
+2025/03/25 17:27:18 INFO: Starting server on :8080
+2025/03/25 17:27:26 DEBUG: Generated PKCE - Verifier: Nw0Ucfm4JtgP-0gjzAfmNV5wkOmFry4eEOWqq7xC3us, Challenge: LfcaKWMHKV_SveWyZXBi2k7WkvP_WERngkliGohJyJs, State: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY
+2025/03/25 17:27:26 INFO: Stored code verifier for state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY
+2025/03/25 17:27:26 INFO: GET /twitter/auth 200 595.667µs
+2025/03/25 17:27:29 INFO: Received callback with state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY, code length: 91
+2025/03/25 17:27:29 INFO: Found code verifier for state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY
+2025/03/25 17:27:29 INFO: Starting token exchange with code length: 91
+2025/03/25 17:27:29 DEBUG: Token exchange request data: map[code:[Q3lSWGxKbHhlSjZ2N0dkZ2phTzJVd1NidjQ0UlhrWFk3elFJR2VMQUtYd3hQOjE3NDI5MDM4NDgwNDg6MToxOmFjOjE] code_verifier:[Nw0Ucfm4JtgP-0gjzAfmNV5wkOmFry4eEOWqq7xC3us] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:27:29 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:27:29 INFO: Received callback with state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY, code length: 91
+2025/03/25 17:27:29 INFO: Found code verifier for state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY
+2025/03/25 17:27:29 INFO: Starting token exchange with code length: 91
+2025/03/25 17:27:29 DEBUG: Token exchange request data: map[code:[Q3lSWGxKbHhlSjZ2N0dkZ2phTzJVd1NidjQ0UlhrWFk3elFJR2VMQUtYd3hQOjE3NDI5MDM4NDgwNDg6MToxOmFjOjE] code_verifier:[Nw0Ucfm4JtgP-0gjzAfmNV5wkOmFry4eEOWqq7xC3us] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:27:29 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:27:30 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:27:30 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:27:30 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:27:30 INFO: GET /twitter/callback 500 550.183625ms
+2025/03/25 17:27:30 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"N3NKWmtQbTdFWVh3M1ZEUFFHYmtvMFc5SjBtUTYxWF94Y1IxenRyZmxDREwzOjE3NDI5MDM4NTAxNjc6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 17:27:30 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 17:27:30 INFO: Successfully exchanged code for token and cleaned up state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY
+2025/03/25 17:27:30 INFO: GET /twitter/callback 200 631.619667ms
+2025/03/25 17:27:30 INFO: OPTIONS /latest_tweet 405 115.417µs
+2025/03/25 17:32:38 INFO: Cleaned up code verifier for state: skW4WK_5z10p4MV5jSuGc8RLRw1ZWG5PaAOQNgC5vlY
+2025/03/25 17:32:39 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 17:32:39 INFO: GET /latest_tweet 500 5m8.946188542s
+2025/03/25 17:37:51 DEBUG: Generated PKCE - Verifier: pBwGKylpPeOq9Rw-swqoqZXbkkLd7Ghg6NyRhwWisAM, Challenge: rt-Jawh4xqVvmY0p54jIbguaK71EHv2yTg1TktQY-pw, State: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc
+2025/03/25 17:37:51 INFO: Stored code verifier for state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc
+2025/03/25 17:37:51 INFO: GET /twitter/auth 200 715.417µs
+2025/03/25 17:37:55 INFO: Received callback with state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc, code length: 91
+2025/03/25 17:37:55 INFO: Found code verifier for state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc
+2025/03/25 17:37:55 INFO: Starting token exchange with code length: 91
+2025/03/25 17:37:55 DEBUG: Token exchange request data: map[code:[ZzMwWXA3bno2aDU5b291V0UyNThoaGpsbkV3MUcxczZoell6NExCM2poNFJROjE3NDI5MDQ0NzMyNzc6MTowOmFjOjE] code_verifier:[pBwGKylpPeOq9Rw-swqoqZXbkkLd7Ghg6NyRhwWisAM] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:37:55 INFO: Received callback with state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc, code length: 91
+2025/03/25 17:37:55 INFO: Found code verifier for state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc
+2025/03/25 17:37:55 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:37:55 INFO: Starting token exchange with code length: 91
+2025/03/25 17:37:55 DEBUG: Token exchange request data: map[code:[ZzMwWXA3bno2aDU5b291V0UyNThoaGpsbkV3MUcxczZoell6NExCM2poNFJROjE3NDI5MDQ0NzMyNzc6MTowOmFjOjE] code_verifier:[pBwGKylpPeOq9Rw-swqoqZXbkkLd7Ghg6NyRhwWisAM] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:37:55 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:37:56 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:37:56 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:37:56 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:37:56 INFO: GET /twitter/callback 500 805.948125ms
+2025/03/25 17:37:56 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"elhhTnJQQVYtZ0Z2SkExZkR3NEI3dFlpQzVyZnNVX3phV3c0TWdCOFhnenBwOjE3NDI5MDQ0NzYzMTg6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 17:37:56 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 17:37:56 INFO: Successfully exchanged code for token and cleaned up state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc
+2025/03/25 17:37:56 INFO: GET /twitter/callback 200 913.157416ms
+2025/03/25 17:37:56 INFO: OPTIONS /latest_tweet 405 57.209µs
+2025/03/25 17:39:05 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 17:39:05 INFO: GET /latest_tweet 500 1m8.886479208s
+2025/03/25 17:40:13 DEBUG: Generated PKCE - Verifier: cPNy1EJVyJeQq4BYXvBC5eh1NOz_ELtKQ606sqr0uIc, Challenge: W9VU9Y6a2dhwStABT_suLWHybY8gr8iLZs5FQTh2H5A, State: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 17:40:13 INFO: Stored code verifier for state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 17:40:13 INFO: GET /twitter/auth 200 221.708µs
+2025/03/25 17:40:16 INFO: Received callback with state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI, code length: 91
+2025/03/25 17:40:16 INFO: Found code verifier for state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 17:40:16 INFO: Starting token exchange with code length: 91
+2025/03/25 17:40:16 DEBUG: Token exchange request data: map[code:[QUs5TjdLd2FsSks3Z3B4c1ZucWdEXzFUZGtmeVlRQ1Z5V2dTYVhES1diTmFWOjE3NDI5MDQ2MTQ5NzE6MTowOmFjOjE] code_verifier:[cPNy1EJVyJeQq4BYXvBC5eh1NOz_ELtKQ606sqr0uIc] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:40:16 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:40:16 INFO: Received callback with state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI, code length: 91
+2025/03/25 17:40:16 INFO: Found code verifier for state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 17:40:16 INFO: Starting token exchange with code length: 91
+2025/03/25 17:40:16 DEBUG: Token exchange request data: map[code:[QUs5TjdLd2FsSks3Z3B4c1ZucWdEXzFUZGtmeVlRQ1Z5V2dTYVhES1diTmFWOjE3NDI5MDQ2MTQ5NzE6MTowOmFjOjE] code_verifier:[cPNy1EJVyJeQq4BYXvBC5eh1NOz_ELtKQ606sqr0uIc] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:40:16 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:40:16 INFO: Received callback with state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI, code length: 91
+2025/03/25 17:40:16 INFO: Found code verifier for state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 17:40:16 INFO: Starting token exchange with code length: 91
+2025/03/25 17:40:16 DEBUG: Token exchange request data: map[code:[QUs5TjdLd2FsSks3Z3B4c1ZucWdEXzFUZGtmeVlRQ1Z5V2dTYVhES1diTmFWOjE3NDI5MDQ2MTQ5NzE6MTowOmFjOjE] code_verifier:[cPNy1EJVyJeQq4BYXvBC5eh1NOz_ELtKQ606sqr0uIc] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 17:40:16 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 17:40:17 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:40:17 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:40:17 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:40:17 INFO: GET /twitter/callback 500 543.103667ms
+2025/03/25 17:40:17 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 17:40:17 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:40:17 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 17:40:17 INFO: GET /twitter/callback 500 549.8625ms
+2025/03/25 17:40:17 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"bmNfcDVSUHNfVlU0UHVGV3ZrTElSdFNUUGNqdF84bHk1VUxyU1FWbzdVUXJxOjE3NDI5MDQ2MTcxNjQ6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 17:40:17 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 17:40:17 INFO: Successfully exchanged code for token and cleaned up state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 17:40:17 INFO: GET /twitter/callback 200 601.65ms
+2025/03/25 17:40:17 INFO: OPTIONS /latest_tweet 405 58.875µs
+2025/03/25 17:43:08 INFO: Cleaned up code verifier for state: 9cCUyTNjiWyqSaGoTNE5blv1WFsrSjWxSF3lsy1qZIc
+2025/03/25 18:40:33 INFO: Cleaned up code verifier for state: ZPwAPLZdpcugQuv4LstNu14xpXSDZOs-lti9EWUa1WI
+2025/03/25 18:40:36 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 18:40:36 INFO: GET /latest_tweet 500 1h0m19.26375625s
+2025/03/25 19:34:32 DEBUG: Generated PKCE - Verifier: WMZK4kreo5AMsgwaaFg4AWBuxC9NAZpQ17YTNpNVfRU, Challenge: 8lv0Okw2qXRhQvzgOFBEtThfd693N4aR2CvNQPWqdjE, State: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI
+2025/03/25 19:34:32 INFO: Stored code verifier for state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI
+2025/03/25 19:34:32 INFO: GET /twitter/auth 200 1.724292ms
+2025/03/25 19:34:35 INFO: Received callback with state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI, code length: 91
+2025/03/25 19:34:35 INFO: Found code verifier for state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI
+2025/03/25 19:34:35 INFO: Starting token exchange with code length: 91
+2025/03/25 19:34:35 DEBUG: Token exchange request data: map[code:[ZGJma1pYMFVvbmZWekgydWNsQXlvLTF3bFlhc2NsaWgtUnpkOERiTkJHdjdlOjE3NDI5MTE0NzM4MDc6MTowOmFjOjE] code_verifier:[WMZK4kreo5AMsgwaaFg4AWBuxC9NAZpQ17YTNpNVfRU] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:34:35 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:34:35 INFO: Received callback with state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI, code length: 91
+2025/03/25 19:34:35 INFO: Found code verifier for state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI
+2025/03/25 19:34:35 INFO: Starting token exchange with code length: 91
+2025/03/25 19:34:35 DEBUG: Token exchange request data: map[code:[ZGJma1pYMFVvbmZWekgydWNsQXlvLTF3bFlhc2NsaWgtUnpkOERiTkJHdjdlOjE3NDI5MTE0NzM4MDc6MTowOmFjOjE] code_verifier:[WMZK4kreo5AMsgwaaFg4AWBuxC9NAZpQ17YTNpNVfRU] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:34:35 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:34:35 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 19:34:35 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:34:35 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:34:35 INFO: GET /twitter/callback 500 546.86875ms
+2025/03/25 19:34:36 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"UWd0cmhZWExQZ05HTmZoMFd0MFNHREFEa0xsZDIzTzlIQ2t2ZDc1czg0QVp2OjE3NDI5MTE0NzU5MTc6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 19:34:36 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 19:34:36 INFO: Successfully exchanged code for token and cleaned up state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI
+2025/03/25 19:34:36 INFO: GET /twitter/callback 200 617.306167ms
+2025/03/25 19:34:36 INFO: OPTIONS /latest_tweet 405 88.375µs
+2025/03/25 19:38:09 ERROR: Failed to fetch latest tweet: no tweets found
+2025/03/25 19:38:09 INFO: GET /latest_tweet 500 3m33.499893208s
+2025/03/25 19:39:32 INFO: Cleaned up code verifier for state: Omiy-rKXpLIBQYV3QsjmaXJl-hnIP5wnRCusNg1bDXI
+2025/03/25 19:47:19 INFO: Twitter solver URL: 
+2025/03/25 19:47:19 INFO: Linera path: 
+2025/03/25 19:47:19 INFO: Starting server on :8080
+2025/03/25 19:47:49 DEBUG: Generated PKCE - Verifier: eG5oSRFrSOpzQYDzth5PkJG4U1pGBC_91QEFMEKjCcg, Challenge: L5dSGIIrYXZPxwBh75okmxMQOTKWbVcD5VC-LHmw28c, State: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:47:49 INFO: Stored code verifier for state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:47:49 INFO: GET /twitter/auth 200 1.819333ms
+2025/03/25 19:47:53 INFO: Received callback with state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q, code length: 91
+2025/03/25 19:47:53 INFO: Found code verifier for state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:47:53 INFO: Starting token exchange with code length: 91
+2025/03/25 19:47:53 DEBUG: Token exchange request data: map[code:[VHpHb2l4YzBSMXRRODlsX1ZNelBtVmFTZVZ2cnRfUTVyVnN2WUFGNlhtTi1jOjE3NDI5MTIyNzE1NjM6MToxOmFjOjE] code_verifier:[eG5oSRFrSOpzQYDzth5PkJG4U1pGBC_91QEFMEKjCcg] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:47:53 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:47:53 INFO: Received callback with state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q, code length: 91
+2025/03/25 19:47:53 INFO: Found code verifier for state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:47:53 INFO: Starting token exchange with code length: 91
+2025/03/25 19:47:53 DEBUG: Token exchange request data: map[code:[VHpHb2l4YzBSMXRRODlsX1ZNelBtVmFTZVZ2cnRfUTVyVnN2WUFGNlhtTi1jOjE3NDI5MTIyNzE1NjM6MToxOmFjOjE] code_verifier:[eG5oSRFrSOpzQYDzth5PkJG4U1pGBC_91QEFMEKjCcg] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:47:53 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:47:53 INFO: Received callback with state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q, code length: 91
+2025/03/25 19:47:53 INFO: Found code verifier for state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:47:53 INFO: Starting token exchange with code length: 91
+2025/03/25 19:47:53 DEBUG: Token exchange request data: map[code:[VHpHb2l4YzBSMXRRODlsX1ZNelBtVmFTZVZ2cnRfUTVyVnN2WUFGNlhtTi1jOjE3NDI5MTIyNzE1NjM6MToxOmFjOjE] code_verifier:[eG5oSRFrSOpzQYDzth5PkJG4U1pGBC_91QEFMEKjCcg] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:47:53 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:47:53 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 19:47:53 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:47:53 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:47:53 INFO: GET /twitter/callback 500 561.796875ms
+2025/03/25 19:47:53 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 19:47:53 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:47:53 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:47:53 INFO: GET /twitter/callback 500 560.796875ms
+2025/03/25 19:47:53 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"VFphV2tNX2lwdkQ1NzJRQTBIV2w5X21pbmU0YjNMRk43WDFjWkk4WDctRUItOjE3NDI5MTIyNzM4MDM6MTowOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 19:47:53 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 19:47:53 INFO: Successfully exchanged code for token and cleaned up state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:47:53 INFO: GET /twitter/callback 200 613.470042ms
+2025/03/25 19:47:53 INFO: OPTIONS /latest_tweet 405 144.5µs
+2025/03/25 19:48:13 ERROR: Failed to fetch latest tweet: failed to get latest tweet: failed to get tweets: received 429 status code, response: {"title":"Too Many Requests","detail":"Too Many Requests","type":"about:blank","status":429}
+2025/03/25 19:48:13 INFO: GET /latest_tweet 500 19.532190958s
+2025/03/25 19:51:22 DEBUG: Generated PKCE - Verifier: 0h4xQs1YKsjk4srnxZJYMk7D0_6YRd8bsSgp1ddv5yI, Challenge: LAQ2MB3ylxXCL7HV3HnmSNvS5tNDD54FgfgRr2ZoXnE, State: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
+2025/03/25 19:51:22 INFO: Stored code verifier for state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
+2025/03/25 19:51:22 INFO: GET /twitter/auth 200 383.667µs
+2025/03/25 19:51:25 INFO: Received callback with state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8, code length: 91
+2025/03/25 19:51:25 INFO: Found code verifier for state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
+2025/03/25 19:51:25 INFO: Starting token exchange with code length: 91
+2025/03/25 19:51:25 DEBUG: Token exchange request data: map[code:[dnZyMHZrQlVva3Z6QWRoRHAtTUpEakpJZDNKNFZGQ1hPRWJnUHZKWTNtTHhKOjE3NDI5MTI0ODM2Nzk6MToxOmFjOjE] code_verifier:[0h4xQs1YKsjk4srnxZJYMk7D0_6YRd8bsSgp1ddv5yI] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:51:25 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:51:25 INFO: Received callback with state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8, code length: 91
+2025/03/25 19:51:25 INFO: Found code verifier for state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
+2025/03/25 19:51:25 INFO: Starting token exchange with code length: 91
+2025/03/25 19:51:25 DEBUG: Token exchange request data: map[code:[dnZyMHZrQlVva3Z6QWRoRHAtTUpEakpJZDNKNFZGQ1hPRWJnUHZKWTNtTHhKOjE3NDI5MTI0ODM2Nzk6MToxOmFjOjE] code_verifier:[0h4xQs1YKsjk4srnxZJYMk7D0_6YRd8bsSgp1ddv5yI] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:51:25 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:51:25 INFO: Received callback with state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8, code length: 91
+2025/03/25 19:51:25 INFO: Found code verifier for state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
+2025/03/25 19:51:25 INFO: Starting token exchange with code length: 91
+2025/03/25 19:51:25 DEBUG: Token exchange request data: map[code:[dnZyMHZrQlVva3Z6QWRoRHAtTUpEakpJZDNKNFZGQ1hPRWJnUHZKWTNtTHhKOjE3NDI5MTI0ODM2Nzk6MToxOmFjOjE] code_verifier:[0h4xQs1YKsjk4srnxZJYMk7D0_6YRd8bsSgp1ddv5yI] grant_type:[authorization_code] redirect_uri:[http://localhost:5173/twitter/callback]]
+2025/03/25 19:51:25 DEBUG: Token exchange request headers: map[Authorization:[Basic WVZwRmREUmZNME0wWXpGNVRXeEVTMHQ2VlhBNk1UcGphUTpMOXJXUGhES1V6U3RfVWJzTTB6amptQWFXMVEyMVNxeC03SlVXVEpsVW1BcTlIb2t3Ng==] Content-Type:[application/x-www-form-urlencoded]]
+2025/03/25 19:51:25 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 19:51:25 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:51:25 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:51:25 INFO: GET /twitter/callback 500 533.595375ms
+2025/03/25 19:51:25 DEBUG: Token exchange response status: 400, body: {"error":"invalid_request","error_description":"Value passed for the authorization code was invalid."}
+2025/03/25 19:51:25 ERROR: Token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:51:25 ERROR: Failed to exchange code for token: token exchange failed: invalid_request - Value passed for the authorization code was invalid.
+2025/03/25 19:51:25 INFO: GET /twitter/callback 500 563.580875ms
+2025/03/25 19:51:25 DEBUG: Token exchange response status: 200, body: {"token_type":"bearer","expires_in":7200,"access_token":"VFhjOFNpNkhXalgyOVUzTGl4UF9oUk1FSGd5MW42dHlSVWl3eXlkRFJ4TG1BOjE3NDI5MTI0ODU4MDQ6MToxOmF0OjE","scope":"tweet.write users.read tweet.read"}
+2025/03/25 19:51:25 INFO: Successfully exchanged code for token. Expires in: 7200 seconds
+2025/03/25 19:51:25 INFO: Successfully exchanged code for token and cleaned up state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
+2025/03/25 19:51:25 INFO: GET /twitter/callback 200 631.695833ms
+2025/03/25 19:51:25 INFO: OPTIONS /latest_tweet 405 80.584µs
+2025/03/25 19:51:29 ERROR: Failed to fetch latest tweet: failed to get latest tweet: failed to get tweets: received 429 status code, response: {"title":"Too Many Requests","detail":"Too Many Requests","type":"about:blank","status":429}
+2025/03/25 19:51:29 INFO: GET /latest_tweet 500 3.594164333s
+2025/03/25 19:52:49 INFO: Cleaned up code verifier for state: BC0L9lE7PQnLwXqmNedl9Lu6cKUAI7BAxmFRAkeYs4Q
+2025/03/25 19:56:22 INFO: Cleaned up code verifier for state: zIGJxXhufQfJEpm3SjK6XCjP4ITKgaj39OYWuzRw5o8
