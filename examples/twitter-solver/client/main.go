@@ -359,7 +359,7 @@ func main() {
 
 	handler := corsMiddleware(loggingMiddleware(http.DefaultServeMux))
 	logger.Info("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", handler); err != nil {
+	if err := http.ListenAndServe(":3005", handler); err != nil {
 		logger.Error("Failed to start server: %v", err)
 		os.Exit(1)
 	}
