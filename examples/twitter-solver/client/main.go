@@ -358,7 +358,7 @@ func main() {
 	http.Handle("/screenshots/", http.StripPrefix("/screenshots/", http.FileServer(http.Dir("screenshots"))))
 
 	handler := corsMiddleware(loggingMiddleware(http.DefaultServeMux))
-	logger.Info("Starting server on :8080")
+	logger.Info("Starting server on :3005")
 	if err := http.ListenAndServe(":3005", handler); err != nil {
 		logger.Error("Failed to start server: %v", err)
 		os.Exit(1)
