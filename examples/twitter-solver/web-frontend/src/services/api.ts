@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080';
-const REDIRECT_URI = 'http://localhost:5173/twitter/callback';
+const API_BASE_URL = 'http://localhost:3005';
+const REDIRECT_URI = 'http://localhost:5173/nft';
 
 export interface TwitterAuthResponse {
   auth_url: string;

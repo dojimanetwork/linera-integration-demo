@@ -232,7 +232,7 @@ func (tc *TwitterClient) PostTweet(content string) error {
 }
 
 // GetLatestTweet fetches the latest tweet from the authenticated user using Bearer Token
-func (tc *TwitterClient) GetLatestTweet() (*TwitterTweet, error) {
+func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
 	if tc.token == nil {
 		return nil, fmt.Errorf("not authenticated")
 	}
@@ -294,7 +294,7 @@ func (tc *TwitterClient) GetLatestTweet() (*TwitterTweet, error) {
 		return nil, fmt.Errorf("no tweets found for user ID %s", userData.Data.ID)
 	}
 
-	return &tweetsData.Data[0], nil
+	return &tweetsData.Data, nil
 }
 
 // GetTweetByID fetches a tweet by its ID using OAuth 1.0a

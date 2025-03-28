@@ -39,7 +39,7 @@ const App: React.FC = () => {
             <Route path="/" element={<TwitterAuth />} />
             <Route path="/twitter/callback" element={<TwitterCallback />} />
             <Route
-              path="/dashboard"
+              path="/nft"
               element={
                 // <ProtectedRoute>
                   <Dashboard />

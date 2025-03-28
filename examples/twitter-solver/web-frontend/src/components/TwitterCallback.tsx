@@ -28,7 +28,7 @@ const TwitterCallback: React.FC = () => {
         if (response.status === 'success' && response.user) {
           setUser(response.user);
           console.log("entered")
-          navigate('/dashboard');
+          navigate('/nft');
         } else {
           setError(response.error || 'Authentication failed');
         }

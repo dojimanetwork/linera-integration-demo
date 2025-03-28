@@ -102,7 +102,7 @@ func (c *Client) GetTweets() ([]Tweet, error) {
 }
 
 // GetLatestTweet fetches the latest tweet from Twitter with retry logic
-func (c *Client) GetLatestTweet() (*TwitterTweet, error) {
+func (c *Client) GetLatestTweet() (*[]TwitterTweet, error) {
 	if c.twitterClient == nil {
 		return nil, fmt.Errorf("Twitter client not initialized")
 	}
