@@ -8,7 +8,7 @@ mod state;
 use std::sync::{Arc, Mutex};
 
 use async_graphql::{EmptySubscription, Object, Request, Response, Schema};
-use crowd_funding::{ChainAddresses, ChainPledges, Operation, TokenPrice, TotalChainPledges, ALCHEMY_API_KEY};
+use crowd_funding::{ChainAddresses, ChainPledges, CrowdApplication, Operation, QueryCrowdApp, TokenPrice, TotalChainPledges, ALCHEMY_API_KEY};
 use linera_sdk::{base::{ApplicationId, WithServiceAbi}, ensure, graphql::GraphQLMutationRoot, http, views::View, Service, ServiceRuntime};
 use state::CrowdFundingState;
 
@@ -58,6 +58,18 @@ struct QueryRoot {
 
 #[Object]
 impl QueryRoot {
+
+    async fn get_crowd_app(&self, twitter_id: String) -> QueryCrowdApp {
+        let app = self.state.crowd_application.get(&twitter_id).await.unwrap().unwrap();
+        let app_mod = QueryCrowdApp {
+            status: app.status,
+            total_chain_pledges: app.total_chain_pledges,
+            individual_pledges: app.individual_pledges,
+            chain_addresses: app.chain_addresses.clone(),
+        };
+        app_mod
+    }
+
     async fn get_chain_addresses(&self) -> Vec<ChainAddresses> {
         let mut chain_addresses = Vec::new();
         self.state.chain_addresses.for_each_index_value(|chain, address| {
@@ -135,6 +147,8 @@ impl QueryRoot {
 }
 
 impl QueryRoot {
+
+
     fn calculate_rate(
         &self,
         token: String,

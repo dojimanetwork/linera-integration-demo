@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/ethereum/go-ethereum/core/types"
 	"log"
 	"math/big"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -230,6 +231,25 @@ type CollectResponse struct {
 type TotalPledgeInUsdResponse struct {
 	Data struct {
 		TotalPledgeInUsd string `json:"totalPledgeInUsd"`
+	} `json:"data"`
+}
+
+// NewCrowdAppResponse represents the response structure from the GraphQL mutation
+type NewCrowdAppResponse struct {
+	Data struct {
+		NewCrowdApp bool `json:"newCrowdApp"`
+	} `json:"data"`
+}
+
+// GetCrowdAppResponse represents the response structure from the GraphQL query
+type GetCrowdAppResponse struct {
+	Data struct {
+		GetCrowdApp struct {
+			Status            string             `json:"status"`
+			ChainAddresses    []ChainAddress     `json:"chainAddresses"`
+			TotalChainPledges []ChainTotalPledge `json:"totalChainPledges"`
+			IndividualPledges []ChainPledge      `json:"individualPledges"`
+		} `json:"getCrowdApp"`
 	} `json:"data"`
 }
 
@@ -545,6 +565,119 @@ func handleTotalPledgeInUsd(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse request body
+	var requestBody struct {
+		Args struct {
+			Deadline int64  `json:"deadline"`
+			Target   string `json:"target"`
+		} `json:"args"`
+		TwitterID string `json:"twitterId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Build GraphQL mutation
+	mutation := fmt.Sprintf(`{"query":"mutation{newCrowdApp(args:{deadline:%d,target:\"%s\"},twitterId:\"%s\")}"}`,
+		requestBody.Args.Deadline,
+		requestBody.Args.Target,
+		requestBody.TwitterID)
+
+	// Create request
+	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
+	if err != nil {
+		http.Error(w, "Error creating request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		http.Error(w, "Error sending request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	// Parse response
+	var graphqlResp struct {
+		Data string `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&graphqlResp); err != nil {
+		http.Error(w, "Error parsing response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare response
+	response := map[string]interface{}{
+		"status":  "success",
+		"message": "New crowd app created successfully",
+		"data":    graphqlResp.Data,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func handleGetCrowdApp(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get twitterId from query parameters
+	twitterID := r.URL.Query().Get("twitterId")
+	if twitterID == "" {
+		http.Error(w, "twitterId parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Build GraphQL query
+	query := fmt.Sprintf(`{"query":"query{getCrowdApp(twitterId:\"%s\"){status chainAddresses{chain address} totalChainPledges{amount chain} individualPledges{depositAddress amount}}}"}`, twitterID)
+
+	// Create request
+	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		http.Error(w, "Error creating request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		http.Error(w, "Error sending request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Parse response
+	var graphqlResp GetCrowdAppResponse
+	if err := json.NewDecoder(resp.Body).Decode(&graphqlResp); err != nil {
+		http.Error(w, "Error parsing response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare response
+	response := map[string]interface{}{
+		"status":  "success",
+		"message": "Crowd app data retrieved successfully",
+		"data":    graphqlResp.Data.GetCrowdApp,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func main() {
 	// Define routes with CORS and logging middleware
 	http.HandleFunc("/post_tx_hash", corsMiddleware(loggingMiddleware(handlePostTxHash)))
@@ -554,6 +687,8 @@ func main() {
 	http.HandleFunc("/total_pledges", corsMiddleware(loggingMiddleware(handleTotalPledges)))
 	http.HandleFunc("/collect", corsMiddleware(loggingMiddleware(handleCollect)))
 	http.HandleFunc("/pledge_in_usd", corsMiddleware(loggingMiddleware(handleTotalPledgeInUsd)))
+	http.HandleFunc("/crowd_app/new", corsMiddleware(loggingMiddleware(handleNewCrowdApp)))
+	http.HandleFunc("/crowd_app/get", corsMiddleware(loggingMiddleware(handleGetCrowdApp)))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3003")

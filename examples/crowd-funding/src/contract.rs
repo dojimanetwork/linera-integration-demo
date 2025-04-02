@@ -7,14 +7,14 @@ mod state;
 
 use std::num::FpCategory::Zero;
 use async_graphql::InputType;
-use crowd_funding::{CrowdFundingAbi, InstantiationArgument, Message, Operation, TotalChainPledges};
+use crowd_funding::{ChainAddresses, ChainPledges, CrowdApplication, CrowdFundingAbi, InstantiationArgument, Message, Operation, Status, TotalChainPledges};
 use fungible::{Account, FungibleTokenAbi};
 use linera_sdk::{
     base::{AccountOwner, Amount, ApplicationId, WithContractAbi},
     views::{RootView, View},
     Contract, ContractRuntime,
 };
-use state::{CrowdFundingState, Status};
+use state::{CrowdFundingState};
 
 pub struct CrowdFundingContract {
     state: CrowdFundingState,
@@ -61,17 +61,36 @@ impl Contract for CrowdFundingContract {
                     self.execute_pledge_with_transfer(owner, amount);
                 }
             }
-            Operation::Collect => self.collect_pledges().await,
+            Operation::Collect { twitter_id} => self.collect_pledges(twitter_id).await,
             Operation::Cancel => self.cancel_campaign().await,
-            Operation::AddChain { chain_name, address} => {
-                self.state.chain_addresses.insert(&chain_name, address)
-                    .expect("Failed to insert chain address");
+            Operation::AddChain { twitter_id, chain_name, chain_address} => {
+               let mut app =  self.state.crowd_application.get(&twitter_id).await.expect("failed to get crowd app")
+                   .expect("failed to get app");
+                let mut found = false;
+                for (index, total_pledge) in app.chain_addresses.clone().iter_mut().enumerate() {
+                    if total_pledge.chain == chain_name {
+                        total_pledge.address = chain_address.clone();
+                        app.chain_addresses.insert(index, total_pledge.clone());
+                        app.chain_addresses.remove(index);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if !found {
+                    app.chain_addresses.push(ChainAddresses {
+                        address: chain_address,
+                        chain: chain_name,
+                    });
+                }
+                self.state.crowd_application.insert(&twitter_id, app).expect("failed to insert chain address");
             }
             Operation::RemoveChain { chain_name } => {
                 self.state.chain_addresses.remove(&chain_name)
                     .expect("Failed to remove chain address");
             }
             Operation::Fund {
+                twitter_id,
                 chain_name,
                 deposit_address,
                 amount,
@@ -80,8 +99,22 @@ impl Contract for CrowdFundingContract {
                 let parse_amount =  amount.parse::<f64>().unwrap();
 
                 // add amount, and record of deposit
-                self.pledge_chain_amount(chain_name, deposit_address, parse_amount).await;
+                self.pledge_chain_amount(chain_name, deposit_address, parse_amount, twitter_id).await;
 
+            }
+
+            Operation::NewCrowdApp {
+                args,
+                twitter_id
+            } => {
+                let app = CrowdApplication{
+                    status: Default::default(),
+                    instantiation_argument: args,
+                    chain_addresses: Default::default(),
+                    total_chain_pledges: Default::default(),
+                    individual_pledges: Default::default(),
+                };
+                self.state.crowd_application.insert(&twitter_id, app).unwrap()
             }
         }
     }
@@ -106,36 +139,52 @@ impl Contract for CrowdFundingContract {
 }
 
 impl CrowdFundingContract {
+    async fn get_crowd_app(&mut self, twitter_id: String) -> CrowdApplication {
+        let mut app =  self.state.crowd_application.get(&twitter_id).await.expect("failed to get crowd app")
+            .expect("failed to get app");
+        app
+    }
 
+    async fn pledge_chain_amount(&mut self, chain_name: String, deposit_address: String, amount: f64, twitter_id: String) {
+        let key = format!("{}_{}", deposit_address, chain_name);
 
-    async fn pledge_chain_amount(&mut self, chain_name: String, deposit_address: String, amount: f64) {
-        let _key = &format!("{}_{}", deposit_address, chain_name);
-        let deposits = self.state.individual_pledges.get(_key).await
-            .expect("Failed to get deposits for the address")
-            .unwrap_or_else(|| {
-                // self.state.individual_pledges.insert(&_key.clone(), "0".to_string()).unwrap();
-                "0".to_string()
-            });
+        let mut app = self.get_crowd_app(twitter_id.clone()).await;
 
-        let mut curr_amt_f64: f64 = deposits.parse().unwrap();
-        curr_amt_f64 += amount;
+        app.individual_pledges.push(ChainPledges {
+            deposit_address: key,
+            amount: amount.to_string(),
+        });
 
-        self.state.individual_pledges.insert(_key,curr_amt_f64.to_string()).unwrap();
-        self.execute_total_chain_pledges(chain_name, amount).await;
+        self.state.crowd_application.insert(&twitter_id, app).expect("failed to insert app");
+        self.execute_total_chain_pledges( twitter_id, chain_name, amount).await;
 
     }
 
-    async fn execute_total_chain_pledges(&mut self, chain_name: String, amount: f64) {
-        let curr_amt = self.state.total_chain_pledges.get(&chain_name).await
-            .expect("Failed to get deposits for the address")
-            .unwrap_or_else(|| {
-                // self.state.individual_pledges.insert(&chain_name.clone(), "0".to_string()).unwrap();
-                "0".to_string()
-            });
+    async fn execute_total_chain_pledges(&mut self, twitter_id: String, chain_name: String, amount: f64) {
+        let mut app = self.get_crowd_app(twitter_id.clone()).await;
 
-        let mut curr_amt_f64: f64 = curr_amt.parse().unwrap();
-        curr_amt_f64 += amount;
-        self.state.total_chain_pledges.insert(&chain_name, curr_amt_f64.to_string()).unwrap();
+        let mut found = false;
+        for (index, total_pledge) in app.total_chain_pledges.clone().iter_mut().enumerate() {
+            if total_pledge.chain == chain_name {
+                let curr_amt  = total_pledge.amount.is_empty().then(|| "0".to_string()).unwrap_or(total_pledge.clone().amount);
+                let mut curr_amt_f64: f64 = curr_amt.parse().unwrap();
+                curr_amt_f64 += amount;
+                total_pledge.amount = curr_amt_f64.to_string();
+                app.total_chain_pledges.remove(index);
+                app.total_chain_pledges.insert(index, total_pledge.clone());
+                found = true;
+                break;
+            }
+        }
+
+        if !found {
+            app.total_chain_pledges.push(TotalChainPledges {
+                chain: chain_name,
+                amount: amount.to_string(),
+            });
+        }
+
+        self.state.crowd_application.insert(&twitter_id, app).expect("failed to insert app");
     }
 
     fn fungible_id(&mut self) -> ApplicationId<FungibleTokenAbi> {
@@ -192,10 +241,14 @@ impl CrowdFundingContract {
     }
 
 
-    async fn total_in_usd(&mut self) -> f64 {
+    async fn total_in_usd(&mut self, twitter_id: String) -> f64 {
         let application_id = self.runtime.application_id();
+        let mut app = self.get_crowd_app(twitter_id.clone()).await;
         let mut total: f64 = 0.0;
-        self.state.total_chain_pledges.for_each_index_value(|chain, amount| {
+        for total_pledge in app.total_chain_pledges.iter_mut() {
+            let chain = total_pledge.chain.clone();
+            let amount = total_pledge.amount.to_string();
+
             let request = async_graphql::Request::new(format!(
                 r#"query {{ fetchTokenPrice(token: "{chain}") {{ price }} }}"#
             ));
@@ -217,15 +270,14 @@ impl CrowdFundingContract {
 
             let curr_amt_f64: f64 = amount.parse().unwrap();
             total += price * curr_amt_f64;
-            Ok(())
-        }).await.expect("failed to get chain pledges");
+        };
 
         total
     }
 
     /// Collects all pledges and completes the campaign if the target has been reached.
-    async fn collect_pledges(&mut self) {
-        let total = self.total_in_usd().await;
+    async fn collect_pledges(&mut self, twitter_id: String) {
+        let total = self.total_in_usd(twitter_id).await;
         match self.state.status.get() {
             Status::Active => {
                 assert!(
