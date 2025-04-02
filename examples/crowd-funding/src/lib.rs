@@ -5,10 +5,7 @@
 
 
 use async_graphql::{scalar, InputObject, Request, Response, SimpleObject};
-use linera_sdk::{
-    base::{AccountOwner, Amount, ContractAbi, ServiceAbi, Timestamp},
-    graphql::GraphQLMutationRoot,
-};
+use linera_sdk::{base::{AccountOwner, Amount, ContractAbi, ServiceAbi, Timestamp}, graphql::GraphQLMutationRoot, DataBlobHash};
 use serde::{Deserialize, Serialize};
 
 
@@ -71,6 +68,7 @@ pub enum Operation {
     },
     NewCrowdApp {
         args: InitialArgs,
+        profile_screenshot: DataBlobHash,
         twitter_id: String,
     }
 }
@@ -149,6 +147,7 @@ pub struct InitialArgs {
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, SimpleObject, InputObject)]
 pub struct CrowdApplication {
     pub status: Status,
+    pub profile_screenshot: DataBlobHash,
     pub instantiation_argument: InitialArgs,
     pub chain_addresses: Vec<ChainAddresses>,
     pub total_chain_pledges: Vec<TotalChainPledges>,
@@ -158,9 +157,11 @@ pub struct CrowdApplication {
 #[derive(SimpleObject)]
 pub struct QueryCrowdApp {
     pub id: String,
+    pub profile_screenshot: Vec<u8>,
     pub status: Status,
     pub chain_addresses: Vec<ChainAddresses>,
     pub total_chain_pledges: Vec<TotalChainPledges>,
     pub individual_pledges: Vec<ChainPledges>,
+    pub profile_hash: DataBlobHash,
 }
 

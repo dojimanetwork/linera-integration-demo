@@ -246,6 +246,8 @@ type GetCrowdAppResponse struct {
 	Data struct {
 		GetCrowdApp struct {
 			Id                string             `json:"id"`
+			ProfileHash       string             `json:"profileHash"`
+			ProfileScreenshot []int              `json:"profileScreenshot"`
 			Status            string             `json:"status"`
 			ChainAddresses    []ChainAddress     `json:"chainAddresses"`
 			TotalChainPledges []ChainTotalPledge `json:"totalChainPledges"`
@@ -259,6 +261,8 @@ type GetAllCrowdAppsResponse struct {
 	Data struct {
 		GetAllCrowdApps []struct {
 			ID                string             `json:"id"`
+			ProfileHash       string             `json:"profileHash"`
+			ProfileScreenshot []int              `json:"profileScreenshot"`
 			Status            string             `json:"status"`
 			ChainAddresses    []ChainAddress     `json:"chainAddresses"`
 			TotalChainPledges []ChainTotalPledge `json:"totalChainPledges"`
@@ -585,7 +589,6 @@ func handleTotalPledgeInUsd(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
-
 func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -598,7 +601,8 @@ func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 			Deadline int64  `json:"deadline"`
 			Target   string `json:"target"`
 		} `json:"args"`
-		TwitterID string `json:"twitterId"`
+		TwitterID         string `json:"twitterId"`
+		ProfileScreenshot string `json:"profileScreenshot"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -607,10 +611,11 @@ func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build GraphQL mutation
-	mutation := fmt.Sprintf(`{"query":"mutation{newCrowdApp(args:{deadline:%d,target:\"%s\"},twitterId:\"%s\")}"}`,
+	mutation := fmt.Sprintf(`{"query":"mutation CrowdApp { newCrowdApp(args:{deadline:%d, target:\"%s\"}, twitterId:\"%s\", profileScreenshot:\"%s\") }"}`,
 		requestBody.Args.Deadline,
 		requestBody.Args.Target,
-		requestBody.TwitterID)
+		requestBody.TwitterID,
+		requestBody.ProfileScreenshot)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
@@ -628,6 +633,7 @@ func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
 	// Parse response
 	var graphqlResp struct {
 		Data string `json:"data"`
@@ -661,8 +667,7 @@ func handleGetCrowdApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build GraphQL query
-	query := fmt.Sprintf(`{"query":"query{getCrowdApp(twitterId:\"%s\"){id status chainAddresses{chain address} totalChainPledges{amount chain} individualPledges{depositAddress amount}}}"}`, twitterID)
+	query := fmt.Sprintf(`{"query":"query getCrowdApp { getCrowdApp(twitterId:\"%s\") { id status profileHash profileScreenshot chainAddresses { chain address } totalChainPledges { amount chain } individualPledges { depositAddress amount } } }"}`, twitterID)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
@@ -705,8 +710,7 @@ func handleGetAllCrowdApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build GraphQL query
-	query := `{"query":"query{getAllCrowdApps{id status chainAddresses{chain address} totalChainPledges{amount chain} individualPledges{depositAddress amount}}}"}`
+	query := `{"query":"query getApps { getAllCrowdApps { id profileHash profileScreenshot status chainAddresses { chain address } totalChainPledges { amount chain } individualPledges { depositAddress amount } } }"}`
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))

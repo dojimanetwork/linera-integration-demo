@@ -61,12 +61,21 @@ impl QueryRoot {
     async fn get_all_crowd_apps(&self) -> Vec<QueryCrowdApp> {
         let mut apps = Vec::new();
         self.state.crowd_application.for_each_index_value(|twitter_id, app| {
+            let payload = {
+                let mut runtime = self
+                    .runtime
+                    .try_lock()
+                    .expect("Services only run in a single thread");
+                runtime.read_data_blob(app.profile_screenshot)
+            };
             apps.push(QueryCrowdApp {
                 id: twitter_id,
+                profile_screenshot: payload,
                 status: app.status.clone(),
                 total_chain_pledges: app.total_chain_pledges.clone(),
                 individual_pledges: app.individual_pledges.clone(),
                 chain_addresses: app.chain_addresses.clone(),
+                profile_hash: app.profile_screenshot.clone(),
             });
             Ok(())
         }).await.expect("failed to get chain pledges");
@@ -74,12 +83,21 @@ impl QueryRoot {
     }
     async fn get_crowd_app(&self, twitter_id: String) -> QueryCrowdApp {
         let app = self.state.crowd_application.get(&twitter_id).await.unwrap().unwrap();
+        let payload = {
+            let mut runtime = self
+                .runtime
+                .try_lock()
+                .expect("Services only run in a single thread");
+            runtime.read_data_blob(app.profile_screenshot)
+        };
         let app_mod = QueryCrowdApp {
             id: twitter_id,
+            profile_screenshot: payload,
             status: app.status,
             total_chain_pledges: app.total_chain_pledges,
             individual_pledges: app.individual_pledges,
             chain_addresses: app.chain_addresses.clone(),
+            profile_hash: app.profile_screenshot.clone(),
         };
         app_mod
     }
