@@ -157,6 +157,7 @@ pub struct CrowdApplication {
 
 #[derive(SimpleObject)]
 pub struct QueryCrowdApp {
+    pub id: String,
     pub status: Status,
     pub chain_addresses: Vec<ChainAddresses>,
     pub total_chain_pledges: Vec<TotalChainPledges>,

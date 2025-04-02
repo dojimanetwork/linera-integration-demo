@@ -58,10 +58,24 @@ struct QueryRoot {
 
 #[Object]
 impl QueryRoot {
-
+    async fn get_all_crowd_apps(&self) -> Vec<QueryCrowdApp> {
+        let mut apps = Vec::new();
+        self.state.crowd_application.for_each_index_value(|twitter_id, app| {
+            apps.push(QueryCrowdApp {
+                id: twitter_id,
+                status: app.status.clone(),
+                total_chain_pledges: app.total_chain_pledges.clone(),
+                individual_pledges: app.individual_pledges.clone(),
+                chain_addresses: app.chain_addresses.clone(),
+            });
+            Ok(())
+        }).await.expect("failed to get chain pledges");
+        apps
+    }
     async fn get_crowd_app(&self, twitter_id: String) -> QueryCrowdApp {
         let app = self.state.crowd_application.get(&twitter_id).await.unwrap().unwrap();
         let app_mod = QueryCrowdApp {
+            id: twitter_id,
             status: app.status,
             total_chain_pledges: app.total_chain_pledges,
             individual_pledges: app.individual_pledges,

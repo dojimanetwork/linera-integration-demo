@@ -245,11 +245,25 @@ type NewCrowdAppResponse struct {
 type GetCrowdAppResponse struct {
 	Data struct {
 		GetCrowdApp struct {
+			Id                string             `json:"id"`
 			Status            string             `json:"status"`
 			ChainAddresses    []ChainAddress     `json:"chainAddresses"`
 			TotalChainPledges []ChainTotalPledge `json:"totalChainPledges"`
 			IndividualPledges []ChainPledge      `json:"individualPledges"`
 		} `json:"getCrowdApp"`
+	} `json:"data"`
+}
+
+// GetAllCrowdAppsResponse represents the response structure from the GraphQL query
+type GetAllCrowdAppsResponse struct {
+	Data struct {
+		GetAllCrowdApps []struct {
+			ID                string             `json:"id"`
+			Status            string             `json:"status"`
+			ChainAddresses    []ChainAddress     `json:"chainAddresses"`
+			TotalChainPledges []ChainTotalPledge `json:"totalChainPledges"`
+			IndividualPledges []ChainPledge      `json:"individualPledges"`
+		} `json:"getAllCrowdApps"`
 	} `json:"data"`
 }
 
@@ -522,8 +536,15 @@ func handleTotalPledgeInUsd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract Twitter ID from query parameters
+	twitterID := r.URL.Query().Get("twitterId")
+	if twitterID == "" {
+		http.Error(w, "Twitter ID is required", http.StatusBadRequest)
+		return
+	}
+
 	// Build GraphQL query
-	query := `{"query":"query totalPledgeInUsd { totalPledgeInUsd }"}`
+	query := fmt.Sprintf(`{"query":"query totalPledgeInUsd { totalPledgeInUsd(twitterId:\"%s\") }"}`, twitterID)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
@@ -641,7 +662,7 @@ func handleGetCrowdApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build GraphQL query
-	query := fmt.Sprintf(`{"query":"query{getCrowdApp(twitterId:\"%s\"){status chainAddresses{chain address} totalChainPledges{amount chain} individualPledges{depositAddress amount}}}"}`, twitterID)
+	query := fmt.Sprintf(`{"query":"query{getCrowdApp(twitterId:\"%s\"){id status chainAddresses{chain address} totalChainPledges{amount chain} individualPledges{depositAddress amount}}}"}`, twitterID)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
@@ -678,6 +699,51 @@ func handleGetCrowdApp(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func handleGetAllCrowdApps(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Build GraphQL query
+	query := `{"query":"query{getAllCrowdApps{id status chainAddresses{chain address} totalChainPledges{amount chain} individualPledges{depositAddress amount}}}"}`
+
+	// Create request
+	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		http.Error(w, "Error creating request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		http.Error(w, "Error sending request: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Parse response
+	var graphqlResp GetAllCrowdAppsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&graphqlResp); err != nil {
+		http.Error(w, "Error parsing response: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare response
+	response := map[string]interface{}{
+		"status":  "success",
+		"message": "All crowd apps retrieved successfully",
+		"data":    graphqlResp.Data.GetAllCrowdApps,
+		"count":   len(graphqlResp.Data.GetAllCrowdApps),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func main() {
 	// Define routes with CORS and logging middleware
 	http.HandleFunc("/post_tx_hash", corsMiddleware(loggingMiddleware(handlePostTxHash)))
@@ -689,6 +755,7 @@ func main() {
 	http.HandleFunc("/pledge_in_usd", corsMiddleware(loggingMiddleware(handleTotalPledgeInUsd)))
 	http.HandleFunc("/crowd_app/new", corsMiddleware(loggingMiddleware(handleNewCrowdApp)))
 	http.HandleFunc("/crowd_app/get", corsMiddleware(loggingMiddleware(handleGetCrowdApp)))
+	http.HandleFunc("/crowd_app/all", corsMiddleware(loggingMiddleware(handleGetAllCrowdApps)))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3003")
