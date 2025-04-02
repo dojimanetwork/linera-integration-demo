@@ -117,9 +117,14 @@ impl QueryRoot {
         })
     }
 
-    async fn total_pledge_in_usd(&self) -> String {
+    async fn total_pledge_in_usd(&self, twitter_id: String) -> String {
+        let mut app =  self.state.crowd_application.get(&twitter_id).await.expect("failed to get crowd app")
+            .expect("failed to get app");
+
         let mut total: f64 = 0.0;
-        self.state.total_chain_pledges.for_each_index_value(|chain, amount| {
+        for total_pledge in app.total_chain_pledges.iter_mut() {
+            let chain = total_pledge.chain.clone();
+            let amount = total_pledge.amount.to_string();
             // Handle the Result explicitly rather than using ?
             match self.calculate_rate(chain.clone()) {
                 Ok(price) => {
@@ -128,8 +133,7 @@ impl QueryRoot {
                 },
                 Err(_) => {} // Skip this chain if price calculation fails
             }
-            Ok(())
-        }).await.expect("failed to get chain pledges");
+        };
 
         total.to_string()
     }
