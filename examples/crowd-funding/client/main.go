@@ -271,6 +271,14 @@ type GetAllCrowdAppsResponse struct {
 	} `json:"data"`
 }
 
+// EndpointInfo represents information about an available endpoint
+type EndpointInfo struct {
+	Path        string   `json:"path"`
+	Method      string   `json:"method"`
+	Description string   `json:"description"`
+	Parameters  []string `json:"parameters,omitempty"`
+}
+
 func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -589,6 +597,7 @@ func handleTotalPledgeInUsd(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
 func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -748,6 +757,88 @@ func handleGetAllCrowdApps(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func handleAvailableEndpoints(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Define all available endpoints
+	endpoints := []EndpointInfo{
+		{
+			Path:        "/post_tx_hash",
+			Method:      "POST",
+			Description: "Process a transaction hash and fund the crowd app",
+			Parameters:  []string{"txHash", "chain"},
+		},
+		{
+			Path:        "/add_chain_address",
+			Method:      "POST",
+			Description: "Add a new chain address for a crowd app",
+			Parameters:  []string{"chain", "address"},
+		},
+		{
+			Path:        "/chain_addresses",
+			Method:      "GET",
+			Description: "Get all chain addresses",
+		},
+		{
+			Path:        "/chain_pledges",
+			Method:      "GET",
+			Description: "Get all chain pledges",
+		},
+		{
+			Path:        "/total_pledges",
+			Method:      "GET",
+			Description: "Get total pledges across all chains",
+		},
+		{
+			Path:        "/collect",
+			Method:      "POST",
+			Description: "Collect funds from all pledges",
+		},
+		{
+			Path:        "/pledge_in_usd",
+			Method:      "GET",
+			Description: "Get total pledge amount in USD",
+			Parameters:  []string{"twitterId"},
+		},
+		{
+			Path:        "/crowd_app/new",
+			Method:      "POST",
+			Description: "Create a new crowd app",
+			Parameters:  []string{"args.deadline", "args.target", "twitterId"},
+		},
+		{
+			Path:        "/crowd_app/get",
+			Method:      "GET",
+			Description: "Get crowd app details by Twitter ID",
+			Parameters:  []string{"twitterId"},
+		},
+		{
+			Path:        "/crowd_app/all",
+			Method:      "GET",
+			Description: "Get all crowd apps",
+		},
+		{
+			Path:        "/available",
+			Method:      "GET",
+			Description: "List all available endpoints",
+		},
+	}
+
+	// Prepare response
+	response := map[string]interface{}{
+		"status":    "success",
+		"message":   "Available endpoints retrieved successfully",
+		"endpoints": endpoints,
+		"count":     len(endpoints),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func main() {
 	// Define routes with CORS and logging middleware
 	http.HandleFunc("/post_tx_hash", corsMiddleware(loggingMiddleware(handlePostTxHash)))
@@ -760,6 +851,7 @@ func main() {
 	http.HandleFunc("/crowd_app/new", corsMiddleware(loggingMiddleware(handleNewCrowdApp)))
 	http.HandleFunc("/crowd_app/get", corsMiddleware(loggingMiddleware(handleGetCrowdApp)))
 	http.HandleFunc("/crowd_app/all", corsMiddleware(loggingMiddleware(handleGetAllCrowdApps)))
+	http.HandleFunc("/available", corsMiddleware(loggingMiddleware(handleAvailableEndpoints)))
 
 	// Start server
 	port := getEnvOrDefault("PORT", "3003")
