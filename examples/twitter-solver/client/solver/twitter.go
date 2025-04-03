@@ -231,13 +231,8 @@ func (tc *TwitterClient) PostTweet(content string) error {
 	return nil
 }
 
-// GetLatestTweet fetches the latest tweet from the authenticated user using Bearer Token
-func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
-	if tc.token == nil {
-		return nil, fmt.Errorf("not authenticated")
-	}
-
-	// First, get the authenticated user's ID using OAuth 2.0
+// GetAuthenticatedUserInfo retrieves the authenticated user's information from Twitter
+func (tc *TwitterClient) GetAuthenticatedUserInfo() (*UserInfo, error) {
 	client := tc.config.Client(oauth2.NoContext, tc.token)
 	userResp, err := client.Get(twitterAPIURL + "/users/me")
 	if err != nil {
@@ -246,24 +241,26 @@ func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
 	defer userResp.Body.Close()
 
 	var userData struct {
-		Data struct {
-			ID       string `json:"id"`
-			Username string `json:"username"`
-			Name     string `json:"name"`
-		} `json:"data"`
+		Data UserInfo `json:"data"`
 	}
 
 	if err := json.NewDecoder(userResp.Body).Decode(&userData); err != nil {
 		return nil, fmt.Errorf("failed to parse user data: %v", err)
 	}
 
-	// Then, get the user's latest tweet using Bearer Token
-	tweetsURL := fmt.Sprintf("%s/users/%s/tweets?tweet.fields=author_id,created_at,display_text_range,edit_history_tweet_ids,entities,id,text,source&user.fields=id,confirmed_email", twitterAPIURL, userData.Data.ID)
+	return &userData.Data, nil
+}
 
-	req, err := http.NewRequest("GET", tweetsURL, nil)
+// GetLatestTweet retrieves the latest tweet from the authenticated user
+func (tc *TwitterClient) GetLatestTweet() (*TwitterTweet, error) {
+	// First, get the authenticated user's ID
+	userInfo, err := tc.GetAuthenticatedUserInfo()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		return nil, fmt.Errorf("failed to get user info: %v", err)
 	}
+
+	tweetsURL := fmt.Sprintf("%s/users/%s/tweets?tweet.fields=author_id,created_at,display_text_range,edit_history_tweet_ids,entities,id,text,source&user.fields=id,confirmed_email", twitterAPIURL, userInfo.ID)
+	req, err := http.NewRequest("GET", tweetsURL, nil)
 
 	// Add required headers
 	req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAEiK0AEAAAAAYsG8yyn7gdNdMDIq445ek%2FnXypY%3Djp5rtuWxopwQlhpSB2cNlaxyemQMishgqEAXEiDpWI5AVAN3Ps")
@@ -273,28 +270,21 @@ func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
 	httpClient := &http.Client{}
 	tweetsResp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get tweets: %w", err)
+		return nil, fmt.Errorf("failed to get tweets: %v", err)
 	}
-	defer tweetsResp.Body.Close()
-
-	if tweetsResp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(tweetsResp.Body)
-		return nil, fmt.Errorf("failed to get tweets: received %d status code, response: %s", tweetsResp.StatusCode, string(bodyBytes))
-	}
-
 	var tweetsData struct {
 		Data []TwitterTweet `json:"data"`
 	}
 
 	if err := json.NewDecoder(tweetsResp.Body).Decode(&tweetsData); err != nil {
-		return nil, fmt.Errorf("failed to parse tweets data: %w", err)
+		return nil, fmt.Errorf("failed to parse tweets data: %v", err)
 	}
 
 	if len(tweetsData.Data) == 0 {
-		return nil, fmt.Errorf("no tweets found for user ID %s", userData.Data.ID)
+		return nil, fmt.Errorf("no tweets found")
 	}
 
-	return &tweetsData.Data, nil
+	return &tweetsData.Data[0], nil
 }
 
 // GetTweetByID fetches a tweet by its ID using OAuth 1.0a

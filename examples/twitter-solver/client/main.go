@@ -1,16 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/linera-protocol/examples/twitter-solver/client/solver"
 )
+
+const twitterAPIURL = "https://api.twitter.com/2"
 
 var (
 	twitterClient *solver.Client
@@ -41,6 +46,12 @@ func init() {
 		os.Exit(1)
 	}
 	twitterClient = solver.NewClient()
+
+	// Create screenshots directory if it doesn't exist
+	if err := os.MkdirAll("screenshots", 0755); err != nil {
+		logger.Error("Failed to create screenshots directory: %v", err)
+		os.Exit(1)
+	}
 }
 
 func initFlags() {
@@ -70,6 +81,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
+			return // Add return to prevent further processing
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -270,6 +282,14 @@ func handleTwitterCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user information from Twitter
+	userInfo, err := twitterClient.GetUserInfo()
+	if err != nil {
+		logger.Error("Failed to get user information: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to get user information: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	// Mark state as processed and clean up
 	verifierMutex.Lock()
 	processedStates[state] = true
@@ -284,8 +304,9 @@ func handleTwitterCallback(w http.ResponseWriter, r *http.Request) {
 		"status":  "success",
 		"message": "Successfully authenticated with Twitter",
 		"user": map[string]string{
-			"username": "Twitter User",
-			"name":     "Twitter User",
+			"id":       userInfo.ID,
+			"username": userInfo.Username,
+			"name":     userInfo.Name,
 		},
 	})
 }
@@ -344,6 +365,156 @@ func handleTakeScreenshot(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func handleTwitterProfileScreenshot(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get user info from Twitter API using the Twitter client
+	userInfo, err := twitterClient.GetUserInfo()
+	if err != nil {
+		logger.Error("Failed to get user info from Twitter: %v", err)
+		http.Error(w, "Failed to get user info", http.StatusInternalServerError)
+		return
+	}
+
+	if userInfo == nil {
+		logger.Error("No tweets found for user")
+		http.Error(w, "No tweets found for user", http.StatusInternalServerError)
+		return
+	}
+
+	// Use the author ID from the latest tweet to get the username
+	username := userInfo.Username
+
+	// Construct Twitter profile URL
+	profileURL := fmt.Sprintf("https://x.com/%s", username)
+
+	// Urlbox API configuration
+	urlboxAPIKey := os.Getenv("URLBOX_API_KEY")
+	urlboxAPISecret := os.Getenv("URLBOX_API_SECRET")
+
+	if urlboxAPIKey == "" || urlboxAPISecret == "" {
+		logger.Error("Urlbox API credentials not configured")
+		http.Error(w, "Screenshot service not configured", http.StatusInternalServerError)
+		return
+	}
+
+	urlboxURL := "https://api.urlbox.io/v1/render/sync"
+
+	// Create request body
+	requestBody := map[string]string{
+		"url":       profileURL,
+		"dark_mode": "true",
+	}
+
+	body, err := json.Marshal(requestBody)
+	if err != nil {
+		logger.Error("Failed to marshal request body: %v", err)
+		http.Error(w, "Failed to generate screenshot", http.StatusInternalServerError)
+		return
+	}
+
+	// Create a new HTTP client
+	client := &http.Client{}
+
+	// Make request to Urlbox API
+	req, err := http.NewRequest("POST", urlboxURL, bytes.NewBuffer(body))
+	if err != nil {
+		logger.Error("Failed to create request to Urlbox: %v", err)
+		http.Error(w, "Failed to generate screenshot", http.StatusInternalServerError)
+		return
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", urlboxAPISecret))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Failed to get screenshot from Urlbox: %v", err)
+		http.Error(w, "Failed to generate screenshot", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Urlbox API returned non-200 status: %d", resp.StatusCode)
+		http.Error(w, "Failed to generate screenshot", http.StatusInternalServerError)
+		return
+	}
+
+	var renderResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&renderResponse); err != nil {
+		logger.Error("Failed to decode render response: %v", err)
+		http.Error(w, "Failed to process render response", http.StatusInternalServerError)
+		return
+	}
+
+	imageURL, ok := renderResponse["renderUrl"].(string)
+	if !ok {
+		logger.Error("Render URL not found in response")
+		http.Error(w, "Failed to retrieve render URL", http.StatusInternalServerError)
+		return
+	}
+
+	// Download image data from the render URL
+	resp, err = http.Get(imageURL)
+	if err != nil {
+		logger.Error("Failed to download image from render URL: %v", err)
+		http.Error(w, "Failed to download image", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Render URL returned non-200 status: %d", resp.StatusCode)
+		http.Error(w, "Failed to download image", http.StatusInternalServerError)
+		return
+	}
+
+	// Read the image data
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("Failed to read screenshot data: %v", err)
+		http.Error(w, "Failed to process screenshot", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate a unique filename
+	filename := fmt.Sprintf("profile_%s_%d.png", username, time.Now().Unix())
+	filepath := filepath.Join("screenshots", filename)
+
+	// Save the screenshot
+	if err := os.WriteFile(filepath, imageData, 0644); err != nil {
+		logger.Error("Failed to save screenshot: %v", err)
+		http.Error(w, "Failed to save screenshot", http.StatusInternalServerError)
+		return
+	}
+
+	// Return the URL to access the screenshot
+	screenshotURL := fmt.Sprintf("/screenshots/%s", filename)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":         "success",
+		"screenshot_url": screenshotURL,
+	})
+}
+
+type Session struct {
+	UserID    string
+	ExpiresAt time.Time
+}
+
+func getSession(sessionID string) (*Session, error) {
+	// TODO: Implement Redis session retrieval
+	// For now, return a mock session
+	return &Session{
+		UserID:    "mock_user_id",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}, nil
+}
+
 func main() {
 	http.HandleFunc("/post_tweet", handlePostTweet)
 	http.HandleFunc("/delete_tweet", handleDeleteTweet)
@@ -353,6 +524,7 @@ func main() {
 	http.HandleFunc("/twitter/callback", handleTwitterCallback)
 	http.HandleFunc("/latest_tweet", handleLatestTweet)
 	http.HandleFunc("/take_screenshot", handleTakeScreenshot)
+	http.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
 
 	// Serve screenshots directory
 	http.Handle("/screenshots/", http.StripPrefix("/screenshots/", http.FileServer(http.Dir("screenshots"))))

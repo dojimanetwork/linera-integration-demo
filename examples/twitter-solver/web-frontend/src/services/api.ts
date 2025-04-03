@@ -43,6 +43,11 @@ export interface LatestTweetResponse {
   tweet: Tweet;
 }
 
+export interface ProfileScreenshotResponse {
+  status: string;
+  screenshot_url: string;
+}
+
 const api = {
   // Get Twitter auth URL
   getTwitterAuthUrl: async (): Promise<TwitterAuthResponse> => {
@@ -126,6 +131,29 @@ const api = {
       return data;
     } catch (error) {
       console.error('Error taking screenshot:', error);
+      throw error;
+    }
+  },
+
+  // Take screenshot of a Twitter profile
+  takeProfileScreenshot: async (): Promise<ProfileScreenshotResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/twitter_profile_screenshot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to take profile screenshot');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error taking profile screenshot:', error);
       throw error;
     }
   }

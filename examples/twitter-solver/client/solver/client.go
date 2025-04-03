@@ -101,8 +101,16 @@ func (c *Client) GetTweets() ([]Tweet, error) {
 	return nil, nil
 }
 
+func (c *Client) GetUserInfo() (*UserInfo, error) {
+	info, err := c.twitterClient.GetAuthenticatedUserInfo()
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
 // GetLatestTweet fetches the latest tweet from Twitter with retry logic
-func (c *Client) GetLatestTweet() (*[]TwitterTweet, error) {
+func (c *Client) GetLatestTweet() (*TwitterTweet, error) {
 	if c.twitterClient == nil {
 		return nil, fmt.Errorf("Twitter client not initialized")
 	}

@@ -9,7 +9,9 @@ export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [tweet, setTweet] = useState<Tweet | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [profileScreenshotUrl, setProfileScreenshotUrl] = useState<string | null>(null);
   const [isTakingScreenshot, setIsTakingScreenshot] = useState(false);
+  const [isTakingProfileScreenshot, setIsTakingProfileScreenshot] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -45,6 +47,19 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleTakeProfileScreenshot = async () => {
+    setIsTakingProfileScreenshot(true);
+    try {
+      const response = await api.takeProfileScreenshot();
+      if (response.status === 'success') {
+        setProfileScreenshotUrl(response.screenshot_url);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to take profile screenshot');
+    } finally {
+      setIsTakingProfileScreenshot(false);
+    }
+  };
 
   if (error) {
     return (
@@ -72,6 +87,26 @@ export const Dashboard: React.FC = () => {
           </Box>
         </Box>
 
+        <Box sx={{ mb: 3 }}>
+          <Button
+            variant="outlined"
+            startIcon={<CameraAltIcon />}
+            onClick={handleTakeProfileScreenshot}
+            disabled={isTakingProfileScreenshot}
+            fullWidth
+          >
+            {isTakingProfileScreenshot ? 'Taking Profile Screenshot...' : 'Take Profile Screenshot'}
+          </Button>
+          {profileScreenshotUrl && (
+            <Box sx={{ mt: 2 }}>
+              <img
+                src={`http://localhost:3005${profileScreenshotUrl}`}
+                alt="Profile Screenshot"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </Box>
+          )}
+        </Box>
 
         {tweet && (
             <Paper sx={{ p: 3, mt: 3 }}>
@@ -98,17 +133,16 @@ export const Dashboard: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                  View on Twitter ${tweet.id}
+                  View on Twitter
                 </Link>
               </Box>
               {screenshotUrl && (
                   <Box sx={{ mt: 2 }}>
                     <img
-                        src={`http://localhost:8080/${screenshotUrl}`}
+                        src={`http://localhost:3005${screenshotUrl}`}
                         alt="Tweet Screenshot"
                         style={{ maxWidth: '100%', height: 'auto' }}
                     />
-
                   </Box>
               )}
             </Paper>

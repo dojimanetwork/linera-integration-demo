@@ -39,3 +39,9 @@ type DeleteTweetRequest struct {
 type GetTweetsResponse struct {
 	Tweets []Tweet `json:"tweets"`
 }
+
+type UserInfo struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Name     string `json:"name"`
+}
