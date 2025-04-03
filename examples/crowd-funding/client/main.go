@@ -174,8 +174,9 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 // ChainAddress represents a chain and address pair
 type ChainAddress struct {
-	Chain   string `json:"chain"`
-	Address string `json:"address"`
+	Chain     string `json:"chain"`
+	Address   string `json:"address"`
+	TwitterId string `json:"twitter_id"`
 }
 
 // Global variable to store chain addresses
@@ -325,7 +326,7 @@ func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Build GraphQL mutation
-		mutation := fmt.Sprintf(`{"query":"mutation{addChain(chainName:\"%s\",address:\"%s\")}"}`, chainToToken[chainAddr.Chain], chainAddr.Address)
+		mutation := fmt.Sprintf(`{"query":"mutation{addChain(twitterId:\"%s\",chainName:\"%s\",address:\"%s\")}"}`, chainAddr.TwitterId, chainToToken[chainAddr.Chain], chainAddr.Address)
 
 		// Create request
 		req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
@@ -1072,6 +1073,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	// Get parameters from query params
 	txHash := r.URL.Query().Get("txHash")
 	chain := r.URL.Query().Get("chain")
+	twitterId := r.URL.Query().Get("twitterId")
 
 	logger.Debug("Processing transaction - Hash: %s, Chain: %s", txHash, chain)
 
@@ -1085,6 +1087,12 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	if chain == "" {
 		logger.Error("Missing chain parameter")
 		http.Error(w, "chain parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	if twitterId == "" {
+		logger.Error("Missing twitter id parameter")
+		http.Error(w, "twitter id parameter is required", http.StatusBadRequest)
 		return
 	}
 
@@ -1144,8 +1152,8 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 		txHash, chain, fromAddress, amountStr, fromToken)
 
 	// Build GraphQL mutation
-	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`,
-		fromToken, fromAddress, amountStr)
+	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(twitterId:\"%s\",chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`,
+		twitterId, fromToken, fromAddress, amountStr)
 
 	logger.Debug("Sending GraphQL mutation: %s", mutation)
 
