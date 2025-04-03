@@ -246,6 +246,8 @@ type GetCrowdAppResponse struct {
 	Data struct {
 		GetCrowdApp struct {
 			Id                string             `json:"id"`
+			Title             string             `json:"title"`
+			Description       string             `json:"description"`
 			ProfileHash       string             `json:"profileHash"`
 			ProfileScreenshot []int              `json:"profileScreenshot"`
 			Status            string             `json:"status"`
@@ -261,6 +263,8 @@ type GetAllCrowdAppsResponse struct {
 	Data struct {
 		GetAllCrowdApps []struct {
 			ID                string             `json:"id"`
+			Title             string             `json:"title"`
+			Description       string             `json:"description"`
 			ProfileHash       string             `json:"profileHash"`
 			ProfileScreenshot []int              `json:"profileScreenshot"`
 			Status            string             `json:"status"`
@@ -612,6 +616,8 @@ func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 		} `json:"args"`
 		TwitterID         string `json:"twitterId"`
 		ProfileScreenshot string `json:"profileScreenshot"`
+		Title             string `json:"title"`
+		Description       string `json:"description"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -620,11 +626,12 @@ func handleNewCrowdApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build GraphQL mutation
-	mutation := fmt.Sprintf(`{"query":"mutation CrowdApp { newCrowdApp(args:{deadline:%d, target:\"%s\"}, twitterId:\"%s\", profileScreenshot:\"%s\") }"}`,
-		requestBody.Args.Deadline,
+	mutation := fmt.Sprintf(`{"query":"mutation CrowdApp { newCrowdApp(args:{deadline:4102473600000000, target:\"%s\"}, twitterId:\"%s\", profileScreenshot:\"%s\", title:\"%s\", description:\"%s\") }"}`,
 		requestBody.Args.Target,
 		requestBody.TwitterID,
-		requestBody.ProfileScreenshot)
+		requestBody.ProfileScreenshot,
+		requestBody.Title,
+		requestBody.Description)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
@@ -676,7 +683,7 @@ func handleGetCrowdApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := fmt.Sprintf(`{"query":"query getCrowdApp { getCrowdApp(twitterId:\"%s\") { id status profileHash profileScreenshot chainAddresses { chain address } totalChainPledges { amount chain } individualPledges { depositAddress amount } } }"}`, twitterID)
+	query := fmt.Sprintf(`{"query":"query getCrowdApp { getCrowdApp(twitterId:\"%s\") { id title description status profileHash profileScreenshot chainAddresses { chain address } totalChainPledges { amount chain } individualPledges { depositAddress amount } } }"}`, twitterID)
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))
@@ -719,7 +726,7 @@ func handleGetAllCrowdApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `{"query":"query getApps { getAllCrowdApps { id profileHash profileScreenshot status chainAddresses { chain address } totalChainPledges { amount chain } individualPledges { depositAddress amount } } }"}`
+	query := `{"query":"query getApps { getAllCrowdApps { id title description profileHash profileScreenshot status chainAddresses { chain address } totalChainPledges { amount chain } individualPledges { depositAddress amount } } }"}`
 
 	// Create request
 	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(query)))

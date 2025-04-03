@@ -106,12 +106,16 @@ impl Contract for CrowdFundingContract {
             Operation::NewCrowdApp {
                 args,
                 profile_screenshot,
-                twitter_id
+                twitter_id,
+                title,
+                description,
             } => {
                 self.runtime.assert_data_blob_exists(profile_screenshot);
 
                 let app = CrowdApplication{
                     status: Default::default(),
+                    title,
+                    description,
                     profile_screenshot,
                     instantiation_argument: args,
                     chain_addresses: Default::default(),

@@ -76,6 +76,8 @@ impl QueryRoot {
                 individual_pledges: app.individual_pledges.clone(),
                 chain_addresses: app.chain_addresses.clone(),
                 profile_hash: app.profile_screenshot.clone(),
+                title: app.title.clone(),
+                description: app.description.clone(),
             });
             Ok(())
         }).await.expect("failed to get chain pledges");
@@ -98,6 +100,8 @@ impl QueryRoot {
             individual_pledges: app.individual_pledges,
             chain_addresses: app.chain_addresses.clone(),
             profile_hash: app.profile_screenshot.clone(),
+            title: app.title.clone(),
+            description: app.description.clone(),
         };
         app_mod
     }
