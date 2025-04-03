@@ -1091,8 +1091,8 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if twitterId == "" {
-		logger.Error("Missing twitter id parameter")
-		http.Error(w, "twitter id parameter is required", http.StatusBadRequest)
+		logger.Error("Missing twitterId parameter")
+		http.Error(w, "twitterId parameter is required", http.StatusBadRequest)
 		return
 	}
 
