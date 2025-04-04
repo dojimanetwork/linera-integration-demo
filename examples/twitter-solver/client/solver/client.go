@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 // Client represents the Twitter solver client
@@ -107,6 +109,14 @@ func (c *Client) GetUserInfo() (*UserInfo, error) {
 		return nil, err
 	}
 	return info, nil
+}
+
+func (c *Client) GetTcToken() (*oauth2.Token, error) {
+	return c.twitterClient.GetTcToken()
+}
+
+func (c *Client) UserDetails() (*UserDetails, error) {
+	return c.twitterClient.GetUserDetails()
 }
 
 // GetLatestTweet fetches the latest tweet from Twitter with retry logic

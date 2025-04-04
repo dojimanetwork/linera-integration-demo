@@ -404,9 +404,12 @@ func handleTwitterProfileScreenshot(w http.ResponseWriter, r *http.Request) {
 	urlboxURL := "https://api.urlbox.io/v1/render/sync"
 
 	// Create request body
-	requestBody := map[string]string{
+	requestBody := map[string]interface{}{
 		"url":       profileURL,
 		"dark_mode": "true",
+		"format":    "png",
+		"delay":     "1000",
+		"cookie":    []string{fmt.Sprintf("auth_token=%s", "ee09f38b122e71bcd40f1887f8fdf1d3bf0f022f")},
 	}
 
 	body, err := json.Marshal(requestBody)
@@ -501,6 +504,28 @@ func handleTwitterProfileScreenshot(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func handleUserDetails(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get user details from Twitter
+	userDetails, err := twitterClient.UserDetails()
+	if err != nil {
+		logger.Error("Failed to get user details: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to get user details: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return user details as JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"data":   userDetails,
+	})
+}
+
 type Session struct {
 	UserID    string
 	ExpiresAt time.Time
@@ -525,6 +550,7 @@ func main() {
 	http.HandleFunc("/latest_tweet", handleLatestTweet)
 	http.HandleFunc("/take_screenshot", handleTakeScreenshot)
 	http.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
+	http.HandleFunc("/user_details", handleUserDetails)
 
 	// Serve screenshots directory
 	http.Handle("/screenshots/", http.StripPrefix("/screenshots/", http.FileServer(http.Dir("screenshots"))))

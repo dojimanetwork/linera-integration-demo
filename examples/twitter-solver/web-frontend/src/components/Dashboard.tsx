@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api, {Tweet} from "../services/api";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import {useNavigate} from 'react-router-dom';
+import UserProfile from './UserProfile';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -76,6 +77,10 @@ export const Dashboard: React.FC = () => {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" minHeight="100vh" p={3}>
+      <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
+        <UserProfile />
+      </Paper>
+
       <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%' }}>
         <Box display="flex" alignItems="center" mb={3}>
           <Avatar sx={{ bgcolor: '#1DA1F2', mr: 2 }}>

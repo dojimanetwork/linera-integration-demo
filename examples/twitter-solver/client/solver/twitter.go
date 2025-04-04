@@ -251,6 +251,10 @@ func (tc *TwitterClient) GetAuthenticatedUserInfo() (*UserInfo, error) {
 	return &userData.Data, nil
 }
 
+func (tc *TwitterClient) GetTcToken() (*oauth2.Token, error) {
+	return tc.token, nil
+}
+
 // GetLatestTweet retrieves the latest tweet from the authenticated user
 func (tc *TwitterClient) GetLatestTweet() (*TwitterTweet, error) {
 	// First, get the authenticated user's ID
@@ -346,4 +350,93 @@ func LoadTwitterConfig() (*TwitterConfig, error) {
 	}
 
 	return config, nil
+}
+
+// UserDetails represents detailed user information from Twitter
+type UserDetails struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Username        string `json:"username"`
+	Description     string `json:"description"`
+	ProfileImageURL string `json:"profile_image_url"`
+	BannerURL       string `json:"profile_banner_url"`
+	FollowersCount  int    `json:"followers_count"`
+	FollowingCount  int    `json:"following_count"`
+	TweetCount      int    `json:"tweet_count"`
+	CreatedAt       string `json:"created_at"`
+	Verified        bool   `json:"verified"`
+}
+
+// GetUserDetails fetches detailed user information from Twitter
+func (tc *TwitterClient) GetUserDetails() (*UserDetails, error) {
+	// First get the user ID using GetAuthenticatedUserInfo
+	userInfo, err := tc.GetAuthenticatedUserInfo()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user info: %w", err)
+	}
+
+	// Construct the URL for user lookup
+	url := fmt.Sprintf("%s/users/%s?user.fields=created_at,description,profile_image_url,profile_banner_url,public_metrics,verified", twitterAPIURL, userInfo.ID)
+
+	// Create request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add authorization header
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tc.token.AccessToken))
+
+	// Make request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("twitter API returned non-200 status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response
+	var result struct {
+		Data struct {
+			ID              string `json:"id"`
+			Name            string `json:"name"`
+			Username        string `json:"username"`
+			Description     string `json:"description"`
+			ProfileImageURL string `json:"profile_image_url"`
+			BannerURL       string `json:"profile_banner_url"`
+			CreatedAt       string `json:"created_at"`
+			Verified        bool   `json:"verified"`
+			PublicMetrics   struct {
+				FollowersCount int `json:"followers_count"`
+				FollowingCount int `json:"following_count"`
+				TweetCount     int `json:"tweet_count"`
+			} `json:"public_metrics"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	// Convert to UserDetails
+	details := &UserDetails{
+		ID:              result.Data.ID,
+		Name:            result.Data.Name,
+		Username:        result.Data.Username,
+		Description:     result.Data.Description,
+		ProfileImageURL: result.Data.ProfileImageURL,
+		BannerURL:       result.Data.BannerURL,
+		FollowersCount:  result.Data.PublicMetrics.FollowersCount,
+		FollowingCount:  result.Data.PublicMetrics.FollowingCount,
+		TweetCount:      result.Data.PublicMetrics.TweetCount,
+		CreatedAt:       result.Data.CreatedAt,
+		Verified:        result.Data.Verified,
+	}
+
+	return details, nil
 }

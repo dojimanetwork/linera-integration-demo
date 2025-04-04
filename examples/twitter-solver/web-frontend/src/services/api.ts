@@ -48,6 +48,25 @@ export interface ProfileScreenshotResponse {
   screenshot_url: string;
 }
 
+export interface UserDetails {
+  id: string;
+  name: string;
+  username: string;
+  description: string;
+  profile_image_url: string;
+  banner_url: string;
+  followers_count: number;
+  following_count: number;
+  tweet_count: number;
+  created_at: string;
+  verified: boolean;
+}
+
+export interface UserDetailsResponse {
+  status: string;
+  data: UserDetails;
+}
+
 const api = {
   // Get Twitter auth URL
   getTwitterAuthUrl: async (): Promise<TwitterAuthResponse> => {
@@ -154,6 +173,29 @@ const api = {
       return data;
     } catch (error) {
       console.error('Error taking profile screenshot:', error);
+      throw error;
+    }
+  },
+
+  // Get user details
+  getUserDetails: async (): Promise<UserDetailsResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user_details`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to get user details');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error getting user details:', error);
       throw error;
     }
   }
