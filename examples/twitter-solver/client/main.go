@@ -82,6 +82,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 			"http://localhost:5173":         true,
 			"https://market-place.ngrok.io": true,
 			"http://localhost:3002":         true,
+			"https://twitter-solver.ngrok.io": true,
 		}
 
 		if allowedOrigins[origin] {
