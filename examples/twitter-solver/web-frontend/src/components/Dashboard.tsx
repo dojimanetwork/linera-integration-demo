@@ -5,6 +5,8 @@ import api, {Tweet, WebhookNotification} from "../services/api";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import {useNavigate} from 'react-router-dom';
 import UserProfile from './UserProfile';
+import WebhookReceiver from './WebhookReceiver';
+import { addWebhook } from '../services/webhookHandler';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -15,7 +17,7 @@ export const Dashboard: React.FC = () => {
   const [isTakingProfileScreenshot, setIsTakingProfileScreenshot] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState('');
-  const [chain, setChain] = useState('ethereum');
+  const [chain, setChain] = useState('solana');
   const [webhookUrl, setWebhookUrl] = useState('');
   const [useWebhook, setUseWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<WebhookNotification | null>(null);
@@ -26,8 +28,8 @@ export const Dashboard: React.FC = () => {
   // Predefined webhook URLs
   const webhookOptions = [
     { id: 'none', label: 'No Webhook', url: '' },
-    { id: 'local', label: 'Local Webhook', url: 'http://localhost:5173/webhook' },
-    { id: 'production', label: 'Production Webhook', url: 'https://api.example.com/webhook' },
+    { id: 'builtin', label: 'Built-in Webhook Receiver', url: 'http://localhost:3004/webhook' },
+    { id: 'test', label: 'Test Webhook', url: 'https://webhook.site/your-unique-id' },
     { id: 'custom', label: 'Custom URL', url: '' }
   ];
 
@@ -85,19 +87,68 @@ export const Dashboard: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // If using the mock webhook, handle it locally
+      if (selectedWebhookOption === 'builtin') {
+        // Create a mock webhook notification
+        const mockWebhook: WebhookNotification = {
+          status: 'success',
+          txHash,
+          chain,
+          fromAddress: '0x' + Math.random().toString(16).substring(2, 42),
+          fromToken: chain === 'ethereum' ? 'ETH' : 'SOL',
+          amount: (Math.random() * 10).toFixed(4),
+          timestamp: Math.floor(Date.now() / 1000).toString(),
+          data: { mock: true }
+        };
+        
+        // Add to local storage
+        addWebhook(mockWebhook);
+        
+        // Update webhook status
+        setWebhookStatus(mockWebhook);
+        
+        // Clear form fields
+        setTxHash('');
+        setWebhookUrl('');
+        
+        // Show success message
+        setError(null);
+        
+        // Return early
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Otherwise, make the API call
       const response = await api.postTxHash(
         txHash,
         chain,
-        useWebhook ? webhookUrl : undefined
+        selectedWebhookOption !== 'none' ? webhookUrl : undefined
       );
       
       if (response.status === 'success') {
-        setWebhookStatus(response.webhook || null);
+        // Update webhook status if available
+        if (response.webhook) {
+          setWebhookStatus(response.webhook);
+        }
+        
+        // Clear form fields
         setTxHash('');
         setWebhookUrl('');
+        
+        // Show success message
+        setError(null);
+      } else {
+        setError(`Transaction submission failed: ${response.status}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit transaction hash');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit transaction hash';
+      setError(errorMessage);
+      
+      // If webhook error, show specific message
+      if (errorMessage.includes('webhook') || errorMessage.includes('404')) {
+        setError(`Transaction processed but webhook failed: ${errorMessage}. The webhook URL may be invalid or not accessible.`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +210,9 @@ export const Dashboard: React.FC = () => {
           <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
             Webhook Options
           </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Note: Make sure the webhook URL is accessible before submitting. For testing, you can use the built-in webhook receiver below.
+          </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {webhookOptions.map((option) => (
               <FormControlLabel
@@ -207,11 +261,14 @@ export const Dashboard: React.FC = () => {
               Amount: {webhookStatus.amount} {webhookStatus.fromToken}
             </Typography>
             <Typography variant="body2">
-              Timestamp: {new Date(webhookStatus.timestamp).toLocaleString()}
+              Timestamp: {new Date(parseInt(webhookStatus.timestamp) * 1000).toLocaleString()}
             </Typography>
           </Box>
         )}
       </Paper>
+
+      {/* Webhook Receiver Component */}
+      <WebhookReceiver refreshInterval={2000} />
 
       <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%' }}>
         <Box display="flex" alignItems="center" mb={3}>

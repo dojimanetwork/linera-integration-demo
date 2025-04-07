@@ -76,9 +76,20 @@ func getEnvOrDefault(key, defaultValue string) string {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		origin := r.Header.Get("Origin")
+		allowedOrigins := map[string]bool{
+			"http://localhost:5173":         true,
+			"https://market-place.ngrok.io": true,
+		}
+
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
+		}
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return // Add return to prevent further processing
@@ -210,7 +221,7 @@ func handleTwitterAuth(w http.ResponseWriter, r *http.Request) {
 
 	// Clean up code verifier after 5 minutes
 	go func() {
-		time.Sleep(5 * time.Minute)
+		time.Sleep(60 * time.Minute)
 		verifierMutex.Lock()
 		delete(codeVerifiers, state)
 		verifierMutex.Unlock()

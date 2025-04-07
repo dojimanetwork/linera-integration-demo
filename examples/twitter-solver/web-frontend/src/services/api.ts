@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3005';
 const REDIRECT_URI = 'http://localhost:5173/nft';
+const CROWD_URI = 'http://localhost:3003'
 
 export interface TwitterAuthResponse {
   auth_url: string;
@@ -80,7 +81,11 @@ export interface WebhookNotification {
 
 export interface PostTxHashResponse {
   status: string;
-  message: string;
+  chain: string;
+  fromAddress: string;
+  fromToken: string;
+  amount: number;
+  data: any;
   webhook?: WebhookNotification;
 }
 
@@ -218,27 +223,54 @@ const api = {
   },
 
   // Post transaction hash with webhook support
-  postTxHash: async (txHash: string, chain: string, webhookUrl?: string): Promise<PostTxHashResponse> => {
+  postTxHash: async (
+    txHash: string,
+    chain: string,
+    webhookUrl?: string
+  ): Promise<PostTxHashResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/post_tx_hash`, {
+      let url = `${CROWD_URI}/post_tx_hash?txHash=${encodeURIComponent(txHash)}&chain=${encodeURIComponent(chain)}&twitterId=12341`;
+      
+      if (webhookUrl) {
+        url += `&webhook=${encodeURIComponent(webhookUrl)}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          txHash,
-          chain,
-          webhook: webhookUrl 
-        }),
       });
-
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to post transaction hash');
+        throw new Error(errorData.message || `Error: ${response.status} ${response.statusText}`);
       }
-
+      
       const data = await response.json();
-      return data;
+      
+      // Create a webhook notification from the response data
+      const webhookNotification: WebhookNotification = {
+        status: data.status,
+        txHash: txHash,
+        chain: data.chain,
+        fromAddress: data.fromAddress,
+        fromToken: data.fromToken,
+        amount: data.amount,
+        timestamp: Math.floor(Date.now() / 1000).toString(),
+        data: data.data
+      };
+      
+      // Return the response with the webhook notification
+      return {
+        status: data.status,
+        chain: data.chain,
+        fromAddress: data.fromAddress,
+        fromToken: data.fromToken,
+        amount: data.amount,
+        data: data.data,
+        webhook: webhookNotification
+      };
     } catch (error) {
       console.error('Error posting transaction hash:', error);
       throw error;
