@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
-import { Link, Box, Typography, Button, Paper, Avatar } from '@mui/material';
+import { Link, Box, Typography, Button, Paper, Avatar, TextField, FormControlLabel, Switch } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import api, {Tweet} from "../services/api";
+import api, {Tweet, WebhookNotification} from "../services/api";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import {useNavigate} from 'react-router-dom';
 import UserProfile from './UserProfile';
@@ -14,7 +14,22 @@ export const Dashboard: React.FC = () => {
   const [isTakingScreenshot, setIsTakingScreenshot] = useState(false);
   const [isTakingProfileScreenshot, setIsTakingProfileScreenshot] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState('');
+  const [chain, setChain] = useState('ethereum');
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [useWebhook, setUseWebhook] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState<WebhookNotification | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedWebhookOption, setSelectedWebhookOption] = useState('none');
   const navigate = useNavigate();
+
+  // Predefined webhook URLs
+  const webhookOptions = [
+    { id: 'none', label: 'No Webhook', url: '' },
+    { id: 'local', label: 'Local Webhook', url: 'http://localhost:5173/webhook' },
+    { id: 'production', label: 'Production Webhook', url: 'https://api.example.com/webhook' },
+    { id: 'custom', label: 'Custom URL', url: '' }
+  ];
 
   useEffect(() => {
     const handleLatestTweet = async () => {
@@ -62,6 +77,47 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleSubmitTxHash = async () => {
+    if (!txHash || !chain) {
+      setError('Please provide both transaction hash and chain');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await api.postTxHash(
+        txHash,
+        chain,
+        useWebhook ? webhookUrl : undefined
+      );
+      
+      if (response.status === 'success') {
+        setWebhookStatus(response.webhook || null);
+        setTxHash('');
+        setWebhookUrl('');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit transaction hash');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWebhookOptionChange = (optionId: string) => {
+    setSelectedWebhookOption(optionId);
+    const selectedOption = webhookOptions.find(option => option.id === optionId);
+    
+    if (selectedOption) {
+      if (optionId === 'custom') {
+        setUseWebhook(true);
+        setWebhookUrl('');
+      } else {
+        setUseWebhook(optionId !== 'none');
+        setWebhookUrl(selectedOption.url);
+      }
+    }
+  };
+
   if (error) {
     return (
         <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -79,6 +135,82 @@ export const Dashboard: React.FC = () => {
     <Box display="flex" flexDirection="column" alignItems="center" minHeight="100vh" p={3}>
       <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
         <UserProfile />
+      </Paper>
+
+      <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Submit Transaction Hash
+        </Typography>
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            fullWidth
+            label="Transaction Hash"
+            value={txHash}
+            onChange={(e) => setTxHash(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Chain"
+            value={chain}
+            onChange={(e) => setChain(e.target.value)}
+            margin="normal"
+          />
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+            Webhook Options
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {webhookOptions.map((option) => (
+              <FormControlLabel
+                key={option.id}
+                control={
+                  <Switch
+                    checked={selectedWebhookOption === option.id}
+                    onChange={() => handleWebhookOptionChange(option.id)}
+                  />
+                }
+                label={option.label}
+              />
+            ))}
+          </Box>
+          {selectedWebhookOption === 'custom' && (
+            <TextField
+              fullWidth
+              label="Custom Webhook URL"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              margin="normal"
+            />
+          )}
+          <Button
+            variant="contained"
+            onClick={handleSubmitTxHash}
+            disabled={isSubmitting}
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Transaction Hash'}
+          </Button>
+        </Box>
+        {webhookStatus && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Webhook Status:
+            </Typography>
+            <Typography variant="body2">
+              Status: {webhookStatus.status}
+            </Typography>
+            <Typography variant="body2">
+              From: {webhookStatus.fromAddress}
+            </Typography>
+            <Typography variant="body2">
+              Amount: {webhookStatus.amount} {webhookStatus.fromToken}
+            </Typography>
+            <Typography variant="body2">
+              Timestamp: {new Date(webhookStatus.timestamp).toLocaleString()}
+            </Typography>
+          </Box>
+        )}
       </Paper>
 
       <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%' }}>

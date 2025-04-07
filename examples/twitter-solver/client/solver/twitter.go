@@ -256,7 +256,7 @@ func (tc *TwitterClient) GetTcToken() (*oauth2.Token, error) {
 }
 
 // GetLatestTweet retrieves the latest tweet from the authenticated user
-func (tc *TwitterClient) GetLatestTweet() (*TwitterTweet, error) {
+func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
 	// First, get the authenticated user's ID
 	userInfo, err := tc.GetAuthenticatedUserInfo()
 	if err != nil {
@@ -288,7 +288,7 @@ func (tc *TwitterClient) GetLatestTweet() (*TwitterTweet, error) {
 		return nil, fmt.Errorf("no tweets found")
 	}
 
-	return &tweetsData.Data[0], nil
+	return &tweetsData.Data, nil
 }
 
 // GetTweetByID fetches a tweet by its ID using OAuth 1.0a

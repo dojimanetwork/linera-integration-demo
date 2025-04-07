@@ -2382,8 +2382,8 @@ name = "crowd-funding"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
- "fungible 0.1.0",
- "linera-sdk 0.14.0",
+ "fungible 0.1.0 (git+https://github.com/bhaagiKenpachi/linera-fungible?rev=e93272c)",
+ "linera-sdk 0.14.0 (git+https://github.com/jvff/linera-protocol?rev=26a5299)",
  "serde",
  "serde_json",
 ]

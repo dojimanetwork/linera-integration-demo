@@ -67,6 +67,23 @@ export interface UserDetailsResponse {
   data: UserDetails;
 }
 
+export interface WebhookNotification {
+  status: string;
+  txHash: string;
+  chain: string;
+  fromAddress: string;
+  fromToken: string;
+  amount: string;
+  timestamp: string;
+  data?: any;
+}
+
+export interface PostTxHashResponse {
+  status: string;
+  message: string;
+  webhook?: WebhookNotification;
+}
+
 const api = {
   // Get Twitter auth URL
   getTwitterAuthUrl: async (): Promise<TwitterAuthResponse> => {
@@ -196,6 +213,34 @@ const api = {
       return data;
     } catch (error) {
       console.error('Error getting user details:', error);
+      throw error;
+    }
+  },
+
+  // Post transaction hash with webhook support
+  postTxHash: async (txHash: string, chain: string, webhookUrl?: string): Promise<PostTxHashResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/post_tx_hash`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          txHash,
+          chain,
+          webhook: webhookUrl 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to post transaction hash');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error posting transaction hash:', error);
       throw error;
     }
   }
