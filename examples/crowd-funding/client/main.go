@@ -122,7 +122,7 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// Set CORS headers
 		origin := r.Header.Get("Origin")
 		allowedOrigins := map[string]bool{
-			"http://localhost:3002":         true,
+			"http://localhost:5173":         true,
 			"https://market-place.ngrok.io": true,
 		}
 
@@ -174,9 +174,8 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 // ChainAddress represents a chain and address pair
 type ChainAddress struct {
-	Chain     string `json:"chain"`
-	Address   string `json:"address"`
-	TwitterId string `json:"twitter_id"`
+	Chain   string `json:"chain"`
+	Address string `json:"address"`
 }
 
 // Global variable to store chain addresses
@@ -284,6 +283,19 @@ type EndpointInfo struct {
 	Parameters  []string `json:"parameters,omitempty"`
 }
 
+// WebhookNotification represents a notification to be sent to a webhook
+type WebhookNotification struct {
+	Status      string      `json:"status"`
+	TxHash      string      `json:"txHash"`
+	Chain       string      `json:"chain"`
+	FromAddress string      `json:"fromAddress"`
+	FromToken   string      `json:"fromToken"`
+	Amount      float64     `json:"amount"`
+	Timestamp   int64       `json:"timestamp"`
+	Data        interface{} `json:"data,omitempty"`
+	Client      string      `json:"client"`
+}
+
 func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -326,7 +338,7 @@ func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Build GraphQL mutation
-		mutation := fmt.Sprintf(`{"query":"mutation{addChain(twitterId:\"%s\",chainName:\"%s\",chainAddress:\"%s\")}"}`, chainAddr.TwitterId, chainToToken[chainAddr.Chain], chainAddr.Address)
+		mutation := fmt.Sprintf(`{"query":"mutation{addChain(chainName:\"%s\",address:\"%s\")}"}`, chainToToken[chainAddr.Chain], chainAddr.Address)
 
 		// Create request
 		req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
@@ -777,7 +789,7 @@ func handleAvailableEndpoints(w http.ResponseWriter, r *http.Request) {
 			Path:        "/post_tx_hash",
 			Method:      "POST",
 			Description: "Process a transaction hash and fund the crowd app",
-			Parameters:  []string{"txHash", "chain"},
+			Parameters:  []string{"txHash", "chain", "webhook"},
 		},
 		{
 			Path:        "/add_chain_address",
@@ -917,6 +929,7 @@ func GetSolanaTransaction(txHash string) (interface{}, error) {
 	var response interface{}
 	var err error
 	for i := 0; i < 20; i++ {
+		logger.Debug("Retrying %v time", i)
 		response, err = makeRPCRequest(SolanaRPC, requestBody)
 		if responseMap, ok := response.(map[string]interface{}); ok {
 			if responseMap["result"] == nil {
@@ -1063,6 +1076,42 @@ func extractFromAddress(tx interface{}, chain string) (string, error) {
 	return "", fmt.Errorf("could not extract from address from transaction")
 }
 
+// sendWebhookNotification sends a notification to the specified webhook URL
+func sendWebhookNotification(webhookURL string, notification WebhookNotification) error {
+	if webhookURL == "" {
+		return nil // No webhook URL provided, skip notification
+	}
+
+	// Marshal notification to JSON
+	jsonData, err := json.Marshal(notification)
+	if err != nil {
+		return fmt.Errorf("error marshaling webhook notification: %w", err)
+	}
+
+	// Create request
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating webhook request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending webhook request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("webhook request failed with status: %d", resp.StatusCode)
+	}
+
+	logger.Info("Webhook notification sent successfully to %s", webhookURL)
+	return nil
+}
+
 func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		logger.Error("Invalid method %s for /post_tx_hash", r.Method)
@@ -1074,6 +1123,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	txHash := r.URL.Query().Get("txHash")
 	chain := r.URL.Query().Get("chain")
 	twitterId := r.URL.Query().Get("twitterId")
+	webhookURL := r.URL.Query().Get("webhook") // Get webhook URL from query params
 
 	logger.Debug("Processing transaction - Hash: %s, Chain: %s", txHash, chain)
 
@@ -1096,106 +1146,240 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var (
-		tx  interface{}
-		err error
-	)
-
-	// Get transaction details based on chain
-	switch chain {
-	case "solana":
-		logger.Debug("Fetching Solana transaction: %s", txHash)
-		tx, err = GetSolanaTransaction(txHash)
-	case "ethereum":
-		logger.Debug("Fetching Ethereum transaction: %s", txHash)
-		tx, err = GetEthereumTransaction(txHash)
-	default:
-		logger.Error("Invalid chain parameter: %s", chain)
-		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
-		return
-	}
-
-	if err != nil {
-		logger.Error("Error getting transaction: %v", err)
-		http.Error(w, "Error getting transaction: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Extract from address
-	fromAddress, err := extractFromAddress(tx, chain)
-	if err != nil {
-		logger.Error("Error extracting from address: %v", err)
-		http.Error(w, "Error extracting from address: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Get the from token based on chain
-	fromToken, err := getTokenForChain(chain)
-	if err != nil {
-		logger.Error("Error getting token for chain: %v", err)
-		http.Error(w, "Error getting token for chain: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Extract amount from transaction
-	amount, err := extractAmountFromTx(tx)
-	if err != nil {
-		logger.Error("Error extracting amount from transaction: %v", err)
-		http.Error(w, "Error extracting amount from transaction: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Convert amount to string
-	amountStr := fmt.Sprintf("%f", amount)
-
-	logger.Info("Transaction processed successfully - Hash: %s, Chain: %s, From: %s, Amount: %s %s",
-		txHash, chain, fromAddress, amountStr, fromToken)
-
-	// Build GraphQL mutation
-	mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(twitterId:\"%s\",chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`,
-		twitterId, fromToken, fromAddress, amountStr)
-
-	logger.Debug("Sending GraphQL mutation: %s", mutation)
-
-	// Create request
-	req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
-	if err != nil {
-		logger.Error("Error creating GraphQL request: %v", err)
-		http.Error(w, "Error creating request: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send request
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		logger.Error("Error sending GraphQL request: %v", err)
-		http.Error(w, "Error sending request: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
-	// Check response status
-	if resp.StatusCode != http.StatusOK {
-		logger.Error("Error response from GraphQL endpoint: %d", resp.StatusCode)
-		http.Error(w, "Error from GraphQL endpoint", resp.StatusCode)
-		return
-	}
-
-	logger.Info("Successfully processed fund request - Chain: %s, From: %s, Amount: %s %s",
-		chain, fromAddress, amountStr, fromToken)
-
+	// Send immediate response to client
 	response := map[string]interface{}{
-		"status":      "success",
-		"chain":       chain,
-		"fromAddress": fromAddress,
-		"fromToken":   fromToken,
-		"amount":      amount,
-		"data":        tx,
+		"status":  "processing",
+		"message": "Transaction is successfully processed for completion",
+		"txHash":  txHash,
+		"chain":   chain,
 	}
 
-	// Return response
+	// Return response immediately
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+
+	// Create a channel for webhook notifications
+	webhookChan := make(chan WebhookNotification, 1)
+
+	// Start processing in a goroutine
+	go func() {
+		var (
+			tx  interface{}
+			err error
+		)
+
+		// Get transaction details based on chain
+		switch chain {
+		case "solana":
+			logger.Debug("Fetching Solana transaction: %s", txHash)
+			tx, err = GetSolanaTransaction(txHash)
+		case "ethereum":
+			logger.Debug("Fetching Ethereum transaction: %s", txHash)
+			tx, err = GetEthereumTransaction(txHash)
+		default:
+			logger.Error("Invalid chain parameter: %s", chain)
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: "",
+				FromToken:   "",
+				Amount:      0,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": "Invalid chain parameter. Must be 'solana' or 'ethereum'"},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		if err != nil {
+			logger.Error("Error getting transaction: %v", err)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: "",
+				FromToken:   "",
+				Amount:      0,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": err.Error()},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		// Extract from address
+		fromAddress, err := extractFromAddress(tx, chain)
+		if err != nil {
+			logger.Error("Error extracting from address: %v", err)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: "",
+				FromToken:   "",
+				Amount:      0,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": err.Error()},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		// Get the from token based on chain
+		fromToken, err := getTokenForChain(chain)
+		if err != nil {
+			logger.Error("Error getting token for chain: %v", err)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: fromAddress,
+				FromToken:   "",
+				Amount:      0,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": err.Error()},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		// Extract amount from transaction
+		amount, err := extractAmountFromTx(tx)
+		if err != nil {
+			logger.Error("Error extracting amount from transaction: %v", err)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: fromAddress,
+				FromToken:   fromToken,
+				Amount:      0,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": err.Error()},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		// Convert amount to string
+		amountStr := fmt.Sprintf("%f", amount)
+
+		logger.Info("Transaction processed successfully - Hash: %s, Chain: %s, From: %s, Amount: %s %s",
+			txHash, chain, fromAddress, amountStr, fromToken)
+
+		// Build GraphQL mutation
+		mutation := fmt.Sprintf(`{"query":"mutation calFund{fund(twitterId:\"%s\",chainName:\"%s\",depositAddress:\"%s\",amount:\"%s\")}"}`,
+			twitterId, fromToken, fromAddress, amountStr)
+
+		logger.Debug("Sending GraphQL mutation: %s", mutation)
+
+		// Create request
+		req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
+		if err != nil {
+			logger.Error("Error creating GraphQL request: %v", err)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: fromAddress,
+				FromToken:   fromToken,
+				Amount:      amount,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": err.Error()},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+
+		// Send request
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			logger.Error("Error sending GraphQL request: %v", err)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: fromAddress,
+				FromToken:   fromToken,
+				Amount:      amount,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": err.Error()},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+		defer resp.Body.Close()
+
+		// Check response status
+		if resp.StatusCode != http.StatusOK {
+			logger.Error("Error response from GraphQL endpoint: %d", resp.StatusCode)
+
+			// Create error webhook notification
+			errorNotification := WebhookNotification{
+				Status:      "error",
+				TxHash:      txHash,
+				Chain:       chain,
+				FromAddress: fromAddress,
+				FromToken:   fromToken,
+				Amount:      amount,
+				Timestamp:   time.Now().Unix(),
+				Data:        map[string]interface{}{"error": fmt.Sprintf("GraphQL endpoint returned status: %d", resp.StatusCode)},
+				Client:      "crowd-funding",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		logger.Info("Successfully processed fund request - Chain: %s, From: %s, Amount: %s %s",
+			chain, fromAddress, amountStr, fromToken)
+
+		// Create webhook notification
+		notification := WebhookNotification{
+			Status:      "success",
+			TxHash:      txHash,
+			Chain:       chain,
+			FromAddress: fromAddress,
+			FromToken:   fromToken,
+			Amount:      amount,
+			Timestamp:   time.Now().Unix(),
+			Data:        tx,
+			Client:      "crowd-funding", // Add client identifier
+		}
+		webhookChan <- notification
+	}()
+
+	// Start a goroutine to handle webhook notifications
+	go func() {
+		// Wait for notification from the processing goroutine
+		notification := <-webhookChan
+
+		// Send webhook notification if URL is provided
+		if webhookURL != "" {
+			if err := sendWebhookNotification(webhookURL, notification); err != nil {
+				logger.Error("Error sending webhook notification: %v", err)
+			}
+		}
+	}()
 }
