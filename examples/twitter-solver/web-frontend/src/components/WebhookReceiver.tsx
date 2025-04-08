@@ -9,66 +9,47 @@ interface WebhookReceiverProps {
 
 const WebhookReceiver: React.FC<WebhookReceiverProps> = ({ refreshInterval = 2000 }) => {
   const [webhooks, setWebhooks] = useState<WebhookNotification[]>([]);
-  const [isListening, setIsListening] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
   const [serverConnected, setServerConnected] = useState(false);
 
-  // Function to refresh webhooks from localStorage
-  const refreshLocalWebhooks = () => {
+  const fetchWebhooks = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const storedWebhooks = getWebhooks();
-      setWebhooks(storedWebhooks);
-      setIsListening(true);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to retrieve webhooks');
-      setIsListening(false);
-    }
-  };
-
-  // Function to refresh webhooks from server
-  const refreshServerWebhooks = async () => {
-    try {
-      const serverWebhooks = await getWebhooksFromServer('twitter-solver');
+      const serverWebhooks = await getWebhooksFromServer();
       setWebhooks(serverWebhooks);
-      setServerConnected(true);
-      setIsListening(true);
-      setError(null);
     } catch (err) {
-      setServerConnected(false);
-      setError(err instanceof Error ? err.message : 'Failed to connect to webhook server');
-      setIsListening(false);
+      setError('Failed to fetch webhooks from server');
+      console.error('Error fetching webhooks:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Function to refresh webhooks based on selected tab
-  const refreshWebhooks = () => {
-    if (tabValue === 0) {
-      refreshLocalWebhooks();
-    } else {
-      refreshServerWebhooks();
+  const clearWebhooks = async () => {
+    try {
+      await clearWebhooks();
+      setWebhooks([]);
+    } catch (err) {
+      setError('Failed to clear webhooks');
+      console.error('Error clearing webhooks:', err);
     }
   };
 
   useEffect(() => {
-    // Initial load of webhooks
-    refreshWebhooks();
+    fetchWebhooks();
+  }, []);
 
-    // Set up polling interval to check for new webhooks
-    const interval = setInterval(refreshWebhooks, refreshInterval);
-
-    // Clean up interval on unmount
-    return () => clearInterval(interval);
-  }, [refreshInterval, tabValue]);
-
-  const handleClearWebhooks = () => {
-    if (tabValue === 0) {
-      clearWebhooks();
-      setWebhooks([]);
-    } else {
-      // Server webhooks can't be cleared from the client
-      setError('Server webhooks cannot be cleared from the client');
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return 'text-green-500';
+      case 'error':
+        return 'text-red-500';
+      default:
+        return 'text-gray-500';
     }
   };
 
@@ -84,21 +65,35 @@ const WebhookReceiver: React.FC<WebhookReceiverProps> = ({ refreshInterval = 200
         </Typography>
         <Box>
           <Chip 
-            label={isListening ? "Listening for webhooks..." : "Not listening"} 
-            color={isListening ? "success" : "default"} 
+            label={isLoading ? 'Loading...' : 'Refresh'} 
+            color={isLoading ? "success" : "default"} 
             size="small" 
             sx={{ mr: 1 }}
           />
           <Button 
             variant="outlined" 
             size="small" 
-            onClick={handleClearWebhooks}
-            disabled={webhooks.length === 0 || tabValue === 1}
+            onClick={fetchWebhooks}
+            disabled={isLoading}
+          >
+            Refresh
+          </Button>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={clearWebhooks}
+            disabled={webhooks.length === 0}
           >
             Clear All
           </Button>
         </Box>
       </Box>
+
+      {error && (
+        <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+          Error: {error}
+        </Typography>
+      )}
 
       <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
         <Tab label="Local Storage" />
@@ -165,12 +160,6 @@ const WebhookReceiver: React.FC<WebhookReceiverProps> = ({ refreshInterval = 200
         </Box>
       )}
 
-      {error && (
-        <Typography color="error" variant="body2" sx={{ mb: 2 }}>
-          Error: {error}
-        </Typography>
-      )}
-
       <Divider sx={{ my: 2 }} />
 
       <Typography variant="subtitle1" gutterBottom>
@@ -184,44 +173,47 @@ const WebhookReceiver: React.FC<WebhookReceiverProps> = ({ refreshInterval = 200
             : "No webhooks received yet. Make sure the webhook server is running and clients are sending webhooks."}
         </Typography>
       ) : (
-        <List>
+        <div className="space-y-4">
           {webhooks.map((webhook, index) => (
-            <ListItem key={index} divider={index < webhooks.length - 1}>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2">
-                      Transaction: {webhook.txHash.substring(0, 10)}...
-                    </Typography>
-                    <Chip 
-                      label={webhook.status} 
-                      color={webhook.status === 'success' ? 'success' : 'error'} 
-                      size="small" 
+            <div
+              key={index}
+              className="p-4 border rounded shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className={`font-semibold ${getStatusColor(webhook.status)}`}>
+                    Status: {webhook.status}
+                  </p>
+                  <p>Transaction Hash: {webhook.txHash}</p>
+                  <p>Chain: {webhook.chain}</p>
+                  <p>From: {webhook.fromAddress}</p>
+                  <p>
+                    Amount: {typeof webhook.amount === 'string' ? webhook.amount : JSON.stringify(webhook.amount)} {webhook.fromToken}
+                  </p>
+                  <p>
+                    Time: {new Date(parseInt(typeof webhook.timestamp === 'string' ? webhook.timestamp : String(webhook.timestamp)) * 1000).toLocaleString()}
+                  </p>
+                  {webhook.client && <p>Client: {webhook.client}</p>}
+                </div>
+                {webhook.data?.screenshot && (
+                  <div className="ml-4">
+                    <img
+                      src={`http://localhost:3005/screenshots/${webhook.data.screenshot}`}
+                      alt="Transaction Screenshot"
+                      className="max-w-xs rounded shadow-sm"
                     />
-                    {webhook.client && (
-                      <Chip 
-                        label={webhook.client} 
-                        size="small" 
-                        variant="outlined"
-                      />
-                    )}
-                  </Box>
-                }
-                secondary={
-                  <>
-                    <Typography variant="body2">
-                      Chain: {webhook.chain} | From: {webhook.fromAddress.substring(0, 10)}...
-                    </Typography>
-                    <Typography variant="body2">
-                      Amount: {typeof webhook.amount === 'string' ? webhook.amount : JSON.stringify(webhook.amount)} {webhook.fromToken} | 
-                      Time: {new Date(parseInt(typeof webhook.timestamp === 'string' ? webhook.timestamp : String(webhook.timestamp)) * 1000).toLocaleString()}
-                    </Typography>
-                  </>
-                }
-              />
-            </ListItem>
+                  </div>
+                )}
+              </div>
+              {webhook.data?.error && (
+                <div className="mt-2 p-2 bg-red-50 text-red-700 rounded">
+                  <p className="font-semibold">Error Details:</p>
+                  <p>{webhook.data.error}</p>
+                </div>
+              )}
+            </div>
           ))}
-        </List>
+        </div>
       )}
     </Paper>
   );

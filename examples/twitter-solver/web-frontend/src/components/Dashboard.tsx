@@ -28,9 +28,8 @@ export const Dashboard: React.FC = () => {
   // Predefined webhook URLs
   const webhookOptions = [
     { id: 'none', label: 'No Webhook', url: '' },
-    { id: 'builtin', label: 'Built-in Webhook Receiver', url: 'http://localhost:3004/webhook' },
+    { id: 'builtin', label: 'Built-in Webhook Receiver', url: 'http://localhost:3005/webhook' },
     { id: 'server', label: 'Webhook Server', url: 'http://localhost:3006/webhook' },
-    { id: 'test', label: 'Test Webhook', url: 'https://webhook.site/your-unique-id' },
     { id: 'custom', label: 'Custom URL', url: '' }
   ];
 
@@ -80,44 +79,76 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSubmitTxHash = async () => {
+  const handleSubmitTxHash = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!txHash || !chain) {
-      setError('Please provide both transaction hash and chain');
+      setError('Please enter both transaction hash and chain');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      console.log("option", selectedWebhookOption, "url", webhookUrl)
-      // Otherwise, make the API call
       const response = await api.postTxHash(
         txHash,
         chain,
         selectedWebhookOption !== 'none' ? webhookUrl : undefined
       );
       
-      if (response.status === 'success') {
-        // Update webhook status if available
-        if (response.webhook) {
-          setWebhookStatus(response.webhook);
-        }
+      if (response.status === 'success' || response.status === 'processing') {
+        // Create a webhook notification from the response
+        const webhookNotification: WebhookNotification = {
+          status: response.status,
+          txHash: response.txHash,
+          chain: response.chain,
+          fromAddress: response.fromAddress || '',
+          fromToken: response.fromToken || '',
+          amount: response.amount || '',
+          timestamp: Math.floor(Date.now() / 1000).toString(),
+          data: response.data || {},
+          client: 'twitter-solver'
+        };
         
-        // Clear form fields
+        setWebhookStatus(webhookNotification);
         setTxHash('');
-        setWebhookUrl('');
-        
-        // Show success message
-        setError(null);
+        setChain('');
+        setError('');
       } else {
-        setError(`Transaction submission failed: ${response.status}`);
+        setWebhookStatus({
+          status: 'error',
+          txHash: txHash,
+          chain: chain,
+          fromAddress: '',
+          fromToken: '',
+          amount: '',
+          timestamp: Math.floor(Date.now() / 1000).toString(),
+          data: { error: response.message || 'Failed to submit transaction hash' },
+          client: 'crowd-funding'
+        });
+        setError(response.message || 'Failed to submit transaction hash');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to submit transaction hash';
-      setError(errorMessage);
-      
-      // If webhook error, show specific message
-      if (errorMessage.includes('webhook') || errorMessage.includes('404')) {
-        setError(`Transaction processed but webhook failed: ${errorMessage}. The webhook URL may be invalid or not accessible.`);
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setWebhookStatus({
+        status: 'error',
+        txHash: txHash,
+        chain: chain,
+        fromAddress: '',
+        fromToken: '',
+        amount: '',
+        timestamp: Math.floor(Date.now() / 1000).toString(),
+        data: { error: errorMessage },
+        client: 'twitter-solver'
+      });
+      if (err instanceof Error) {
+        if (err.message.includes('webhook')) {
+          setError('Webhook error: ' + err.message);
+        } else if (err.message.includes('404')) {
+          setError('Transaction hash not found');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred');
       }
     } finally {
       setIsSubmitting(false);
@@ -217,22 +248,76 @@ export const Dashboard: React.FC = () => {
           </Button>
         </Box>
         {webhookStatus && (
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 
+            webhookStatus.status === 'error' ? '#FEE2E2' : 
+            webhookStatus.status === 'processing' ? '#FEF3C7' : 
+            '#F0FDF4', 
+            borderRadius: 1 
+          }}>
             <Typography variant="subtitle1" gutterBottom>
               Webhook Status:
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ 
+              color: 
+                webhookStatus.status === 'error' ? '#DC2626' : 
+                webhookStatus.status === 'processing' ? '#D97706' : 
+                '#059669', 
+              fontWeight: 'bold' 
+            }}>
               Status: {webhookStatus.status}
             </Typography>
-            <Typography variant="body2">
-              From: {webhookStatus.fromAddress}
-            </Typography>
-            <Typography variant="body2">
-              Amount: {webhookStatus.amount} {webhookStatus.fromToken}
-            </Typography>
-            <Typography variant="body2">
-              Timestamp: {new Date(parseInt(webhookStatus.timestamp) * 1000).toLocaleString()}
-            </Typography>
+            {webhookStatus.txHash && (
+              <Typography variant="body2">
+                Transaction Hash: {webhookStatus.txHash}
+              </Typography>
+            )}
+            {webhookStatus.chain && (
+              <Typography variant="body2">
+                Chain: {webhookStatus.chain}
+              </Typography>
+            )}
+            {webhookStatus.fromAddress && (
+              <Typography variant="body2">
+                From: {webhookStatus.fromAddress}
+              </Typography>
+            )}
+            {webhookStatus.amount && (
+              <Typography variant="body2">
+                Amount: {typeof webhookStatus.amount === 'string' ? webhookStatus.amount : JSON.stringify(webhookStatus.amount)} {webhookStatus.fromToken}
+              </Typography>
+            )}
+            {webhookStatus.timestamp && (
+              <Typography variant="body2">
+                Time: {new Date(parseInt(typeof webhookStatus.timestamp === 'string' ? webhookStatus.timestamp : String(webhookStatus.timestamp)) * 1000).toLocaleString()}
+              </Typography>
+            )}
+            {webhookStatus.client && (
+              <Typography variant="body2">
+                Client: {webhookStatus.client}
+              </Typography>
+            )}
+            {webhookStatus.data?.error && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: '#FEF2F2', borderRadius: 1 }}>
+                <Typography variant="body2" sx={{ color: '#DC2626', fontWeight: 'bold' }}>
+                  Error Details:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#DC2626' }}>
+                  {webhookStatus.data.error}
+                </Typography>
+              </Box>
+            )}
+            {webhookStatus.data?.screenshot && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" gutterBottom>
+                  Screenshot:
+                </Typography>
+                <img
+                  src={`http://localhost:3005/screenshots/${webhookStatus.data.screenshot}`}
+                  alt="Transaction Screenshot"
+                  style={{ maxWidth: '100%', borderRadius: 4 }}
+                />
+              </Box>
+            )}
           </Box>
         )}
       </Paper>
@@ -315,3 +400,4 @@ export const Dashboard: React.FC = () => {
     </Box>
   );
 }; 
+

@@ -74,19 +74,21 @@ export interface WebhookNotification {
   chain: string;
   fromAddress: string;
   fromToken: string;
-  amount: string;
-  timestamp: string;
+  amount: string | number;
+  timestamp: string | number;
   data?: any;
   client?: string;
 }
 
 export interface PostTxHashResponse {
   status: string;
+  message?: string;
+  txHash: string;
   chain: string;
-  fromAddress: string;
-  fromToken: string;
-  amount: number;
-  data: any;
+  fromAddress?: string;
+  fromToken?: string;
+  amount?: number;
+  data?: any;
   webhook?: WebhookNotification;
 }
 
@@ -265,6 +267,8 @@ const api = {
       // Return the response with the webhook notification
       return {
         status: data.status,
+        message: data.message,
+        txHash: data.txHash,
         chain: data.chain,
         fromAddress: data.fromAddress,
         fromToken: data.fromToken,
