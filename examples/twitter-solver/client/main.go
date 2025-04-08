@@ -560,27 +560,18 @@ func getSession(sessionID string) (*Session, error) {
 	}, nil
 }
 
-// corsFileServer wraps a file server handler with CORS headers
-func corsFileServer(next http.Handler) http.Handler {
+// customFileServer creates a file server with CORS headers
+func customFileServer(dir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Get the origin from the request
-		origin := r.Header.Get("Origin")
+		// Set CORS headers for all requests
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// Define allowed origins
-		allowedOrigins := map[string]bool{
-			"http://localhost:5173":           true,
-			"https://market-place.ngrok.io":   true,
-			"http://localhost:3002":           true,
-			"https://twitter-solver.ngrok.io": true,
-		}
-
-		// Set CORS headers based on origin
-		if allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
 		}
 
 		// Set content type for images
@@ -590,14 +581,8 @@ func corsFileServer(next http.Handler) http.Handler {
 			w.Header().Set("Content-Type", "image/jpeg")
 		}
 
-		// Handle preflight requests
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		// Call the next handler
-		next.ServeHTTP(w, r)
+		// Serve the file
+		http.ServeFile(w, r, filepath.Join(dir, r.URL.Path))
 	})
 }
 
@@ -623,9 +608,8 @@ func main() {
 	mux.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
 	mux.HandleFunc("/user_details", handleUserDetails)
 
-	// Serve screenshots directory with CORS headers
-	fileServer := http.FileServer(http.Dir("screenshots"))
-	mux.Handle("/screenshots/", corsFileServer(http.StripPrefix("/screenshots/", fileServer)))
+	// Serve screenshots directory with custom file server
+	mux.Handle("/screenshots/", http.StripPrefix("/screenshots/", customFileServer("screenshots")))
 
 	// Apply middleware to the mux
 	handler := corsMiddleware(loggingMiddleware(mux))
