@@ -124,6 +124,7 @@ func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		allowedOrigins := map[string]bool{
 			"http://localhost:5173":         true,
 			"https://market-place.ngrok.io": true,
+			"http://localhost:3002":         true,
 		}
 
 		if allowedOrigins[origin] {
