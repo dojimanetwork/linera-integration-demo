@@ -77,8 +77,10 @@ func getEnvOrDefault(key, defaultValue string) string {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		// Get the origin from the request
 		origin := r.Header.Get("Origin")
+
+		// Define allowed origins
 		allowedOrigins := map[string]bool{
 			"http://localhost:5173":           true,
 			"https://market-place.ngrok.io":   true,
@@ -86,6 +88,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 			"https://twitter-solver.ngrok.io": true,
 		}
 
+		// Set CORS headers based on origin
 		if allowedOrigins[origin] {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -93,10 +96,13 @@ func corsMiddleware(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
 		}
-		if r.Method == "OPTIONS" {
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
-			return // Add return to prevent further processing
+			return
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -557,12 +563,25 @@ func getSession(sessionID string) (*Session, error) {
 // corsFileServer wraps a file server handler with CORS headers
 func corsFileServer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set CORS headers
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+		// Get the origin from the request
+		origin := r.Header.Get("Origin")
+
+		// Define allowed origins
+		allowedOrigins := map[string]bool{
+			"http://localhost:5173":           true,
+			"https://market-place.ngrok.io":   true,
+			"http://localhost:3002":           true,
+			"https://twitter-solver.ngrok.io": true,
+		}
+
+		// Set CORS headers based on origin
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+		}
 
 		// Set content type for images
 		if strings.HasSuffix(r.URL.Path, ".png") {
@@ -583,28 +602,34 @@ func corsFileServer(next http.Handler) http.Handler {
 }
 
 func main() {
-	http.HandleFunc("/post_tweet", handlePostTweet)
-	http.HandleFunc("/delete_tweet", handleDeleteTweet)
-	http.HandleFunc("/get_tweets", handleGetTweets)
-	http.HandleFunc("/ws", handleWebSocket)
-	http.HandleFunc("/twitter/auth", handleTwitterAuth)
-	http.HandleFunc("/twitter/callback", handleTwitterCallback)
-	http.HandleFunc("/latest_tweet", handleLatestTweet)
-	http.HandleFunc("/take_screenshot", handleTakeScreenshot)
-	http.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
-	http.HandleFunc("/user_details", handleUserDetails)
-
 	// Create screenshots directory if it doesn't exist
 	if err := os.MkdirAll("screenshots", 0755); err != nil {
 		logger.Error("Failed to create screenshots directory: %v", err)
 		os.Exit(1)
 	}
 
+	// Create a new mux for routing
+	mux := http.NewServeMux()
+
+	// Register handlers
+	mux.HandleFunc("/post_tweet", handlePostTweet)
+	mux.HandleFunc("/delete_tweet", handleDeleteTweet)
+	mux.HandleFunc("/get_tweets", handleGetTweets)
+	mux.HandleFunc("/ws", handleWebSocket)
+	mux.HandleFunc("/twitter/auth", handleTwitterAuth)
+	mux.HandleFunc("/twitter/callback", handleTwitterCallback)
+	mux.HandleFunc("/latest_tweet", handleLatestTweet)
+	mux.HandleFunc("/take_screenshot", handleTakeScreenshot)
+	mux.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
+	mux.HandleFunc("/user_details", handleUserDetails)
+
 	// Serve screenshots directory with CORS headers
 	fileServer := http.FileServer(http.Dir("screenshots"))
-	http.Handle("/screenshots/", corsFileServer(http.StripPrefix("/screenshots/", fileServer)))
+	mux.Handle("/screenshots/", corsFileServer(http.StripPrefix("/screenshots/", fileServer)))
 
-	handler := corsMiddleware(loggingMiddleware(http.DefaultServeMux))
+	// Apply middleware to the mux
+	handler := corsMiddleware(loggingMiddleware(mux))
+
 	logger.Info("Starting server on :3005")
 	if err := http.ListenAndServe(":3005", handler); err != nil {
 		logger.Error("Failed to start server: %v", err)
