@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/rs/cors"
 )
 
 // WebhookNotification represents a notification to be sent to a webhook
@@ -16,8 +18,8 @@ type WebhookNotification struct {
 	Chain       string      `json:"chain"`
 	FromAddress string      `json:"fromAddress"`
 	FromToken   string      `json:"fromToken"`
-	Amount      string      `json:"amount"`
-	Timestamp   string      `json:"timestamp"`
+	Amount      interface{} `json:"amount"`    // Can be string or number
+	Timestamp   interface{} `json:"timestamp"` // Can be string or number
 	Data        interface{} `json:"data,omitempty"`
 	Client      string      `json:"client,omitempty"` // Which client sent this notification
 }
@@ -45,15 +47,27 @@ func NewWebhookServer(port int) *WebhookServer {
 // Start starts the webhook server
 func (s *WebhookServer) Start() error {
 	// Set up routes
-	http.HandleFunc("/webhook", s.handleWebhook)
-	http.HandleFunc("/webhooks", s.handleGetWebhooks)
-	http.HandleFunc("/subscribe", s.handleSubscribe)
-	http.HandleFunc("/health", s.handleHealth)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/webhook", s.handleWebhook)
+	mux.HandleFunc("/webhooks", s.handleGetWebhooks)
+	mux.HandleFunc("/subscribe", s.handleSubscribe)
+	mux.HandleFunc("/health", s.handleHealth)
+
+	// Set up CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	// Wrap the mux with CORS middleware
+	handler := c.Handler(mux)
 
 	// Start the server
 	addr := fmt.Sprintf(":%d", s.port)
 	log.Printf("Webhook server starting on %s", addr)
-	return http.ListenAndServe(addr, nil)
+	return http.ListenAndServe(addr, handler)
 }
 
 // handleWebhook handles incoming webhook notifications
@@ -71,13 +85,46 @@ func (s *WebhookServer) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add timestamp if not provided
-	if notification.Timestamp == "" {
+	if notification.Timestamp == nil {
 		notification.Timestamp = fmt.Sprintf("%d", time.Now().Unix())
+	} else {
+		// Ensure Timestamp is properly formatted as a string
+		switch v := notification.Timestamp.(type) {
+		case float64:
+			// Convert float64 to string
+			notification.Timestamp = fmt.Sprintf("%d", int64(v))
+		case int:
+			// Convert int to string
+			notification.Timestamp = fmt.Sprintf("%d", v)
+		case int64:
+			// Convert int64 to string
+			notification.Timestamp = fmt.Sprintf("%d", v)
+		case string:
+			// Already a string, no conversion needed
+		default:
+			// For any other type, convert to string
+			notification.Timestamp = fmt.Sprintf("%v", v)
+		}
 	}
 
 	// Add client information if available
 	if client := r.URL.Query().Get("client"); client != "" {
 		notification.Client = client
+	}
+
+	// Ensure Amount is properly formatted
+	switch v := notification.Amount.(type) {
+	case float64:
+		// Convert float64 to string with appropriate precision
+		notification.Amount = fmt.Sprintf("%f", v)
+	case int:
+		// Convert int to string
+		notification.Amount = fmt.Sprintf("%d", v)
+	case string:
+		// Already a string, no conversion needed
+	default:
+		// For any other type, convert to string
+		notification.Amount = fmt.Sprintf("%v", v)
 	}
 
 	// Store the webhook notification

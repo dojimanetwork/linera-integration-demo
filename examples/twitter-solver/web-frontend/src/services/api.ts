@@ -77,6 +77,7 @@ export interface WebhookNotification {
   amount: string;
   timestamp: string;
   data?: any;
+  client?: string;
 }
 
 export interface PostTxHashResponse {

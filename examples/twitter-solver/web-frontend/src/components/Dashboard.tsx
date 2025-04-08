@@ -29,6 +29,7 @@ export const Dashboard: React.FC = () => {
   const webhookOptions = [
     { id: 'none', label: 'No Webhook', url: '' },
     { id: 'builtin', label: 'Built-in Webhook Receiver', url: 'http://localhost:3004/webhook' },
+    { id: 'server', label: 'Webhook Server', url: 'http://localhost:3006/webhook' },
     { id: 'test', label: 'Test Webhook', url: 'https://webhook.site/your-unique-id' },
     { id: 'custom', label: 'Custom URL', url: '' }
   ];
@@ -87,38 +88,7 @@ export const Dashboard: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // If using the mock webhook, handle it locally
-      if (selectedWebhookOption === 'builtin') {
-        // Create a mock webhook notification
-        const mockWebhook: WebhookNotification = {
-          status: 'success',
-          txHash,
-          chain,
-          fromAddress: '0x' + Math.random().toString(16).substring(2, 42),
-          fromToken: chain === 'ethereum' ? 'ETH' : 'SOL',
-          amount: (Math.random() * 10).toFixed(4),
-          timestamp: Math.floor(Date.now() / 1000).toString(),
-          data: { mock: true }
-        };
-        
-        // Add to local storage
-        addWebhook(mockWebhook);
-        
-        // Update webhook status
-        setWebhookStatus(mockWebhook);
-        
-        // Clear form fields
-        setTxHash('');
-        setWebhookUrl('');
-        
-        // Show success message
-        setError(null);
-        
-        // Return early
-        setIsSubmitting(false);
-        return;
-      }
-      
+      console.log("option", selectedWebhookOption, "url", webhookUrl)
       // Otherwise, make the API call
       const response = await api.postTxHash(
         txHash,

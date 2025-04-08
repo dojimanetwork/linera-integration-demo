@@ -1,122 +1,153 @@
-# Webhook Server
+# Linera Protocol Webhook Server
 
-This is a centralized webhook server for handling notifications from various clients in the Twitter Solver project.
+A centralized webhook server for handling notifications across multiple Linera Protocol clients, including the crowd-funding app and Twitter solver frontend.
 
 ## Features
 
-- Receives webhook notifications from multiple clients (universal-solver, crowd-funding, non-fungible)
-- Stores webhook notifications in memory with a configurable limit
-- Provides REST API endpoints for retrieving webhook notifications
-- Supports Server-Sent Events (SSE) for real-time notifications
-- Includes health check endpoint
-- Supports filtering notifications by client
+- Real-time notifications via Server-Sent Events (SSE)
+- CORS support for cross-origin requests
+- Client-specific webhook filtering
+- Health check endpoint
+- Static file serving for screenshots and other assets
+- In-memory webhook storage with automatic cleanup
 
 ## API Endpoints
 
 ### POST /webhook
 Receives webhook notifications from clients.
 
-Request body:
+Query Parameters:
+- `client` (optional): Identifier for the client sending the webhook (e.g., 'crowd-funding', 'twitter-solver')
+
+Request Body:
 ```json
 {
   "status": "success",
-  "txHash": "0x...",
+  "txHash": "0x123...",
   "chain": "ethereum",
-  "fromAddress": "0x...",
+  "fromAddress": "0xabc...",
   "fromToken": "ETH",
   "amount": "1.5",
   "timestamp": "2024-03-21T12:00:00Z",
   "data": {
-    "additional": "data"
+    "additional": "information"
   },
-  "client": "universal-solver"
+  "client": "crowd-funding"
 }
 ```
 
 ### GET /webhooks
 Retrieves stored webhook notifications.
 
-Query parameters:
-- `client` (optional): Filter notifications by client
-- `limit` (optional): Limit the number of notifications returned
+Query Parameters:
+- `client` (optional): Filter webhooks by client identifier
 
-### GET /webhooks/subscribe
-Subscribes to real-time webhook notifications using Server-Sent Events.
-
-Query parameters:
-- `client` (optional): Filter notifications by client
+### GET /subscribe
+Establishes a Server-Sent Events connection for real-time notifications.
 
 ### GET /health
 Health check endpoint.
 
+### GET /screenshots/*
+Serves static files from the screenshots directory.
+
 ## Usage
 
-1. Start the server:
+### Starting the Server
+
 ```bash
-go run main.go -port 3005
+cd examples/twitter-solver/webhook
+go run main.go
 ```
 
-2. Send a webhook notification:
+The server will start on port 3005 by default.
+
+### Sending Webhooks
+
 ```bash
-curl -X POST http://localhost:3005/webhook \
+curl -X POST http://localhost:3005/webhook?client=crowd-funding \
   -H "Content-Type: application/json" \
   -d '{
     "status": "success",
-    "txHash": "0x...",
+    "txHash": "0x123...",
     "chain": "ethereum",
-    "fromAddress": "0x...",
+    "fromAddress": "0xabc...",
     "fromToken": "ETH",
     "amount": "1.5",
     "timestamp": "2024-03-21T12:00:00Z",
     "data": {},
-    "client": "universal-solver"
+    "client": "crowd-funding"
   }'
 ```
 
-3. Retrieve webhook notifications:
+### Retrieving Webhooks
+
 ```bash
-curl http://localhost:3005/webhooks?client=universal-solver
+# Get all webhooks
+curl http://localhost:3005/webhooks
+
+# Get webhooks for a specific client
+curl http://localhost:3005/webhooks?client=crowd-funding
 ```
 
-4. Subscribe to real-time notifications:
-```bash
-curl http://localhost:3005/webhooks/subscribe?client=universal-solver
+### Subscribing to Notifications
+
+```javascript
+const eventSource = new EventSource('http://localhost:3005/subscribe');
+eventSource.onmessage = (event) => {
+  const webhook = JSON.parse(event.data);
+  console.log('New webhook:', webhook);
+};
 ```
 
-## Integration with Clients
+## Integration
 
-### Universal Solver
-Update the webhook URL in the configuration to point to this server:
-```
-http://localhost:3005/webhook
+### Crowd-Funding Client
+
+The crowd-funding client sends webhook notifications when transactions are processed:
+
+```go
+webhookURL := "http://localhost:3005/webhook?client=crowd-funding"
+notification := WebhookNotification{
+    Status:      "success",
+    TxHash:      txHash,
+    Chain:       "ethereum",
+    FromAddress: fromAddress,
+    FromToken:   "ETH",
+    Amount:      amount,
+    Timestamp:   time.Now().UTC(),
+    Data:        map[string]interface{}{},
+    Client:      "crowd-funding",
+}
 ```
 
-### Crowd Funding
-Update the webhook URL in the configuration to point to this server:
-```
-http://localhost:3005/webhook
-```
+### Twitter Frontend
 
-### Non-Fungible Client
-Update the webhook URL in the configuration to point to this server:
-```
-http://localhost:3005/webhook
-```
+The Twitter frontend can:
+1. Send webhook notifications for transactions
+2. Subscribe to real-time notifications
+3. Display webhook history
+4. View transaction screenshots
 
 ## Development
 
+### Dependencies
+
+- Go 1.21 or later
+- github.com/gorilla/mux v1.8.1
+
 ### Building
+
 ```bash
 go build -o webhook-server
 ```
 
-### Running Tests
+### Testing
+
 ```bash
 go test ./...
 ```
 
-### Docker
-```bash
-docker build -t webhook-server .
-docker run -p 3005:3005 webhook-server
-``` 
+## License
+
+This project is part of the Linera Protocol and is subject to its licensing terms. 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -79,9 +80,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		origin := r.Header.Get("Origin")
 		allowedOrigins := map[string]bool{
-			"http://localhost:5173":         true,
-			"https://market-place.ngrok.io": true,
-			"http://localhost:3002":         true,
+			"http://localhost:5173":           true,
+			"https://market-place.ngrok.io":   true,
+			"http://localhost:3002":           true,
 			"https://twitter-solver.ngrok.io": true,
 		}
 
@@ -553,6 +554,34 @@ func getSession(sessionID string) (*Session, error) {
 	}, nil
 }
 
+// corsFileServer wraps a file server handler with CORS headers
+func corsFileServer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+
+		// Set content type for images
+		if strings.HasSuffix(r.URL.Path, ".png") {
+			w.Header().Set("Content-Type", "image/png")
+		} else if strings.HasSuffix(r.URL.Path, ".jpg") || strings.HasSuffix(r.URL.Path, ".jpeg") {
+			w.Header().Set("Content-Type", "image/jpeg")
+		}
+
+		// Handle preflight requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Call the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	http.HandleFunc("/post_tweet", handlePostTweet)
 	http.HandleFunc("/delete_tweet", handleDeleteTweet)
@@ -565,8 +594,15 @@ func main() {
 	http.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
 	http.HandleFunc("/user_details", handleUserDetails)
 
-	// Serve screenshots directory
-	http.Handle("/screenshots/", http.StripPrefix("/screenshots/", http.FileServer(http.Dir("screenshots"))))
+	// Create screenshots directory if it doesn't exist
+	if err := os.MkdirAll("screenshots", 0755); err != nil {
+		logger.Error("Failed to create screenshots directory: %v", err)
+		os.Exit(1)
+	}
+
+	// Serve screenshots directory with CORS headers
+	fileServer := http.FileServer(http.Dir("screenshots"))
+	http.Handle("/screenshots/", corsFileServer(http.StripPrefix("/screenshots/", fileServer)))
 
 	handler := corsMiddleware(loggingMiddleware(http.DefaultServeMux))
 	logger.Info("Starting server on :3005")
