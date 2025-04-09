@@ -55,7 +55,7 @@ func (s *WebhookServer) Start() error {
 
 	// Set up CORS middleware
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3002", "https://market-place.ngrok.io", "https://twitter-solver.ngrok.io"},
+		AllowedOrigins:   []string{"http://localhost:3002", "https://market-place.ngrok.io", "https://twitter-solver.ngrok.io", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,9 +10,56 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/linera-protocol/examples/universal-solver/client/solver"
 )
+
+// WebhookNotification represents a notification to be sent to a webhook
+type WebhookNotification struct {
+	Status      string      `json:"status"`
+	TxHash      string      `json:"txHash"`
+	Chain       string      `json:"chain"`
+	FromAddress string      `json:"fromAddress"`
+	FromToken   string      `json:"fromToken"`
+	Amount      float64     `json:"amount"`
+	Timestamp   int64       `json:"timestamp"`
+	Data        interface{} `json:"data,omitempty"`
+	Client      string      `json:"client"`
+}
+
+// sendWebhookNotification sends a notification to the specified webhook URL
+func sendWebhookNotification(notification WebhookNotification, webhookURL string) error {
+	// Marshal notification to JSON
+	jsonData, err := json.Marshal(notification)
+	if err != nil {
+		return fmt.Errorf("error marshaling notification: %v", err)
+	}
+
+	// Create POST request
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("webhook returned non-200 status: %d", resp.StatusCode)
+	}
+
+	return nil
+}
 
 var (
 	solverClient *solver.Client
@@ -24,6 +72,9 @@ var (
 )
 
 func init() {
+	// Initialize the logger
+	logger = NewLogger()
+	logger.Info("Initializing application...")
 	initFlags()
 }
 
@@ -130,7 +181,10 @@ func main() {
 
 // Update the handlePostTxHash function
 func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
+	logger.Info("Received POST request to /post_tx_hash")
+
 	if r.Method != http.MethodPost {
+		logger.Error("Invalid method %s for /post_tx_hash", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -145,113 +199,239 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	chain := r.URL.Query().Get("chain")
 	toToken := r.URL.Query().Get("toToken")
 	destinationAddress := r.URL.Query().Get("destinationAddress")
+	webhookURL := r.URL.Query().Get("webhookURL")
+
+	logger.Debug("Request parameters - txHash: %s, chain: %s, toToken: %s, destinationAddress: %s, webhookURL: %s",
+		txHash, chain, toToken, destinationAddress, webhookURL)
 
 	// Get additional transfer parameters
 	sourceOwner := r.URL.Query().Get("sourceOwner")
 	tokenId := r.URL.Query().Get("tokenId")
 	blobHash := r.URL.Query().Get("blobHash")
-
-	if err != nil {
-		http.Error(w, "Invalid tokenId", http.StatusBadRequest)
-		return
-	}
 	targetChainId := r.URL.Query().Get("targetChainId")
 	targetOwner := r.URL.Query().Get("targetOwner")
 	nftId := r.URL.Query().Get("nftId")
 
+	logger.Debug("Additional parameters - sourceOwner: %s, tokenId: %s, blobHash: %s, targetChainId: %s, targetOwner: %s, nftId: %s",
+		sourceOwner, tokenId, blobHash, targetChainId, targetOwner, nftId)
+
 	// Validate required parameters
 	if txHash == "" {
+		logger.Error("Missing required parameter: txHash")
 		http.Error(w, "txHash parameter is required", http.StatusBadRequest)
 		return
 	}
 
 	if chain == "" {
+		logger.Error("Missing required parameter: chain")
 		http.Error(w, "chain parameter is required", http.StatusBadRequest)
 		return
 	}
 
-	// Get transaction details based on chain
-	switch chain {
-	case "solana":
-		tx, err = solverClient.GetSolanaTransaction(SolanaRPC, txHash)
-	case "ethereum":
-		tx, err = solverClient.GetEthereumTransaction(EthereumRPC, txHash)
-	default:
-		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
-		return
-	}
-
-	if err != nil {
-		http.Error(w, "Error getting transaction: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	// Send immediate response to client
 	response := map[string]interface{}{
-		"status": "success",
-		"chain":  chain,
-		"data":   tx,
+		"status":  "processing",
+		"message": "Transaction is being processed",
+		"txHash":  txHash,
+		"chain":   chain,
 	}
 
-	// If toToken and destinationAddress are provided, execute transfer
-	if toToken != "" && destinationAddress != "" {
+	logger.Info("Sending initial response to client - status: processing")
+
+	// Return response immediately
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	// Create a channel for webhook notifications
+	webhookChan := make(chan WebhookNotification, 1)
+
+	// Start processing in a goroutine
+	go func() {
+		logger.Info("Starting transaction processing in background")
+
+		// Get transaction details based on chain
+		switch chain {
+		case "solana":
+			logger.Debug("Processing Solana transaction: %s", txHash)
+			tx, err = solverClient.GetSolanaTransaction(SolanaRPC, txHash)
+		case "ethereum":
+			logger.Debug("Processing Ethereum transaction: %s", txHash)
+			tx, err = solverClient.GetEthereumTransaction(EthereumRPC, txHash)
+		default:
+			logger.Error("Invalid chain parameter: %s", chain)
+			errorNotification := WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": "Invalid chain parameter. Must be 'solana' or 'ethereum'"},
+				Client:    "non-fungible",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		if err != nil {
+			logger.Error("Error getting transaction details: %v", err)
+			errorNotification := WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": err.Error()},
+				Client:    "non-fungible",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
 		// Get the from token based on chain
 		fromToken, err := getTokenForChain(chain)
 		if err != nil {
-			http.Error(w, "Error getting token for chain: "+err.Error(), http.StatusInternalServerError)
+			logger.Error("Error getting token for chain: %v", err)
+			errorNotification := WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": err.Error()},
+				Client:    "non-fungible",
+			}
+			webhookChan <- errorNotification
 			return
 		}
+
+		logger.Debug("Retrieved fromToken: %s for chain: %s", fromToken, chain)
 
 		// Extract amount from transaction
 		amount, err := extractAmountFromTx(tx)
 		if err != nil {
-			http.Error(w, "Error extracting amount from transaction: "+err.Error(), http.StatusInternalServerError)
+			logger.Error("Error extracting amount from transaction: %v", err)
+			errorNotification := WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				FromToken: fromToken,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": err.Error()},
+				Client:    "non-fungible",
+			}
+			webhookChan <- errorNotification
 			return
 		}
 
-		// First calculate the swap
-		swapResult, err := solverClient.CalculateSwap(fromToken, toToken, amount)
-		if err != nil {
-			http.Error(w, "Error calculating swap: "+err.Error(), http.StatusInternalServerError)
-			return
+		logger.Debug("Extracted amount: %f from transaction", amount)
+
+		// Process transfer if toToken and destinationAddress are provided
+		if toToken != "" && destinationAddress != "" {
+			logger.Info("Processing transfer with toToken: %s and destinationAddress: %s", toToken, destinationAddress)
+
+			// Calculate swap
+			swapResult, err := solverClient.CalculateSwap(fromToken, toToken, amount)
+			if err != nil {
+				logger.Error("Error calculating swap: %v", err)
+				errorNotification := WebhookNotification{
+					Status:    "error",
+					TxHash:    txHash,
+					Chain:     chain,
+					FromToken: fromToken,
+					Amount:    amount,
+					Timestamp: time.Now().Unix(),
+					Data:      map[string]interface{}{"error": err.Error()},
+					Client:    "non-fungible",
+				}
+				webhookChan <- errorNotification
+				return
+			}
+
+			logger.Debug("Calculated swap result: %+v", swapResult)
+
+			// Execute transfer
+			transferParams := solver.TransferParams{
+				SourceOwner:   sourceOwner,
+				TokenId:       tokenId,
+				TargetChainId: targetChainId,
+				TargetOwner:   targetOwner,
+				ChainOwner:    destinationAddress,
+				BuyFromToken:  fromToken,
+				ToToken:       toToken,
+				Amount:        fmt.Sprintf("%f", swapResult.ToAmount),
+				BlobHash:      blobHash,
+				NftId:         nftId,
+			}
+
+			logger.Debug("Executing transfer with params: %+v", transferParams)
+
+			transferResp, txhash, err := solverClient.ExecuteTransferMutation(transferParams)
+			if err != nil {
+				logger.Error("Error executing transfer: %v", err)
+				errorNotification := WebhookNotification{
+					Status:    "error",
+					TxHash:    txHash,
+					Chain:     chain,
+					FromToken: fromToken,
+					Amount:    amount,
+					Timestamp: time.Now().Unix(),
+					Data: map[string]interface{}{
+						"error":          err.Error(),
+						"transferParams": transferParams,
+					},
+					Client: "non-fungible",
+				}
+				webhookChan <- errorNotification
+				return
+			}
+
+			logger.Info("Transfer executed successfully with hash: %s", txhash)
+
+			// Send success notification
+			notification := WebhookNotification{
+				Status:    "success",
+				TxHash:    txHash,
+				Chain:     chain,
+				FromToken: fromToken,
+				Amount:    amount,
+				Timestamp: time.Now().Unix(),
+				Data: map[string]interface{}{
+					"transferResult":  transferResp.Data,
+					"swapCalculation": swapResult,
+					"newTxHash":       txhash,
+					"transferParams":  transferParams,
+				},
+				Client: "non-fungible",
+			}
+			webhookChan <- notification
 		}
+	}()
 
-		// Use provided parameters or defaults
-		transferParams := solver.TransferParams{
-			SourceOwner:   sourceOwner,
-			TokenId:       tokenId,
-			TargetChainId: targetChainId,
-			TargetOwner:   targetOwner,
-			ChainOwner:    destinationAddress,
-			BuyFromToken:  fromToken,
-			ToToken:       toToken,
-			Amount:        fmt.Sprintf("%f", swapResult.ToAmount), // Use calculated amount
-			BlobHash:      blobHash,
-			NftId:         nftId,
+	// Start a goroutine to handle webhook notifications
+	go func() {
+		logger.Info("Starting webhook notification handler")
+
+		// Wait for notification from the processing goroutine
+		notification := <-webhookChan
+		logger.Debug("Received notification for webhook: %+v", notification)
+
+		// Send webhook notification if URL is provided
+		if webhookURL != "" {
+			if err := sendWebhookNotification(notification, webhookURL); err != nil {
+				logger.Error("Error sending webhook notification: %v", err)
+			} else {
+				logger.Info("Successfully sent webhook notification to: %s", webhookURL)
+			}
 		}
-
-		// Execute transfer mutation with swap result
-		transferResp, txhash, err := solverClient.ExecuteTransferMutation(transferParams)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		response["transfer_result"] = transferResp.Data
-		response["swap_calculation"] = swapResult
-		response["txhash"] = txhash
-	}
-
-	// Return response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	}()
 }
 
 // Helper function to extract amount from transaction
 func extractAmountFromTx(tx interface{}) (float64, error) {
+	logger.Debug("Extracting amount from transaction: %+v", tx)
+
 	switch v := tx.(type) {
 	case map[string]interface{}:
 		// For Ethereum
 		if value, ok := v["value"].(string); ok {
+			logger.Debug("Processing Ethereum transaction value: %s", value)
 			// Parse decimal string to big.Int
 			bigValue := new(big.Int)
 			if _, success := bigValue.SetString(value, 10); !success {
@@ -268,6 +448,7 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 		}
 		// For Solana
 		if result, ok := v["result"].(map[string]interface{}); ok {
+			logger.Debug("Processing Solana transaction result")
 			meta := result
 			if meta, ok := meta["meta"].(map[string]interface{}); ok {
 				if preBalances, ok := meta["preBalances"].([]interface{}); ok && len(preBalances) > 0 {
@@ -278,7 +459,17 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 						if preBalance > postBalance {
 							// Convert from lamports to SOL (divide by 10^9)
 							lamports := preBalance - postBalance
-							solValue := float64(lamports) / 1e9
+
+							// Extract fee
+							fee := uint64(0)
+							if feeVal, ok := meta["fee"].(float64); ok {
+								fee = uint64(feeVal)
+							}
+
+							// Subtract fee from total amount
+							actualLamports := lamports - fee
+							solValue := float64(actualLamports) / 1e9
+
 							if solValue > float64(^uint64(0)) {
 								return 0, fmt.Errorf("converted SOL value exceeds uint64 range: %f", solValue)
 							}
@@ -289,14 +480,18 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 			}
 		}
 	}
+	logger.Error("Could not extract amount from transaction")
 	return 0, fmt.Errorf("could not extract amount from transaction")
 }
 
 func getTokenForChain(chain string) (string, error) {
+	logger.Debug("Getting token for chain: %s", chain)
 	token, ok := chainToToken[chain]
 	if !ok {
+		logger.Error("Unsupported chain: %s", chain)
 		return "", fmt.Errorf("unsupported chain: %s", chain)
 	}
+	logger.Debug("Found token: %s for chain: %s", token, chain)
 	return token, nil
 }
 
@@ -504,4 +699,55 @@ func handleNextNFTID(w http.ResponseWriter, r *http.Request) {
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	solverClient.HandleWebSocket(w, r)
+}
+
+// Add after the imports
+// Logger represents a custom logger with levels and formatting
+type Logger struct {
+	*log.Logger
+}
+
+// LogLevel represents different logging levels
+type LogLevel string
+
+const (
+	INFO  LogLevel = "INFO"
+	ERROR LogLevel = "ERROR"
+	DEBUG LogLevel = "DEBUG"
+	WARN  LogLevel = "WARN"
+)
+
+var logger *Logger
+
+// NewLogger creates a new logger instance
+func NewLogger() *Logger {
+	return &Logger{
+		Logger: log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds),
+	}
+}
+
+// log formats and writes the log message with the specified level
+func (l *Logger) log(level LogLevel, format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	l.Printf("[%s] %s", level, msg)
+}
+
+// Info logs an info level message
+func (l *Logger) Info(format string, v ...interface{}) {
+	l.log(INFO, format, v...)
+}
+
+// Error logs an error level message
+func (l *Logger) Error(format string, v ...interface{}) {
+	l.log(ERROR, format, v...)
+}
+
+// Debug logs a debug level message
+func (l *Logger) Debug(format string, v ...interface{}) {
+	l.log(DEBUG, format, v...)
+}
+
+// Warn logs a warning level message
+func (l *Logger) Warn(format string, v ...interface{}) {
+	l.log(WARN, format, v...)
 }

@@ -18,7 +18,7 @@ const WebhookReceiver: React.FC<WebhookReceiverProps> = ({ refreshInterval = 200
     setIsLoading(true);
     setError(null);
     try {
-      const serverWebhooks = await getWebhooksFromServer();
+      const serverWebhooks = await getWebhooksFromServer("universal-solver");
       setWebhooks(serverWebhooks);
     } catch (err) {
       setError('Failed to fetch webhooks from server');
