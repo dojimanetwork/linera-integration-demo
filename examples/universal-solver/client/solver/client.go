@@ -1595,3 +1595,35 @@ func (c *Client) handleBroadcasts() {
 		c.clientsLock.RUnlock()
 	}
 }
+
+// SendWebhookNotification sends a notification to the specified webhook URL
+func (c *Client) SendWebhookNotification(notification WebhookNotification, webhookURL string) error {
+	// Marshal notification to JSON
+	jsonData, err := json.Marshal(notification)
+	if err != nil {
+		return fmt.Errorf("error marshaling notification: %v", err)
+	}
+
+	// Create POST request
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("webhook returned non-200 status: %d", resp.StatusCode)
+	}
+
+	return nil
+}

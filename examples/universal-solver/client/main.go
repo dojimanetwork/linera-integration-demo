@@ -212,7 +212,11 @@ func main() {
 }
 
 func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	solver.Logger.Printf("Received POST request to /post_tx_hash")
+
 	if r.Method != http.MethodPost {
+		solver.Logger.Printf("Invalid method %s for /post_tx_hash", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -222,78 +226,199 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	chain := r.URL.Query().Get("chain")
 	toToken := r.URL.Query().Get("toToken")
 	destinationAddress := r.URL.Query().Get("destinationAddress")
+	webhookURL := r.URL.Query().Get("webhookURL")
+
+	solver.Logger.Printf("Processing transaction - Hash: %s, Chain: %s", txHash, chain)
 
 	// Validate required parameters
 	if txHash == "" {
+		solver.Logger.Printf("Missing required parameter: txHash")
 		http.Error(w, "txHash parameter is required", http.StatusBadRequest)
 		return
 	}
 
 	if chain == "" {
+		solver.Logger.Printf("Missing required parameter: chain")
 		http.Error(w, "chain parameter is required", http.StatusBadRequest)
 		return
 	}
 
-	var (
-		tx  interface{}
-		err error
-	)
-
-	// Get transaction details based on chain
-	switch chain {
-	case "solana":
-		tx, err = solverClient.GetSolanaTransaction(SolanaRPC, txHash)
-	case "ethereum":
-		tx, err = solverClient.GetEthereumTransaction(EthereumRPC, txHash)
-	default:
-		http.Error(w, "Invalid chain parameter. Must be 'solana' or 'ethereum'", http.StatusBadRequest)
-		return
-	}
-
-	if err != nil {
-		http.Error(w, "Error getting transaction: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	// Send immediate response to client
 	response := map[string]interface{}{
-		"status": "success",
-		"chain":  chain,
-		"data":   tx,
+		"status":  "processing",
+		"message": "Transaction is being processed",
+		"txHash":  txHash,
+		"chain":   chain,
 	}
 
-	// If toToken and destinationAddress are provided, execute swap
-	if toToken != "" && destinationAddress != "" {
+	solver.Logger.Printf("Sending initial response to client - status: processing")
+
+	// Return response immediately
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	// Create a channel for webhook notifications
+	webhookChan := make(chan solver.WebhookNotification, 1)
+
+	// Start processing in a goroutine
+	go func() {
+		solver.Logger.Printf("Starting transaction processing in background")
+
+		var (
+			tx  interface{}
+			err error
+		)
+
+		// Get transaction details based on chain
+		switch chain {
+		case "solana":
+			solver.Logger.Printf("Processing Solana transaction: %s", txHash)
+			tx, err = solverClient.GetSolanaTransaction(SolanaRPC, txHash)
+		case "ethereum":
+			solver.Logger.Printf("Processing Ethereum transaction: %s", txHash)
+			tx, err = solverClient.GetEthereumTransaction(EthereumRPC, txHash)
+		default:
+			solver.Logger.Printf("Invalid chain parameter: %s", chain)
+			errorNotification := solver.WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": "Invalid chain parameter. Must be 'solana' or 'ethereum'"},
+				Client:    "universal-solver",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
+		if err != nil {
+			solver.Logger.Printf("Error getting transaction: %v", err)
+			errorNotification := solver.WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": err.Error()},
+				Client:    "universal-solver",
+			}
+			webhookChan <- errorNotification
+			return
+		}
+
 		// Get the from token based on chain
 		fromToken, err := getTokenForChain(chain)
 		if err != nil {
-			http.Error(w, "Error getting token for chain: "+err.Error(), http.StatusInternalServerError)
+			solver.Logger.Printf("Error getting token for chain: %v", err)
+			errorNotification := solver.WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": err.Error()},
+				Client:    "universal-solver",
+			}
+			webhookChan <- errorNotification
 			return
 		}
+
+		solver.Logger.Printf("Retrieved fromToken: %s for chain: %s", fromToken, chain)
 
 		// Extract amount from transaction
 		amount, err := extractAmountFromTx(tx)
 		if err != nil {
-			http.Error(w, "Error extracting amount from transaction: "+err.Error(), http.StatusInternalServerError)
+			solver.Logger.Printf("Error extracting amount from transaction: %v", err)
+			errorNotification := solver.WebhookNotification{
+				Status:    "error",
+				TxHash:    txHash,
+				Chain:     chain,
+				FromToken: fromToken,
+				Timestamp: time.Now().Unix(),
+				Data:      map[string]interface{}{"error": err.Error()},
+				Client:    "universal-solver",
+			}
+			webhookChan <- errorNotification
 			return
 		}
 
-		// Execute swap with correct fromToken
-		swapResponse, err := solverClient.ExecuteSwap(fromToken, toToken, float64(amount), destinationAddress)
-		if err != nil {
-			http.Error(w, "Error executing swap: "+err.Error(), http.StatusInternalServerError)
-			return
+		solver.Logger.Printf("Extracted amount: %d from transaction", amount)
+
+		// Process swap if toToken and destinationAddress are provided
+		if toToken != "" && destinationAddress != "" {
+			solver.Logger.Printf("Processing swap with toToken: %s and destinationAddress: %s", toToken, destinationAddress)
+
+			// Execute swap with correct fromToken
+			swapResponse, err := solverClient.ExecuteSwap(fromToken, toToken, amount, destinationAddress)
+			if err != nil {
+				solver.Logger.Printf("Error executing swap: %v", err)
+				errorNotification := solver.WebhookNotification{
+					Status:    "error",
+					TxHash:    txHash,
+					Chain:     chain,
+					FromToken: fromToken,
+					Amount:    float64(amount),
+					Timestamp: time.Now().Unix(),
+					Data:      map[string]interface{}{"error": err.Error()},
+					Client:    "universal-solver",
+				}
+				webhookChan <- errorNotification
+				return
+			}
+
+			solver.Logger.Printf("Swap executed successfully with hash: %s", swapResponse.TxHash)
+
+			// Send success notification
+			notification := solver.WebhookNotification{
+				Status:    "success",
+				TxHash:    txHash,
+				Chain:     chain,
+				FromToken: fromToken,
+				Amount:    float64(amount),
+				Timestamp: time.Now().Unix(),
+				Data: map[string]interface{}{
+					"swapResult": swapResponse,
+				},
+				Client: "universal-solver",
+			}
+			webhookChan <- notification
+		} else {
+			// Send success notification without swap
+			notification := solver.WebhookNotification{
+				Status:    "success",
+				TxHash:    txHash,
+				Chain:     chain,
+				FromToken: fromToken,
+				Amount:    float64(amount),
+				Timestamp: time.Now().Unix(),
+				Data:      tx,
+				Client:    "universal-solver",
+			}
+			webhookChan <- notification
 		}
 
-		response["swap_result"] = swapResponse
-	}
+		solver.Logger.Printf("Transaction processing completed in %v", time.Since(start))
+	}()
 
-	// Return response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	// Start a goroutine to handle webhook notifications
+	go func() {
+		solver.Logger.Printf("Starting webhook notification handler")
+
+		// Wait for notification from the processing goroutine
+		notification := <-webhookChan
+		solver.Logger.Printf("Received notification for webhook: %+v", notification)
+
+		// Send webhook notification if URL is provided
+		if webhookURL != "" {
+			if err := solverClient.SendWebhookNotification(notification, webhookURL); err != nil {
+				solver.Logger.Printf("Error sending webhook notification: %v", err)
+			} else {
+				solver.Logger.Printf("Successfully sent webhook notification to: %s", webhookURL)
+			}
+		}
+	}()
 }
 
 // Helper function to extract amount from transaction
-func extractAmountFromTx(tx interface{}) (uint64, error) {
+func extractAmountFromTx(tx interface{}) (float64, error) {
 	switch v := tx.(type) {
 	case map[string]interface{}:
 		// For Ethereum
@@ -303,13 +428,16 @@ func extractAmountFromTx(tx interface{}) (uint64, error) {
 			if _, success := bigValue.SetString(value, 10); !success {
 				return 0, fmt.Errorf("failed to parse decimal value: %s", value)
 			}
-			// Convert from wei to ETH (divide by 10^18) and check if result fits uint64
+
+			// Convert from wei to ETH by dividing by 10^18
 			weiPerEth := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
-			ethValue := new(big.Int).Div(bigValue, weiPerEth)
-			if !ethValue.IsUint64() {
-				return 0, fmt.Errorf("converted ETH value exceeds uint64 range: %s", ethValue.String())
-			}
-			return ethValue.Uint64(), nil
+
+			// Convert to float64 before division to preserve decimal places
+			fValue, _ := new(big.Float).SetInt(bigValue).Float64()
+			fWeiPerEth, _ := new(big.Float).SetInt(weiPerEth).Float64()
+
+			ethValue := fValue / fWeiPerEth
+			return ethValue, nil
 		}
 		// For Solana
 		if result, ok := v["result"].(map[string]interface{}); ok {
@@ -323,11 +451,21 @@ func extractAmountFromTx(tx interface{}) (uint64, error) {
 						if preBalance > postBalance {
 							// Convert from lamports to SOL (divide by 10^9)
 							lamports := preBalance - postBalance
-							solValue := float64(lamports) / 1e9
+
+							// Extract fee
+							fee := uint64(0)
+							if feeVal, ok := meta["fee"].(float64); ok {
+								fee = uint64(feeVal)
+							}
+
+							// Subtract fee from total amount
+							actualLamports := lamports - fee
+							solValue := float64(actualLamports) / 1e9
+
 							if solValue > float64(^uint64(0)) {
 								return 0, fmt.Errorf("converted SOL value exceeds uint64 range: %f", solValue)
 							}
-							return uint64(solValue), nil
+							return solValue, nil
 						}
 					}
 				}

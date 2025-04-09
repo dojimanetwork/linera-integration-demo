@@ -85,3 +85,16 @@ type Balance struct {
 	Amount  float64 `json:"amount"`
 	Symbol  string  `json:"symbol"`
 }
+
+// WebhookNotification represents a notification to be sent to a webhook
+type WebhookNotification struct {
+	Status      string      `json:"status"`
+	TxHash      string      `json:"txHash"`
+	Chain       string      `json:"chain"`
+	FromAddress string      `json:"fromAddress"`
+	FromToken   string      `json:"fromToken"`
+	Amount      float64     `json:"amount"`
+	Timestamp   int64       `json:"timestamp"`
+	Data        interface{} `json:"data,omitempty"`
+	Client      string      `json:"client"`
+}
