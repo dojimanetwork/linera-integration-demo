@@ -205,38 +205,6 @@ func (tc *TwitterClient) ExchangeCodeForToken(code, codeVerifier string) error {
 	return nil
 }
 
-// PostTweet posts a tweet to Twitter
-func (tc *TwitterClient) PostTweet(content string) error {
-	if tc.token == nil {
-		return fmt.Errorf("not authenticated")
-	}
-
-	client := tc.config.Client(oauth2.NoContext, tc.token)
-
-	// Prepare tweet data
-	tweetData := map[string]interface{}{
-		"text": content,
-	}
-
-	jsonData, err := json.Marshal(tweetData)
-	if err != nil {
-		return fmt.Errorf("failed to marshal tweet data: %v", err)
-	}
-
-	// Send tweet
-	resp, err := client.Post(twitterAPIURL+"/tweets", "application/json", strings.NewReader(string(jsonData)))
-	if err != nil {
-		return fmt.Errorf("failed to post tweet: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("failed to post tweet: status %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
 // GetAuthenticatedUserInfo retrieves the authenticated user's information from Twitter
 func (tc *TwitterClient) GetAuthenticatedUserInfo() (*UserInfo, error) {
 	client := tc.config.Client(oauth2.NoContext, tc.token)
@@ -273,7 +241,7 @@ func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
 	req, err := http.NewRequest("GET", tweetsURL, nil)
 
 	// Add required headers
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tc))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tc.BearerToken))
 	req.Header.Add("Content-Type", "application/json")
 
 	// Use a new HTTP client for this request
@@ -392,7 +360,7 @@ func (tc *TwitterClient) GetUserDetails() (*UserDetails, error) {
 	}
 
 	// Add authorization header
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tc.token.AccessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tc.BearerToken))
 
 	// Make request
 	resp, err := http.DefaultClient.Do(req)
