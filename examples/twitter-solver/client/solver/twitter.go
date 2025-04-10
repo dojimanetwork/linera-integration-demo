@@ -34,6 +34,9 @@ type TwitterConfig struct {
 	ConsumerSecret string
 	AccessToken    string
 	AccessSecret   string
+
+	// Bearer token
+	BearerToken string
 }
 
 // TwitterClient handles Twitter API interactions
@@ -42,6 +45,8 @@ type TwitterClient struct {
 	token  *oauth2.Token
 	// OAuth 1.0a client for tweet operations
 	oauth1Client *http.Client
+
+	BearerToken string
 }
 
 // NewTwitterClient creates a new Twitter client with the given credentials
@@ -65,6 +70,7 @@ func NewTwitterClient(config TwitterConfig) (*TwitterClient, error) {
 	return &TwitterClient{
 		config:       oauthConfig,
 		oauth1Client: oauth1Client,
+		BearerToken:  config.BearerToken,
 	}, nil
 }
 
@@ -267,7 +273,7 @@ func (tc *TwitterClient) GetLatestTweet() (*[]TwitterTweet, error) {
 	req, err := http.NewRequest("GET", tweetsURL, nil)
 
 	// Add required headers
-	req.Header.Add("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAAEiK0AEAAAAAYsG8yyn7gdNdMDIq445ek%2FnXypY%3Djp5rtuWxopwQlhpSB2cNlaxyemQMishgqEAXEiDpWI5AVAN3Ps")
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tc))
 	req.Header.Add("Content-Type", "application/json")
 
 	// Use a new HTTP client for this request
@@ -333,6 +339,7 @@ func LoadTwitterConfig() (*TwitterConfig, error) {
 		ConsumerSecret: os.Getenv("TWITTER_CONSUMER_SECRET"),
 		AccessToken:    os.Getenv("TWITTER_ACCESS_TOKEN"),
 		AccessSecret:   os.Getenv("TWITTER_ACCESS_SECRET"),
+		BearerToken:    os.Getenv("TWITTER_BEARER_TOKEN"),
 	}
 
 	// Validate required credentials
@@ -439,4 +446,45 @@ func (tc *TwitterClient) GetUserDetails() (*UserDetails, error) {
 	}
 
 	return details, nil
+}
+
+// LookupUserByID fetches user details from Twitter API v2
+func (c *TwitterClient) LookupUserByID(userID string) (*LookUpUserDetails, error) {
+	if c.BearerToken == "" {
+		return nil, fmt.Errorf("no access token available")
+	}
+
+	url := fmt.Sprintf("%s/users/%s", twitterAPIURL, userID)
+
+	// Add query parameters for additional fields
+	query := url + "?user.fields=created_at,description,entities,id,location,name,profile_image_url,protected,public_metrics,url,username,verified,verified_type"
+
+	req, err := http.NewRequest("GET", query, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %v", err)
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.BearerToken))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("twitter API returned non-200 status: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var response struct {
+		Data LookUpUserDetails `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	return &response.Data, nil
 }

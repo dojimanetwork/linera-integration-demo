@@ -546,6 +546,35 @@ func handleUserDetails(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func handleUserLookup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get user ID from query parameters
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "user_id parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Lookup user details
+	userDetails, err := twitterClient.LookUpById(userID)
+	if err != nil {
+		logger.Error("Failed to lookup user: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to lookup user: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return user details
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"data":   userDetails,
+	})
+}
+
 type Session struct {
 	UserID    string
 	ExpiresAt time.Time
@@ -607,6 +636,7 @@ func main() {
 	mux.HandleFunc("/take_screenshot", handleTakeScreenshot)
 	mux.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
 	mux.HandleFunc("/user_details", handleUserDetails)
+	mux.HandleFunc("/user_lookup", handleUserLookup)
 
 	// Serve screenshots directory with custom file server
 	mux.Handle("/screenshots/", http.StripPrefix("/screenshots/", customFileServer("screenshots")))

@@ -119,6 +119,10 @@ func (c *Client) UserDetails() (*UserDetails, error) {
 	return c.twitterClient.GetUserDetails()
 }
 
+func (c *Client) LookUpById(userId string) (*LookUpUserDetails, error) {
+	return c.twitterClient.LookupUserByID(userId)
+}
+
 // GetLatestTweet fetches the latest tweet from Twitter with retry logic
 func (c *Client) GetLatestTweet() (*[]TwitterTweet, error) {
 	if c.twitterClient == nil {

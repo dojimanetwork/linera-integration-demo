@@ -45,3 +45,24 @@ type UserInfo struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
 }
+
+// UserDetails represents the response from Twitter's user lookup endpoint
+type LookUpUserDetails struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Username        string `json:"username"`
+	CreatedAt       string `json:"created_at"`
+	Description     string `json:"description"`
+	ProfileImageURL string `json:"profile_image_url"`
+	Protected       bool   `json:"protected"`
+	Verified        bool   `json:"verified"`
+	VerifiedType    string `json:"verified_type"`
+	Location        string `json:"location"`
+	URL             string `json:"url"`
+	PublicMetrics   struct {
+		FollowersCount int `json:"followers_count"`
+		FollowingCount int `json:"following_count"`
+		TweetCount     int `json:"tweet_count"`
+		ListedCount    int `json:"listed_count"`
+	} `json:"public_metrics"`
+}
