@@ -83,14 +83,6 @@ func (c *Client) ExchangeCodeForToken(code, codeVerifier string) error {
 	return c.twitterClient.ExchangeCodeForToken(code, codeVerifier)
 }
 
-// PostTweet sends a request to post a new tweet
-func (c *Client) PostTweet(content string, author string) error {
-	if c.twitterClient == nil {
-		return fmt.Errorf("Twitter client not initialized")
-	}
-	return c.twitterClient.PostTweet(content)
-}
-
 // DeleteTweet sends a request to delete a tweet
 func (c *Client) DeleteTweet(index int) error {
 	// Implementation will be added later

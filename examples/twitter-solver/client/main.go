@@ -130,26 +130,6 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func handlePostTweet(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req solver.PostTweetRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if err := twitterClient.PostTweet(req.Content, req.Author); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to post tweet: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
 func handleDeleteTweet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -626,7 +606,6 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Register handlers
-	mux.HandleFunc("/post_tweet", handlePostTweet)
 	mux.HandleFunc("/delete_tweet", handleDeleteTweet)
 	mux.HandleFunc("/get_tweets", handleGetTweets)
 	mux.HandleFunc("/ws", handleWebSocket)
