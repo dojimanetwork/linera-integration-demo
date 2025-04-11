@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/linera-protocol/examples/twitter-solver/client/middleware"
+	"github.com/linera-protocol/examples/twitter-solver/client/session"
 	"github.com/linera-protocol/examples/twitter-solver/client/solver"
 )
 
@@ -195,32 +197,35 @@ func handleTwitterAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate auth URL and code verifier
 	authURL, codeVerifier, state, err := twitterClient.GetAuthURL()
 	if err != nil {
+		logger.Error("Failed to generate auth URL: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to generate auth URL: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	// Store code verifier with state as key
-	verifierMutex.Lock()
-	codeVerifiers[state] = codeVerifier
-	verifierMutex.Unlock()
+	// Create a new session
+	store := session.GetStore()
+	sess, err := store.CreateSession(w, "", "") // UserID and Username will be set after callback
+	if err != nil {
+		logger.Error("Failed to create session: %v", err)
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
 
-	logger.Info("Stored code verifier for state: %s", state)
+	// Store code verifier and state in session
+	if err := store.StoreCodeVerifier(sess.ID, codeVerifier, state); err != nil {
+		logger.Error("Failed to store code verifier: %v", err)
+		http.Error(w, "Failed to store code verifier", http.StatusInternalServerError)
+		return
+	}
 
-	// Clean up code verifier after 5 minutes
-	go func() {
-		time.Sleep(60 * time.Minute)
-		verifierMutex.Lock()
-		delete(codeVerifiers, state)
-		verifierMutex.Unlock()
-		logger.Info("Cleaned up code verifier for state: %s", state)
-	}()
+	logger.Info("Created new session and stored code verifier for state: %s", state)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"auth_url":      authURL,
-		"code_verifier": codeVerifier,
+		"auth_url": authURL,
 	})
 }
 
@@ -236,44 +241,29 @@ func handleTwitterCallback(w http.ResponseWriter, r *http.Request) {
 
 	logger.Info("Received callback with state: %s, code length: %d", state, len(code))
 
-	// Check if we've already processed this state
-	verifierMutex.RLock()
-	alreadyProcessed := processedStates[state]
-	verifierMutex.RUnlock()
-
-	if alreadyProcessed {
-		logger.Info("State %s already processed, returning success", state)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":  "success",
-			"message": "Already authenticated with Twitter",
-			"user": map[string]string{
-				"username": "Twitter User",
-				"name":     "Twitter User",
-			},
-		})
+	// Get session from cookie
+	store := session.GetStore()
+	sess, err := store.GetSession(r)
+	if err != nil {
+		logger.Error("Failed to get session: %v", err)
+		http.Error(w, "Session not found", http.StatusUnauthorized)
 		return
 	}
 
-	// Validate code format
-	if len(code) < 10 {
-		logger.Error("Invalid authorization code format: too short")
-		http.Error(w, "Invalid authorization code format", http.StatusBadRequest)
+	// Get code verifier from session
+	codeVerifier, storedState, err := store.GetCodeVerifier(sess.ID)
+	if err != nil {
+		logger.Error("Failed to get code verifier: %v", err)
+		http.Error(w, "Failed to get code verifier", http.StatusInternalServerError)
 		return
 	}
 
-	// Retrieve and validate code verifier
-	verifierMutex.RLock()
-	codeVerifier, exists := codeVerifiers[state]
-	verifierMutex.RUnlock()
-
-	if !exists {
-		logger.Error("No code verifier found for state: %s", state)
-		http.Error(w, "Invalid or expired state", http.StatusBadRequest)
+	// Verify state
+	if state != storedState {
+		logger.Error("State mismatch: expected %s, got %s", storedState, state)
+		http.Error(w, "Invalid state", http.StatusBadRequest)
 		return
 	}
-
-	logger.Info("Found code verifier for state: %s", state)
 
 	// Exchange code for token
 	if err := twitterClient.ExchangeCodeForToken(code, codeVerifier); err != nil {
@@ -282,7 +272,7 @@ func handleTwitterCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user information from Twitter
+	// Get user information
 	userInfo, err := twitterClient.GetUserInfo()
 	if err != nil {
 		logger.Error("Failed to get user information: %v", err)
@@ -290,15 +280,20 @@ func handleTwitterCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Mark state as processed and clean up
-	verifierMutex.Lock()
-	processedStates[state] = true
-	delete(codeVerifiers, state)
-	verifierMutex.Unlock()
+	// Update session with user information and tokens
+	updates := map[string]interface{}{
+		"user_id":  userInfo.ID,
+		"username": userInfo.Username,
+	}
+	if err := store.UpdateSession(sess.ID, updates); err != nil {
+		logger.Error("Failed to update session: %v", err)
+		http.Error(w, "Failed to update session", http.StatusInternalServerError)
+		return
+	}
 
-	logger.Info("Successfully exchanged code for token and cleaned up state: %s", state)
+	logger.Info("Successfully authenticated user: %s", userInfo.Username)
 
-	// Return success response with user information
+	// Return success response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "success",
@@ -308,6 +303,44 @@ func handleTwitterCallback(w http.ResponseWriter, r *http.Request) {
 			"username": userInfo.Username,
 			"name":     userInfo.Name,
 		},
+	})
+}
+
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	store := session.GetStore()
+	sess, err := store.GetSession(r)
+	if err != nil {
+		// If no session exists, just return success
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "success",
+			"message": "Logged out successfully",
+		})
+		return
+	}
+
+	// Destroy the session
+	store.DestroySession(sess.ID)
+
+	// Clear the session cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_id",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		MaxAge:   -1,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Logged out successfully",
 	})
 }
 
@@ -605,26 +638,28 @@ func main() {
 	// Create a new mux for routing
 	mux := http.NewServeMux()
 
-	// Register handlers
-	mux.HandleFunc("/delete_tweet", handleDeleteTweet)
-	mux.HandleFunc("/get_tweets", handleGetTweets)
-	mux.HandleFunc("/ws", handleWebSocket)
-	mux.HandleFunc("/twitter/auth", handleTwitterAuth)
-	mux.HandleFunc("/twitter/callback", handleTwitterCallback)
-	mux.HandleFunc("/latest_tweet", handleLatestTweet)
-	mux.HandleFunc("/take_screenshot", handleTakeScreenshot)
-	mux.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
-	mux.HandleFunc("/user_details", handleUserDetails)
-	mux.HandleFunc("/user_lookup", handleUserLookup)
+	// Public routes (no auth required)
+	mux.Handle("/twitter/auth", corsMiddleware(loggingMiddleware(http.HandlerFunc(handleTwitterAuth))))
+	mux.Handle("/twitter/callback", corsMiddleware(loggingMiddleware(http.HandlerFunc(handleTwitterCallback))))
+	mux.Handle("/logout", corsMiddleware(loggingMiddleware(http.HandlerFunc(handleLogout))))
+
+	// Protected routes (auth required)
+	mux.Handle("/post_tweet", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handlePostTweet)))))
+	mux.Handle("/delete_tweet", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleDeleteTweet)))))
+	mux.Handle("/get_tweets", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleGetTweets)))))
+	mux.Handle("/latest_tweet", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleLatestTweet)))))
+	mux.Handle("/take_screenshot", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleTakeScreenshot)))))
+	mux.Handle("/twitter_profile_screenshot", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleTwitterProfileScreenshot)))))
+	mux.Handle("/user_details", middleware.AuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleUserDetails)))))
+
+	// WebSocket endpoint with optional auth
+	mux.Handle("/ws", middleware.OptionalAuthMiddleware(corsMiddleware(loggingMiddleware(http.HandlerFunc(handleWebSocket)))))
 
 	// Serve screenshots directory with custom file server
 	mux.Handle("/screenshots/", http.StripPrefix("/screenshots/", customFileServer("screenshots")))
 
-	// Apply middleware to the mux
-	handler := corsMiddleware(loggingMiddleware(mux))
-
 	logger.Info("Starting server on :3005")
-	if err := http.ListenAndServe(":3005", handler); err != nil {
+	if err := http.ListenAndServe(":3005", mux); err != nil {
 		logger.Error("Failed to start server: %v", err)
 		os.Exit(1)
 	}

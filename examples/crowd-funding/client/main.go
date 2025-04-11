@@ -175,8 +175,9 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 // ChainAddress represents a chain and address pair
 type ChainAddress struct {
-	Chain   string `json:"chain"`
-	Address string `json:"address"`
+	Chain     string `json:"chain"`
+	Address   string `json:"address"`
+	TwitterId string `json:"twitter_id"`
 }
 
 // Global variable to store chain addresses
@@ -332,6 +333,11 @@ func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		if chainAddr.TwitterId == "" {
+			errors = append(errors, fmt.Sprintf("twitter id is required for chain %s", chainAddr.Chain))
+			continue
+		}
+
 		// Validate chain is supported
 		if _, ok := chainToToken[chainAddr.Chain]; !ok {
 			errors = append(errors, fmt.Sprintf("Unsupported chain: %s", chainAddr.Chain))
@@ -339,7 +345,7 @@ func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Build GraphQL mutation
-		mutation := fmt.Sprintf(`{"query":"mutation{addChain(chainName:\"%s\",address:\"%s\")}"}`, chainToToken[chainAddr.Chain], chainAddr.Address)
+		mutation := fmt.Sprintf(`{"query":"mutation{addChain(twitterId:\"%s\",chainName:\"%s\",address:\"%s\")}"}`, chainAddr.TwitterId, chainToToken[chainAddr.Chain], chainAddr.Address)
 
 		// Create request
 		req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
