@@ -92,6 +92,16 @@ export interface PostTxHashResponse {
   webhook?: WebhookNotification;
 }
 
+export interface AuthCheckResponse {
+  status: string;
+  user?: {
+    id: string;
+    username: string;
+    displayName: string;
+    profileImageUrl: string;
+  };
+}
+
 const api = {
   // Get Twitter auth URL
   getTwitterAuthUrl: async (): Promise<TwitterAuthResponse> => {
@@ -279,6 +289,65 @@ const api = {
     } catch (error) {
       console.error('Error posting transaction hash:', error);
       throw error;
+    }
+  },
+
+  // Logout and clear session
+  logout: async (): Promise<{ status: string; message: string }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to logout');
+      }
+
+      // Clear local storage
+      sessionStorage.removeItem('code_verifier');
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error during logout:', error);
+      throw error;
+    }
+  },
+
+  // Check authentication status
+  checkAuth: async (): Promise<AuthCheckResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user_details`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return { status: 'unauthenticated' };
+      }
+
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.data) {
+        return {
+          status: 'success',
+          user: {
+            id: data.data.id,
+            username: data.data.username,
+            displayName: data.data.name,
+            profileImageUrl: data.data.profile_image_url,
+          },
+        };
+      }
+
+      return { status: 'unauthenticated' };
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+      return { status: 'unauthenticated' };
     }
   }
 }

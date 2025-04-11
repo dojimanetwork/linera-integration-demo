@@ -4,7 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { TwitterAuth } from './components/TwitterAuth';
 import TwitterCallback from './components/TwitterCallback';
 import { Dashboard } from './components/Dashboard';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 const theme = createTheme({
   palette: {

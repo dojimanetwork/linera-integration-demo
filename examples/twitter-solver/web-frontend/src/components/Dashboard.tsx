@@ -7,9 +7,10 @@ import {useNavigate} from 'react-router-dom';
 import UserProfile from './UserProfile';
 import WebhookReceiver from './WebhookReceiver';
 import { addWebhook } from '../services/webhookHandler';
+import LogoutButton from './LogoutButton';
 
 export const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [tweet, setTweet] = useState<Tweet | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [profileScreenshotUrl, setProfileScreenshotUrl] = useState<string | null>(null);
@@ -184,220 +185,239 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" minHeight="100vh" p={3}>
-      <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
-        <UserProfile />
-      </Paper>
-
-      <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Submit Transaction Hash
-        </Typography>
-        <Box sx={{ mb: 2 }}>
-          <TextField
-            fullWidth
-            label="Transaction Hash"
-            value={txHash}
-            onChange={(e) => setTxHash(e.target.value)}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Chain"
-            value={chain}
-            onChange={(e) => setChain(e.target.value)}
-            margin="normal"
-          />
-          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-            Webhook Options
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Note: Make sure the webhook URL is accessible before submitting. For testing, you can use the built-in webhook receiver below.
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {webhookOptions.map((option) => (
-              <FormControlLabel
-                key={option.id}
-                control={
-                  <Switch
-                    checked={selectedWebhookOption === option.id}
-                    onChange={() => handleWebhookOptionChange(option.id)}
-                  />
-                }
-                label={option.label}
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-4">
+          {user && (
+            <div className="flex items-center gap-2">
+              <img
+                src={user.profileImageUrl}
+                alt={user.displayName}
+                className="w-8 h-8 rounded-full"
               />
-            ))}
-          </Box>
-          {selectedWebhookOption === 'custom' && (
+              <span className="text-gray-700">{user.displayName}</span>
+            </div>
+          )}
+          <LogoutButton />
+        </div>
+      </div>
+
+      <Box display="flex" flexDirection="column" alignItems="center" minHeight="100vh" p={3}>
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
+          <UserProfile />
+        </Paper>
+
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Submit Transaction Hash
+          </Typography>
+          <Box sx={{ mb: 2 }}>
             <TextField
               fullWidth
-              label="Custom Webhook URL"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
+              label="Transaction Hash"
+              value={txHash}
+              onChange={(e) => setTxHash(e.target.value)}
               margin="normal"
             />
-          )}
-          <Button
-            variant="contained"
-            onClick={handleSubmitTxHash}
-            disabled={isSubmitting}
-            fullWidth
-            sx={{ mt: 2 }}
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit Transaction Hash'}
-          </Button>
-        </Box>
-        {webhookStatus && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: 
-            webhookStatus.status === 'error' ? '#FEE2E2' : 
-            webhookStatus.status === 'processing' ? '#FEF3C7' : 
-            '#F0FDF4', 
-            borderRadius: 1 
-          }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Webhook Status:
+            <TextField
+              fullWidth
+              label="Chain"
+              value={chain}
+              onChange={(e) => setChain(e.target.value)}
+              margin="normal"
+            />
+            <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+              Webhook Options
             </Typography>
-            <Typography variant="body2" sx={{ 
-              color: 
-                webhookStatus.status === 'error' ? '#DC2626' : 
-                webhookStatus.status === 'processing' ? '#D97706' : 
-                '#059669', 
-              fontWeight: 'bold' 
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Note: Make sure the webhook URL is accessible before submitting. For testing, you can use the built-in webhook receiver below.
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {webhookOptions.map((option) => (
+                <FormControlLabel
+                  key={option.id}
+                  control={
+                    <Switch
+                      checked={selectedWebhookOption === option.id}
+                      onChange={() => handleWebhookOptionChange(option.id)}
+                    />
+                  }
+                  label={option.label}
+                />
+              ))}
+            </Box>
+            {selectedWebhookOption === 'custom' && (
+              <TextField
+                fullWidth
+                label="Custom Webhook URL"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                margin="normal"
+              />
+            )}
+            <Button
+              variant="contained"
+              onClick={handleSubmitTxHash}
+              disabled={isSubmitting}
+              fullWidth
+              sx={{ mt: 2 }}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Transaction Hash'}
+            </Button>
+          </Box>
+          {webhookStatus && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 
+              webhookStatus.status === 'error' ? '#FEE2E2' : 
+              webhookStatus.status === 'processing' ? '#FEF3C7' : 
+              '#F0FDF4', 
+              borderRadius: 1 
             }}>
-              Status: {webhookStatus.status}
-            </Typography>
-            {webhookStatus.txHash && (
-              <Typography variant="body2">
-                Transaction Hash: {webhookStatus.txHash}
+              <Typography variant="subtitle1" gutterBottom>
+                Webhook Status:
               </Typography>
-            )}
-            {webhookStatus.chain && (
-              <Typography variant="body2">
-                Chain: {webhookStatus.chain}
+              <Typography variant="body2" sx={{ 
+                color: 
+                  webhookStatus.status === 'error' ? '#DC2626' : 
+                  webhookStatus.status === 'processing' ? '#D97706' : 
+                  '#059669', 
+                fontWeight: 'bold' 
+              }}>
+                Status: {webhookStatus.status}
               </Typography>
-            )}
-            {webhookStatus.fromAddress && (
-              <Typography variant="body2">
-                From: {webhookStatus.fromAddress}
-              </Typography>
-            )}
-            {webhookStatus.amount && (
-              <Typography variant="body2">
-                Amount: {typeof webhookStatus.amount === 'string' ? webhookStatus.amount : JSON.stringify(webhookStatus.amount)} {webhookStatus.fromToken}
-              </Typography>
-            )}
-            {webhookStatus.timestamp && (
-              <Typography variant="body2">
-                Time: {new Date(parseInt(typeof webhookStatus.timestamp === 'string' ? webhookStatus.timestamp : String(webhookStatus.timestamp)) * 1000).toLocaleString()}
-              </Typography>
-            )}
-            {webhookStatus.client && (
-              <Typography variant="body2">
-                Client: {webhookStatus.client}
-              </Typography>
-            )}
-            {webhookStatus.data?.error && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: '#FEF2F2', borderRadius: 1 }}>
-                <Typography variant="body2" sx={{ color: '#DC2626', fontWeight: 'bold' }}>
-                  Error Details:
+              {webhookStatus.txHash && (
+                <Typography variant="body2">
+                  Transaction Hash: {webhookStatus.txHash}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#DC2626' }}>
-                  {webhookStatus.data.error}
+              )}
+              {webhookStatus.chain && (
+                <Typography variant="body2">
+                  Chain: {webhookStatus.chain}
                 </Typography>
-              </Box>
-            )}
-            {webhookStatus.data?.screenshot && (
+              )}
+              {webhookStatus.fromAddress && (
+                <Typography variant="body2">
+                  From: {webhookStatus.fromAddress}
+                </Typography>
+              )}
+              {webhookStatus.amount && (
+                <Typography variant="body2">
+                  Amount: {typeof webhookStatus.amount === 'string' ? webhookStatus.amount : JSON.stringify(webhookStatus.amount)} {webhookStatus.fromToken}
+                </Typography>
+              )}
+              {webhookStatus.timestamp && (
+                <Typography variant="body2">
+                  Time: {new Date(parseInt(typeof webhookStatus.timestamp === 'string' ? webhookStatus.timestamp : String(webhookStatus.timestamp)) * 1000).toLocaleString()}
+                </Typography>
+              )}
+              {webhookStatus.client && (
+                <Typography variant="body2">
+                  Client: {webhookStatus.client}
+                </Typography>
+              )}
+              {webhookStatus.data?.error && (
+                <Box sx={{ mt: 2, p: 2, bgcolor: '#FEF2F2', borderRadius: 1 }}>
+                  <Typography variant="body2" sx={{ color: '#DC2626', fontWeight: 'bold' }}>
+                    Error Details:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#DC2626' }}>
+                    {webhookStatus.data.error}
+                  </Typography>
+                </Box>
+              )}
+              {webhookStatus.data?.screenshot && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" gutterBottom>
+                    Screenshot:
+                  </Typography>
+                  <img
+                    src={`http://localhost:3005/screenshots/${webhookStatus.data.screenshot}`}
+                    alt="Transaction Screenshot"
+                    style={{ maxWidth: '100%', borderRadius: 4 }}
+                  />
+                </Box>
+              )}
+            </Box>
+          )}
+        </Paper>
+
+        {/* Webhook Receiver Component */}
+        <WebhookReceiver refreshInterval={2000} />
+
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%' }}>
+          <Box display="flex" alignItems="center" mb={3}>
+            <Avatar sx={{ bgcolor: '#1DA1F2', mr: 2 }}>
+              {user?.username[0].toUpperCase()}
+            </Avatar>
+            <Box>
+              {/*<Typography variant="h6">{user?.name}</Typography>*/}
+              <Typography color="text.secondary">@{user?.username}</Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ mb: 3 }}>
+            <Button
+              variant="outlined"
+              startIcon={<CameraAltIcon />}
+              onClick={handleTakeProfileScreenshot}
+              disabled={isTakingProfileScreenshot}
+              fullWidth
+            >
+              {isTakingProfileScreenshot ? 'Taking Profile Screenshot...' : 'Take Profile Screenshot'}
+            </Button>
+            {profileScreenshotUrl && (
               <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" gutterBottom>
-                  Screenshot:
-                </Typography>
                 <img
-                  src={`http://localhost:3005/screenshots/${webhookStatus.data.screenshot}`}
-                  alt="Transaction Screenshot"
-                  style={{ maxWidth: '100%', borderRadius: 4 }}
+                  src={`http://localhost:3005${profileScreenshotUrl}`}
+                  alt="Profile Screenshot"
+                  style={{ maxWidth: '100%', height: 'auto' }}
                 />
               </Box>
             )}
           </Box>
-        )}
-      </Paper>
 
-      {/* Webhook Receiver Component */}
-      <WebhookReceiver refreshInterval={2000} />
-
-      <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%' }}>
-        <Box display="flex" alignItems="center" mb={3}>
-          <Avatar sx={{ bgcolor: '#1DA1F2', mr: 2 }}>
-            {user?.username[0].toUpperCase()}
-          </Avatar>
-          <Box>
-            <Typography variant="h6">{user?.name}</Typography>
-            <Typography color="text.secondary">@{user?.username}</Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ mb: 3 }}>
-          <Button
-            variant="outlined"
-            startIcon={<CameraAltIcon />}
-            onClick={handleTakeProfileScreenshot}
-            disabled={isTakingProfileScreenshot}
-            fullWidth
-          >
-            {isTakingProfileScreenshot ? 'Taking Profile Screenshot...' : 'Take Profile Screenshot'}
-          </Button>
-          {profileScreenshotUrl && (
-            <Box sx={{ mt: 2 }}>
-              <img
-                src={`http://localhost:3005${profileScreenshotUrl}`}
-                alt="Profile Screenshot"
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
-            </Box>
+          {tweet && (
+              <Paper sx={{ p: 3, mt: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Latest Tweet
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  {tweet.text}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                  Posted on {new Date(tweet.created_at).toLocaleString()}
+                </Typography>
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                  <Button
+                      variant="outlined"
+                      startIcon={<CameraAltIcon />}
+                      onClick={handleTakeScreenshot}
+                      disabled={isTakingScreenshot}
+                  >
+                    {isTakingScreenshot ? 'Taking Screenshot...' : 'Take Screenshot'}
+                  </Button>
+                  <Link
+                      href={`https://twitter.com/user/status/${tweet.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                  >
+                    View on Twitter
+                  </Link>
+                </Box>
+                {screenshotUrl && (
+                    <Box sx={{ mt: 2 }}>
+                      <img
+                          src={`http://localhost:3005${screenshotUrl}`}
+                          alt="Tweet Screenshot"
+                          style={{ maxWidth: '100%', height: 'auto' }}
+                      />
+                    </Box>
+                )}
+              </Paper>
           )}
-        </Box>
-
-        {tweet && (
-            <Paper sx={{ p: 3, mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Latest Tweet
-              </Typography>
-              <Typography variant="body1" paragraph>
-                {tweet.text}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                Posted on {new Date(tweet.created_at).toLocaleString()}
-              </Typography>
-              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                <Button
-                    variant="outlined"
-                    startIcon={<CameraAltIcon />}
-                    onClick={handleTakeScreenshot}
-                    disabled={isTakingScreenshot}
-                >
-                  {isTakingScreenshot ? 'Taking Screenshot...' : 'Take Screenshot'}
-                </Button>
-                <Link
-                    href={`https://twitter.com/user/status/${tweet.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                  View on Twitter
-                </Link>
-              </Box>
-              {screenshotUrl && (
-                  <Box sx={{ mt: 2 }}>
-                    <img
-                        src={`http://localhost:3005${screenshotUrl}`}
-                        alt="Tweet Screenshot"
-                        style={{ maxWidth: '100%', height: 'auto' }}
-                    />
-                  </Box>
-              )}
-            </Paper>
-        )}
-      </Paper>
-    </Box>
+        </Paper>
+      </Box>
+    </div>
   );
 }; 
 

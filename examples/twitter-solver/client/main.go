@@ -595,6 +595,31 @@ func customFileServer(dir string) http.Handler {
 	})
 }
 
+// handleLogout clears the Twitter client's OAuth token and session data
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Clear Twitter client's token
+	if twitterClient != nil {
+		twitterClient = solver.NewClient()
+	}
+
+	// Clear code verifiers
+	verifierMutex.Lock()
+	codeVerifiers = make(map[string]string)
+	processedStates = make(map[string]bool)
+	verifierMutex.Unlock()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "Successfully logged out",
+	})
+}
+
 func main() {
 	// Create screenshots directory if it doesn't exist
 	if err := os.MkdirAll("screenshots", 0755); err != nil {
@@ -616,6 +641,7 @@ func main() {
 	mux.HandleFunc("/twitter_profile_screenshot", handleTwitterProfileScreenshot)
 	mux.HandleFunc("/user_details", handleUserDetails)
 	mux.HandleFunc("/user_lookup", handleUserLookup)
+	mux.HandleFunc("/logout", handleLogout)
 
 	// Serve screenshots directory with custom file server
 	mux.Handle("/screenshots/", http.StripPrefix("/screenshots/", customFileServer("screenshots")))
