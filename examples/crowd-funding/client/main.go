@@ -345,7 +345,7 @@ func handleAddChainAddress(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Build GraphQL mutation
-		mutation := fmt.Sprintf(`{"query":"mutation{addChain(twitterId:\"%s\",chainName:\"%s\",address:\"%s\")}"}`, chainAddr.TwitterId, chainToToken[chainAddr.Chain], chainAddr.Address)
+		mutation := fmt.Sprintf(`{"query":"mutation{addChain(twitterId:\"%s\",chainName:\"%s\",chainAddress:\"%s\")}"}`, chainAddr.TwitterId, chainToToken[chainAddr.Chain], chainAddr.Address)
 
 		// Create request
 		req, err := http.NewRequest("POST", CrowdSolver, bytes.NewBuffer([]byte(mutation)))
