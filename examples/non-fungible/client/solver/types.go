@@ -104,16 +104,17 @@ type MintResponse struct {
 }
 
 type ListNFTParams struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Price       string `json:"price"`
-	ChainId     string `json:"chainId"`
-	Minter      string `json:"minter"`
-	ChainMinter string `json:"chainMinter"`
-	ChainOwner  string `json:"chainOwner"`
-	ID          int    `json:"id"`
-	Token       string `json:"token"`
-	BlobHash    string `json:"blobHash"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Price       string  `json:"price"`
+	ChainId     string  `json:"chainId"`
+	Minter      string  `json:"minter"`
+	ChainMinter string  `json:"chainMinter"`
+	ChainOwner  string  `json:"chainOwner"`
+	ID          int     `json:"id"`
+	Token       string  `json:"token"`
+	BlobHash    string  `json:"blobHash"`
+	NftType     NftType `json:"nftType"`
 }
 
 type BlobHashParams struct {
@@ -136,6 +137,7 @@ type NFT struct {
 	Description string `json:"description"`
 	BlobHash    string `json:"blobHash"`
 	NftStatus   string `json:"status"`
+	NftType     string `json:"nftType"`
 }
 
 // Add response type for NFTs query

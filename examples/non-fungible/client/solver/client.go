@@ -1288,8 +1288,8 @@ func (c *Client) MintNFT(params ListNFTParams, blobHash string, id int, token st
 	Logger.Printf("Minting NFT with params: %+v, blobHash: %s", params, blobHash)
 
 	mutation := fmt.Sprintf(`{
-		"query": "mutation mint{mint(minter:\"%s\",name:\"%s\",blobHash:\"%s\",token:\"%s\",price:\"%s\",id:%d,chainMinter:\"%s\",chainOwner:\"%s\",description:\"%s\")}"
-	}`, params.Minter, params.Name, blobHash, token, params.Price, id, params.ChainMinter, params.ChainOwner, params.Description)
+		"query": "mutation mint{mint(minter:\"%s\",name:\"%s\",blobHash:\"%s\",token:\"%s\",price:\"%s\",id:%d,chainMinter:\"%s\",chainOwner:\"%s\",description:\"%s\",nftType:\"%s\")}"
+	}`, params.Minter, params.Name, blobHash, token, params.Price, id, params.ChainMinter, params.ChainOwner, params.Description, params.NftType)
 
 	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(mutation)))
 	if err != nil {
@@ -1378,6 +1378,59 @@ func (c *Client) GetAllNFTs() (map[string]NFT, error) {
 
 	// Logger.Printf("Successfully retrieved NFTs: %+v", nftsResp.Data.NFTs)
 	return nftsResp.Data.NFTs, nil
+}
+
+// Add function to get all NFTs
+type NftType string
+
+const (
+	TWITTER NftType = "TWITTER"
+	GENERIC NftType = "GENERIC"
+)
+
+func (c *Client) FilterNFTs(nftType NftType) (map[string]NFT, error) {
+	Logger.Println("Getting filter NFTs")
+
+	query := fmt.Sprintf(`{
+		"query": "query filterNfts{filterNfts(nftType:\"%s\")}"
+	}`, nftType)
+
+	req, err := http.NewRequest("POST", c.nonFungibleURL, bytes.NewBuffer([]byte(query)))
+	if err != nil {
+		Logger.Printf("Error creating NFTs query request: %v", err)
+		return nil, fmt.Errorf("error creating NFTs query request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		Logger.Printf("Error executing NFTs query: %v", err)
+		return nil, fmt.Errorf("error executing NFTs query: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Data struct {
+			FilterNfts map[string]NFT `json:"filterNfts"`
+		} `json:"data"`
+		Errors []struct {
+			Message string `json:"message"`
+		} `json:"errors,omitempty"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		Logger.Printf("Error parsing NFTs response: %v", err)
+		return nil, fmt.Errorf("error parsing NFTs response: %w", err)
+	}
+
+	if len(result.Errors) > 0 {
+		Logger.Printf("NFTs query error: %s", result.Errors[0].Message)
+		return nil, fmt.Errorf("NFTs query error: %s", result.Errors[0].Message)
+	}
+
+	Logger.Printf("Successfully retrieved filtered NFTs")
+	return result.Data.FilterNfts, nil
 }
 
 // ListNftForSale executes the listNftForSale mutation and creates an Ethereum transaction

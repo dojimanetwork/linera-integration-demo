@@ -5,7 +5,8 @@ const fs = require("fs");
 async function main() {
   //get the signer that we will use to deploy
   const [deployer] = await ethers.getSigners();
-  
+
+    console.log(deployer.getAddress())
   //Get the NFTMarketplace smart contract object and deploy it
   const Marketplace = await hre.ethers.getContractFactory("NFTMarketplace");
   const marketplace = await Marketplace.deploy();

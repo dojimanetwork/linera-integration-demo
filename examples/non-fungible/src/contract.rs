@@ -14,7 +14,7 @@ use linera_sdk::{
     Contract, ContractRuntime, DataBlobHash,
 };
 use linera_sdk::base::ApplicationId;
-use non_fungible::{Message, Nft, NftStatus, NonFungibleTokenAbi, Operation, TokenId};
+use non_fungible::{Message, Nft, NftStatus, NftType, NonFungibleTokenAbi, Operation, TokenId};
 use universal_solver::UniversalSolverAbi;
 use self::state::NonFungibleTokenState;
 
@@ -58,10 +58,11 @@ impl Contract for NonFungibleTokenContract {
                 id,
                 chain_owner,
                 chain_minter,
-                description
+                description,
+                nft_type
             } => {
                 // self.check_account_authentication(minter);
-                self.mint(minter, name, blob_hash, token, price, id, chain_owner, chain_minter, description).await;
+                self.mint(minter, name, blob_hash, token, price, id, chain_owner, chain_minter, description, nft_type).await;
             }
 
             Operation::Transfer {
@@ -218,7 +219,8 @@ impl NonFungibleTokenContract {
                   id: u64, // specific chain nft id
                   chain_minter: String, // chain nft minter
                   chain_owner: String,
-                  description: String
+                  description: String,
+                  nft_type: NftType
     ) {
         self.runtime.assert_data_blob_exists(blob_hash);
         let token_id = Nft::create_token_id(
@@ -232,7 +234,8 @@ impl NonFungibleTokenContract {
             price.clone(),
             id,
             &chain_owner,
-            &chain_minter
+            &chain_minter,
+            &nft_type,
         )
         .expect("Failed to serialize NFT metadata");
 
@@ -249,6 +252,7 @@ impl NonFungibleTokenContract {
             chain_minter,
             description,
             status: NftStatus::OnSale,
+            nft_type,
         })
         .await;
 

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Box, Typography, CircularProgress, Paper, Button, Link } from '@mui/material';
-import api, { Tweet } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const TwitterCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -10,58 +9,58 @@ const TwitterCallback: React.FC = () => {
   const { setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-
-
   useEffect(() => {
     const handleCallback = async () => {
-      console.log("entered")
       try {
         const code = searchParams.get('code');
         const state = searchParams.get('state');
-        const codeVerifier = sessionStorage.getItem('code_verifier');
 
-        if (!code || !state || !codeVerifier ) {
-          throw new Error('Missing required parameters');
+        if (!code || !state) {
+          setError('Missing required parameters');
+          return;
         }
 
-        const response = await api.handleTwitterCallback(code, state, codeVerifier);
+        const response = await api.handleTwitterCallback(code, state);
+        
         if (response.status === 'success' && response.user) {
           setUser(response.user);
-          console.log("entered")
           navigate('/nft');
         } else {
           setError(response.error || 'Authentication failed');
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+      } catch (error) {
+        console.error('Error during callback:', error);
+        setError('Failed to authenticate with Twitter');
       }
     };
 
     handleCallback();
-  }, [navigate, setUser]);
-
-
+  }, [searchParams, navigate, setUser]);
 
   if (error) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography color="error" gutterBottom>
-          Error: {error}
-        </Typography>
-        <Button variant="contained" onClick={() => navigate('/')}>
-          Return to Home
-        </Button>
-      </Box>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <div className="p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Authentication Error</h2>
+          <p className="text-gray-700">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Return to Home
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 600, mx: 'auto' }}>
-      <Typography variant="h5" gutterBottom>
-        Processing Twitter Authentication...
-      </Typography>
-      <CircularProgress />
-    </Box>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <div className="p-8 bg-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Authenticating...</h2>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    </div>
   );
 };
 

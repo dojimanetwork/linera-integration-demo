@@ -18,7 +18,7 @@ use linera_sdk::{
     views::View,
     DataBlobHash, Service, ServiceRuntime,
 };
-use non_fungible::{NftOutput, Operation, TokenId};
+use non_fungible::{NftOutput, NftType, Operation, TokenId};
 
 use self::state::NonFungibleTokenState;
 
@@ -139,6 +139,32 @@ impl QueryRoot {
         nfts
     }
 
+    async fn filter_nfts(&self, nft_type: NftType) -> BTreeMap<String, NftOutput> {
+        let mut nfts = BTreeMap::new();
+        self.non_fungible_token
+            .nfts
+            .for_each_index_value(|_token_id, nft| {
+                let nft = nft.into_owned();
+                let payload = {
+                    let mut runtime = self
+                        .runtime
+                        .try_lock()
+                        .expect("Services only run in a single thread");
+                    runtime.read_data_blob(nft.blob_hash)
+                };
+                let nft_output = NftOutput::new(nft, payload);
+                if nft_output.nft_type == nft_type {
+                    nfts.insert(nft_output.token_id.clone(), nft_output);
+                }
+                Ok(())
+            })
+            .await
+            .unwrap();
+
+        nfts
+    }
+
+
     async fn owned_token_ids_by_owner(&self, owner: AccountOwner) -> BTreeSet<String> {
         self.non_fungible_token
             .owned_token_ids
@@ -214,6 +240,7 @@ impl MutationRoot {
                   chain_minter: String, // chain nft minter
                   chain_owner: String, // chain nft owner
                   description: String,
+                  nft_type: NftType
                   ) -> Vec<u8> {
         bcs::to_bytes(&Operation::Mint {
             minter,
@@ -225,6 +252,7 @@ impl MutationRoot {
             chain_owner,
             chain_minter,
             description,
+            nft_type,
         })
         .unwrap()
     }

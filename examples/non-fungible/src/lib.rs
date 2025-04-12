@@ -48,6 +48,7 @@ pub enum Operation {
         chain_minter: String, // chain nft minter
         chain_owner: String, // chain nft owner
         description: String,
+        nft_type: NftType
     },
     /// Transfers a token from a (locally owned) account to a (possibly remote) account.
     Transfer {
@@ -96,6 +97,14 @@ pub enum NftStatus {
     OnSale,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Enum)]
+pub enum NftType {
+    /// Twitter NFT
+    Twitter,
+    /// Normal NFT
+    Generic,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, SimpleObject, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Nft {
@@ -111,6 +120,7 @@ pub struct Nft {
     pub chain_owner: String, // chain nft owner
     pub description: String,
     pub status: NftStatus,
+    pub nft_type: NftType,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, SimpleObject, PartialEq, Eq)]
@@ -129,6 +139,7 @@ pub struct NftOutput {
     pub description: String,
     pub blob_hash: DataBlobHash,
     pub status: NftStatus,
+    pub nft_type: NftType,
 }
 
 impl NftOutput {
@@ -149,6 +160,7 @@ impl NftOutput {
             description: nft.description,
             blob_hash: nft.blob_hash,
             status: nft.status,
+            nft_type: nft.nft_type,
         }
     }
 
@@ -167,6 +179,7 @@ impl NftOutput {
             description: nft.description,
             blob_hash: nft.blob_hash,
             status: nft.status,
+            nft_type: nft.nft_type,
         }
     }
 }
@@ -190,6 +203,7 @@ impl Nft {
         id: u64,
         chain_minter: &String,
         chain_owner: &String,
+        nft_type: &NftType
     ) -> Result<TokenId, bcs::Error> {
         use sha3::Digest as _;
 
@@ -206,6 +220,7 @@ impl Nft {
         hasher.update(price.to_bcs_bytes()?);
         hasher.update(chain_owner.to_bcs_bytes()?);
         hasher.update(chain_minter.to_bcs_bytes()?);
+        hasher.update(nft_type.to_bcs_bytes()?);
 
         Ok(TokenId {
             id: hasher.finalize().to_vec(),

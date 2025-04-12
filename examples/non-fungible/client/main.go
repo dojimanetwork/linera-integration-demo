@@ -169,6 +169,7 @@ func main() {
 	http.HandleFunc("/nfts", corsMiddleware(handleGetNFTs))
 	http.HandleFunc("/publish_image", corsMiddleware(handleBlobHash))
 	http.HandleFunc("/next_nft_id", corsMiddleware(handleNextNFTID))
+	http.HandleFunc("/filter_nfts", corsMiddleware(handleFilterNFTs))
 	http.HandleFunc("/ws", corsMiddleware(handleWebSocket))
 
 	// Start server
@@ -554,6 +555,7 @@ func handleListNFT(w http.ResponseWriter, r *http.Request) {
 		ID          int    `json:"id"`
 		Token       string `json:"token"`
 		BlobHash    string `json:"blobHash"`
+		NftType     string `json:"nftType"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -579,6 +581,7 @@ func handleListNFT(w http.ResponseWriter, r *http.Request) {
 		ID:          requestBody.ID,
 		Token:       requestBody.Token,
 		BlobHash:    requestBody.BlobHash,
+		NftType:     solver.NftType(requestBody.NftType),
 	}
 
 	// List NFT and get blob hash
@@ -750,4 +753,36 @@ func (l *Logger) Debug(format string, v ...interface{}) {
 // Warn logs a warning level message
 func (l *Logger) Warn(format string, v ...interface{}) {
 	l.log(WARN, format, v...)
+}
+
+// handleFilterNFTs handles filtering NFTs by type
+func handleFilterNFTs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get nftType from query parameters
+	nftType := r.URL.Query().Get("nftType")
+	if nftType == "" {
+		http.Error(w, "nftType parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	// Filter NFTs by type
+	filteredNFTs, err := solverClient.FilterNFTs(solver.NftType(nftType))
+	if err != nil {
+		logger.Error("Error filtering NFTs: %v", err)
+		http.Error(w, "Error filtering NFTs", http.StatusInternalServerError)
+		return
+	}
+
+	// Send success response with filtered NFTs
+	successResponse := map[string]interface{}{
+		"status":       "success",
+		"filteredNFTs": filteredNFTs,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(successResponse)
 }
