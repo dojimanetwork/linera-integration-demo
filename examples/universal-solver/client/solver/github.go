@@ -89,14 +89,14 @@ var ExampleRepos = []ExampleRepo{
 		Owner:  "bhaagiKenpachi",
 		Repo:   "non-fungile-client",
 		Type:   "go",
-		Args:   "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url  https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/249979fb024ea93cd229bd36b4940ee0451156bdf8f379e61947673566fb3c1aaaf5aa0e834e1fdf7321a32a6257e5b7728b71a67c4f28d98b5d5fddfb455687e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65050000000000000000000000 -solana-url \"https://sol-test.dojima.network\" -ethereum-url \"https://eth-test.dojima.network\" --non-fungible-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/923fa4bfb37c9aae3fb6901a6230cbcfb675de2cd07c709ea18d209912ac69116c4302192e50d455e7d5c8e554c69177d509ad28228e8c29fb6abd478fbd6abee476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65070000000000000000000000 --nft-address 0x335Fe1De453F85cFAa8B1d0c902E2d89F461f3E",
+		Args:   "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url  https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/c1d0706e263c0ca3da6206ebdeaa26b666c84da1b3272b7c98fabd3b5249137c47ed0391a3d972a93638fd97dc938bf536127ddff4b88efac1ce04fa5af11b03e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65920000000000000000000000 -solana-url \"https://sol-test.dojima.network\" -ethereum-url \"https://eth-test.dojima.network\" --non-fungible-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/ae5b8c290e90596f11a25018f1cc6ed58e61ca40bfe05b961f2fc6067f4f877c014d1d66f9238e81eafbbad023d09f139fec198a979a6c92c861f1bb84c08349e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65960000000000000000000000 --nft-address 0x646Dda3a6Ea1E75717e9D3fFc4fff811ED74D6De",
 		PortNo: 3000,
 	},
 	{
 		Owner:  "bhaagiKenpachi",
 		Repo:   "universal-solver-client",
 		Type:   "go", // Specify the language type
-		Args:   "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/3252b5949106daa5cf7557e0a41beefa959a8ee2b684ec92ba5efe7c89810aaf5dbd4f9c9e4b3ff73cfcba4fc77808ed9537290b1e70f9a40f11073e6c45d6fae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65330000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
+		Args:   "-seed-phrase \"indoor dish desk flag debris potato excuse depart ticket judge file exit\" -solver-url https://linera-api.ngrok.io/chains/e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65/applications/c1d0706e263c0ca3da6206ebdeaa26b666c84da1b3272b7c98fabd3b5249137c47ed0391a3d972a93638fd97dc938bf536127ddff4b88efac1ce04fa5af11b03e476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65920000000000000000000000 -solana-url  \"https://sol-test.dojima.network\"  -ethereum-url  \"https://eth-test.dojima.network\"",
 		PortNo: 3001,
 	},
 	{
@@ -124,7 +124,7 @@ var ExampleRepos = []ExampleRepo{
 		Owner:  "bhaagiKenpachi",
 		Repo:   "linera-crowd-funding",
 		Type:   "wasm",
-		Args:   "--required-application-ids c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000 --json-argument {\"owner\":\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\",\"deadline\":4102473600000000,\"target\":\"100\"} --json-parameters \"c85ece3934d1f286edb4c5c838606e3847269366e499da6f60f180088cfb207dae378075709425bee2e559036c03785899660d4b83418e95aead3b7ad301735ce476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65270000000000000000000000\"",
+		Args:   "--required-application-ids 0f4a84ca5bc9dab7f524ea4fe48f3bcc6afe295241576ce2e10ea548f3cb849a8a0494dc24f52a2bf5a40158f8de27915afcc09c8d432f422948c8ca24815c6ae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65990000000000000000000000 --json-argument {\"owner\":\"User:c3562b79502f7e0ae98b471b275846f91ad052f6ab9bb5fba1ecc1a9dd5a79c9\",\"deadline\":4102473600000000,\"target\":\"100\"} --json-parameters \"0f4a84ca5bc9dab7f524ea4fe48f3bcc6afe295241576ce2e10ea548f3cb849a8a0494dc24f52a2bf5a40158f8de27915afcc09c8d432f422948c8ca24815c6ae476187f6ddfeb9d588c7b45d3df334d5501d6499b3f9ad5595cae86cce16a65990000000000000000000000\"",
 		PortNo: 0,
 	},
 
