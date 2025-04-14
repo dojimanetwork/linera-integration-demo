@@ -54,6 +54,7 @@ type LookUpUserDetails struct {
 	CreatedAt       string `json:"created_at"`
 	Description     string `json:"description"`
 	ProfileImageURL string `json:"profile_image_url"`
+	BannerURL       string `json:"profile_banner_url"`
 	Protected       bool   `json:"protected"`
 	Verified        bool   `json:"verified"`
 	VerifiedType    string `json:"verified_type"`

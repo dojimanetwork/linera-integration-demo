@@ -425,7 +425,7 @@ func (c *TwitterClient) LookupUserByID(userID string) (*LookUpUserDetails, error
 	url := fmt.Sprintf("%s/users/%s", twitterAPIURL, userID)
 
 	// Add query parameters for additional fields
-	query := url + "?user.fields=created_at,description,entities,id,location,name,profile_image_url,protected,public_metrics,url,username,verified,verified_type"
+	query := url + "?user.fields=created_at,description,entities,id,location,name,profile_image_url,profile_banner_url,protected,public_metrics,url,username,verified,verified_type"
 
 	req, err := http.NewRequest("GET", query, nil)
 	if err != nil {
