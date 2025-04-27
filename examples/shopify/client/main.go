@@ -13,16 +13,35 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	_ "github.com/linera-protocol/examples/shopify/client/docs"
 	"github.com/linera-protocol/examples/shopify/client/shopify"
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "github.com/swaggo/swag"
 )
+
+// @title Shopify Client API
+// @version 1.0
+// @description This is a Go HTTP client server for the Shopify application in the Linera Protocol.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.linera.io/support
+// @contact.email support@linera.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:3007
+// @BasePath /
+// @schemes http https
 
 // Config holds the application configuration
 type Config struct {
 	ShopifyURL     string
-	LineraURL      string
 	WebhookURL     string
 	Port           string
 	AllowedOrigins map[string]bool
+	Environment    string
 }
 
 // Logger provides structured logging functionality
@@ -87,17 +106,19 @@ func initConfig() {
 	// Define command line flags
 	shopifyURL := flag.String("shopify-url", getEnvOrDefault("SHOPIFY_URL", "http://localhost:8081/"), "Shopify service URL")
 	webhookURL := flag.String("webhook-url", getEnvOrDefault("WEBHOOK_URL", ""), "Webhook URL for notifications")
-	port := flag.String("port", getEnvOrDefault("PORT", "3000"), "Server port")
+	port := flag.String("port", getEnvOrDefault("PORT", "3006"), "Server port")
 	solanaRPCURL := flag.String("solana-url", getEnvOrDefault("SOLANA_RPC", "http://localhost:8899"), "Solana RPC endpoint")
 	ethereumRPCURL := flag.String("ethereum-url", getEnvOrDefault("ETHEREUM_RPC", "http://localhost:8545"), "Ethereum RPC endpoint")
+	environment := flag.String("env", getEnvOrDefault("ENVIRONMENT", "local"), "Environment (local, dev, prod)")
 
 	flag.Parse()
 
-	// Configure allowed origins
+	// Configure allowed origins based on environment
 	allowedOrigins := map[string]bool{
-		"http://localhost:5173":        true,
-		"https://shopify-app.ngrok.io": true,
-		"http://localhost:3002":        true,
+		"http://localhost:5173":           true,
+		"https://shopify-app.ngrok.io":    true,
+		"http://localhost:3002":           true,
+		"https://shopify-solver.ngrok.io": true,
 	}
 
 	// Set configuration
@@ -106,11 +127,12 @@ func initConfig() {
 		WebhookURL:     *webhookURL,
 		Port:           *port,
 		AllowedOrigins: allowedOrigins,
+		Environment:    *environment,
 	}
 
 	// Initialize shopify client
 	shopify.InitLogger()
-	shopifyClient = shopify.NewClient(config.ShopifyURL, config.LineraURL)
+	shopifyClient = shopify.NewClient(config.ShopifyURL, "")
 
 	// Initialize RPC endpoints and NFT address
 	shopify.InitConfig(*ethereumRPCURL, *solanaRPCURL)
@@ -118,9 +140,9 @@ func initConfig() {
 	// Log configuration
 	logger.Info("Initialized with:")
 	logger.Info("  Shopify URL: %s", config.ShopifyURL)
-	logger.Info("  Linera URL: %s", config.LineraURL)
 	logger.Info("  Webhook URL: %s", config.WebhookURL)
 	logger.Info("  Port: %s", config.Port)
+	logger.Info("  Environment: %s", config.Environment)
 }
 
 // Get environment variable or default value
@@ -151,64 +173,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// Update handler for listing NFT to return blob hash
-func handleListNFT(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Parse JSON request body
-	var requestBody struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Price       string `json:"price"`
-		ChainId     string `json:"chainId"`
-		Minter      string `json:"minter"`
-		ChainMinter string `json:"chainMinter"`
-		ChainOwner  string `json:"chainOwner"`
-		ID          int    `json:"id"`
-		Token       string `json:"token"`
-		BlobHash    string `json:"blobHash"`
-		NftType     string `json:"nftType"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		http.Error(w, "Error parsing request body: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Create params
-	params := shopify.ListNFTParams{
-		Name:        requestBody.Name,
-		Description: requestBody.Description,
-		Price:       requestBody.Price,
-		ChainId:     requestBody.ChainId,
-		Minter:      requestBody.Minter,
-		ChainMinter: requestBody.ChainMinter,
-		ChainOwner:  requestBody.ChainOwner,
-		Token:       requestBody.Token,
-		BlobHash:    requestBody.BlobHash,
-	}
-
-	// List NFT and get blob hash
-	blobHash, err := shopifyClient.ListNFT(params)
-	if err != nil {
-		http.Error(w, "Error listing NFT: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Return success response with blob hash
-	response := map[string]interface{}{
-		"status":   "success",
-		"message":  "NFT listed successfully",
-		"blobHash": blobHash,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
 }
 
 // Helper function to extract amount from transaction
@@ -283,7 +247,24 @@ func getTokenForChain(chain string) (string, error) {
 	return token, nil
 }
 
-// Update the handlePostTxHash function
+// @Summary Post transaction hash
+// @Description Process a transaction hash from a blockchain
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param txHash query string true "Transaction hash"
+// @Param chain query string true "Blockchain chain (e.g. 'solana', 'ethereum')"
+// @Param destinationAddress query string false "Destination address"
+// @Param webhookURL query string false "Webhook URL for notifications"
+// @Param sourceOwner query string false "Source owner"
+// @Param tokenId query string false "Token ID"
+// @Param blobHash query string false "Blob hash"
+// @Param targetChainId query string false "Target chain ID"
+// @Param targetOwner query string false "Target owner"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /post_tx_hash [post]
 func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Received POST request to /post_tx_hash")
 
@@ -304,7 +285,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	destinationAddress := r.URL.Query().Get("destinationAddress")
 	webhookURL := r.URL.Query().Get("webhookURL")
 
-	logger.Debug("Request parameters - txHash: %s, chain: %s, toToken: %s, destinationAddress: %s, webhookURL: %s",
+	logger.Debug("Request parameters - txHash: %s, chain: %s, destinationAddress: %s, webhookURL: %s",
 		txHash, chain, destinationAddress, webhookURL)
 
 	// Get additional transfer parameters
@@ -314,7 +295,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	targetChainId := r.URL.Query().Get("targetChainId")
 	targetOwner := r.URL.Query().Get("targetOwner")
 
-	logger.Debug("Additional parameters - sourceOwner: %s, tokenId: %s, blobHash: %s, targetChainId: %s, targetOwner: %s, nftId: %s",
+	logger.Debug("Additional parameters - sourceOwner: %s, tokenId: %s, blobHash: %s, targetChainId: %s, targetOwner: %s",
 		sourceOwner, tokenId, blobHash, targetChainId, targetOwner)
 
 	// Validate required parameters
@@ -498,7 +479,80 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-// Add handler for getting all NFTs
+// @Summary List an NFT
+// @Description List a new NFT for sale
+// @Tags items
+// @Accept json
+// @Produce json
+// @Param request body object true "NFT details"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /list_item [post]
+func handleListNFT(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse JSON request body
+	var requestBody struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Price       string `json:"price"`
+		ChainId     string `json:"chainId"`
+		Minter      string `json:"minter"`
+		ChainMinter string `json:"chainMinter"`
+		ChainOwner  string `json:"chainOwner"`
+		ID          int    `json:"id"`
+		Token       string `json:"token"`
+		BlobHash    string `json:"blobHash"`
+		NftType     string `json:"nftType"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		http.Error(w, "Error parsing request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Create params
+	params := shopify.ListNFTParams{
+		Name:        requestBody.Name,
+		Description: requestBody.Description,
+		Price:       requestBody.Price,
+		ChainId:     requestBody.ChainId,
+		Minter:      requestBody.Minter,
+		ChainMinter: requestBody.ChainMinter,
+		ChainOwner:  requestBody.ChainOwner,
+		Token:       requestBody.Token,
+		BlobHash:    requestBody.BlobHash,
+	}
+
+	// List NFT and get blob hash
+	blobHash, err := shopifyClient.ListNFT(params)
+	if err != nil {
+		http.Error(w, "Error listing NFT: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response with blob hash
+	response := map[string]interface{}{
+		"status":   "success",
+		"message":  "NFT listed successfully",
+		"blobHash": blobHash,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// @Summary Get all NFTs
+// @Description Get all NFTs available in the system
+// @Tags items
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]string
+// @Router /items/all [get]
 func handleGetNFTs(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -520,7 +574,13 @@ func handleGetNFTs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Add handler for getting balances
+// @Summary Get all balances
+// @Description Get all token balances
+// @Tags balances
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]string
+// @Router /balances [get]
 func handleGetBalances(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Received GET request to /balances")
 
@@ -546,7 +606,16 @@ func handleGetBalances(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Add handler for withdrawing tokens
+// @Summary Withdraw token
+// @Description Withdraw tokens from the system
+// @Tags balances
+// @Accept json
+// @Produce json
+// @Param request body object true "Withdrawal details"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /withdraw/token [post]
 func handleWithdrawToken(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Received POST request to /withdraw/token")
 
@@ -604,40 +673,15 @@ func handleWithdrawToken(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// sendWebhookNotification sends a notification to the specified webhook URL
-func sendWebhookNotification(notification shopify.WebhookNotification, webhookURL string) error {
-	// Marshal notification to JSON
-	jsonData, err := json.Marshal(notification)
-	if err != nil {
-		return fmt.Errorf("error marshaling notification: %v", err)
-	}
-
-	// Create POST request
-	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("error creating request: %v", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-
-	// Send request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("error sending request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Check response status
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("webhook returned non-200 status: %d", resp.StatusCode)
-	}
-
-	return nil
-}
-
-// Add handler for filtering items
+// @Summary Filter items
+// @Description Filter NFTs by type (ON_SALE or SOLD)
+// @Tags items
+// @Produce json
+// @Param type query string false "Filter type (ON_SALE or SOLD)" default(ON_SALE)
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /filter/items [get]
 func handleFilterItems(w http.ResponseWriter, r *http.Request) {
 	logger.Info("Received GET request to /filter/items")
 
@@ -689,6 +733,39 @@ func handleFilterItems(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// Add handler for getting balances
+func sendWebhookNotification(notification shopify.WebhookNotification, webhookURL string) error {
+	// Marshal notification to JSON
+	jsonData, err := json.Marshal(notification)
+	if err != nil {
+		return fmt.Errorf("error marshaling notification: %v", err)
+	}
+
+	// Create POST request
+	req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("webhook returned non-200 status: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 func main() {
 	// Initialize the logger
 	logger = NewLogger()
@@ -701,6 +778,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(corsMiddleware)
 
+	// API routes
 	router.HandleFunc("/list_item", handleListNFT).Methods("POST", "OPTIONS")
 	router.HandleFunc("/post_tx_hash", handlePostTxHash).Methods("POST", "OPTIONS")
 	router.HandleFunc("/items/all", handleGetNFTs).Methods("GET", "OPTIONS")
@@ -708,8 +786,25 @@ func main() {
 	router.HandleFunc("/withdraw/token", handleWithdrawToken).Methods("POST", "OPTIONS")
 	router.HandleFunc("/filter/items", handleFilterItems).Methods("GET", "OPTIONS")
 
+	// Swagger documentation
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 	// Start server
 	logger.Info("Server starting on :%s", config.Port)
+
+	// Provide environment-specific access URLs
+	switch config.Environment {
+	case "local":
+		logger.Info("API accessible at http://localhost:%s", config.Port)
+		logger.Info("Swagger UI available at http://localhost:%s/swagger/index.html", config.Port)
+	case "dev":
+		logger.Info("API accessible at https://dev.shopify-solver.ngrok.io")
+		logger.Info("Swagger UI available at https://dev.shopify-solver.ngrok.io/swagger/index.html")
+	case "prod":
+		logger.Info("API accessible at https://shopify-solver.ngrok.io")
+		logger.Info("Swagger UI available at https://shopify-solver.ngrok.io/swagger/index.html")
+	}
+
 	if err := http.ListenAndServe(":"+config.Port, router); err != nil {
 		logger.Error("Error starting server: %v", err)
 		os.Exit(1)

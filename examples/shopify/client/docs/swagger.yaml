@@ -1,0 +1,229 @@
+basePath: /
+host: localhost:3007
+info:
+  contact:
+    email: support@linera.io
+    name: API Support
+    url: http://www.linera.io/support
+  description: This is a Go HTTP client server for the Shopify application in the
+    Linera Protocol.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Shopify Client API
+  version: "1.0"
+paths:
+  /balances:
+    get:
+      description: Get all token balances
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all balances
+      tags:
+      - balances
+  /filter/items:
+    get:
+      description: Filter NFTs by type (ON_SALE or SOLD)
+      parameters:
+      - default: ON_SALE
+        description: Filter type (ON_SALE or SOLD)
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Filter items
+      tags:
+      - items
+  /items/all:
+    get:
+      description: Get all NFTs available in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all NFTs
+      tags:
+      - items
+  /list_item:
+    post:
+      consumes:
+      - application/json
+      description: List a new NFT for sale
+      parameters:
+      - description: NFT details
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List an NFT
+      tags:
+      - items
+  /post_tx_hash:
+    post:
+      consumes:
+      - application/json
+      description: Process a transaction hash from a blockchain
+      parameters:
+      - description: Transaction hash
+        in: query
+        name: txHash
+        required: true
+        type: string
+      - description: Blockchain chain (e.g. 'solana', 'ethereum')
+        in: query
+        name: chain
+        required: true
+        type: string
+      - description: Destination address
+        in: query
+        name: destinationAddress
+        type: string
+      - description: Webhook URL for notifications
+        in: query
+        name: webhookURL
+        type: string
+      - description: Source owner
+        in: query
+        name: sourceOwner
+        type: string
+      - description: Token ID
+        in: query
+        name: tokenId
+        type: string
+      - description: Blob hash
+        in: query
+        name: blobHash
+        type: string
+      - description: Target chain ID
+        in: query
+        name: targetChainId
+        type: string
+      - description: Target owner
+        in: query
+        name: targetOwner
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Post transaction hash
+      tags:
+      - transactions
+  /withdraw/token:
+    post:
+      consumes:
+      - application/json
+      description: Withdraw tokens from the system
+      parameters:
+      - description: Withdrawal details
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Withdraw token
+      tags:
+      - balances
+schemes:
+- http
+- https
+swagger: "2.0"
