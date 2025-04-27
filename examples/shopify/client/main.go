@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/linera-protocol/examples/shopify/client/shopify"
 	httpSwagger "github.com/swaggo/http-swagger"
 	_ "github.com/swaggo/swag"
+	"gopkg.in/yaml.v3"
 )
 
 // @title Shopify Client API
@@ -106,7 +108,7 @@ func initConfig() {
 	// Define command line flags
 	shopifyURL := flag.String("shopify-url", getEnvOrDefault("SHOPIFY_URL", "http://localhost:8081/"), "Shopify service URL")
 	webhookURL := flag.String("webhook-url", getEnvOrDefault("WEBHOOK_URL", ""), "Webhook URL for notifications")
-	port := flag.String("port", getEnvOrDefault("PORT", "3006"), "Server port")
+	port := flag.String("port", getEnvOrDefault("PORT", "3007"), "Server port")
 	solanaRPCURL := flag.String("solana-url", getEnvOrDefault("SOLANA_RPC", "http://localhost:8899"), "Solana RPC endpoint")
 	ethereumRPCURL := flag.String("ethereum-url", getEnvOrDefault("ETHEREUM_RPC", "http://localhost:8545"), "Ethereum RPC endpoint")
 	environment := flag.String("env", getEnvOrDefault("ENVIRONMENT", "local"), "Environment (local, dev, prod)")
@@ -766,6 +768,97 @@ func sendWebhookNotification(notification shopify.WebhookNotification, webhookUR
 	return nil
 }
 
+// customSwaggerHandler creates a custom Swagger UI handler that
+// updates the Swagger config based on the current environment
+func customSwaggerHandler() http.Handler {
+	// Get the default SwaggerUI handler
+	defaultHandler := httpSwagger.Handler(
+		httpSwagger.DeepLinking(true),
+		httpSwagger.DocExpansion("list"),
+		httpSwagger.DomID("swagger-ui"),
+	)
+
+	// Create a wrapper that modifies the Swagger JSON before serving
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// If this is a request for the Swagger JSON/YAML, we need to modify it
+		if strings.HasSuffix(r.URL.Path, "swagger.json") || strings.HasSuffix(r.URL.Path, "swagger.yaml") {
+			// Create a custom response writer to capture the output
+			responseRecorder := httptest.NewRecorder()
+
+			// Call the original handler to get the Swagger JSON
+			defaultHandler.ServeHTTP(responseRecorder, r)
+
+			// Get the body from the recorder
+			body := responseRecorder.Body.Bytes()
+
+			// Parse the original Swagger document based on content type
+			var swaggerDoc map[string]interface{}
+			contentType := responseRecorder.Header().Get("Content-Type")
+
+			if strings.Contains(contentType, "application/json") {
+				if err := json.Unmarshal(body, &swaggerDoc); err != nil {
+					http.Error(w, "Error parsing Swagger JSON", http.StatusInternalServerError)
+					return
+				}
+			} else if strings.Contains(contentType, "application/yaml") || strings.Contains(contentType, "application/x-yaml") {
+				if err := yaml.Unmarshal(body, &swaggerDoc); err != nil {
+					http.Error(w, "Error parsing Swagger YAML", http.StatusInternalServerError)
+					return
+				}
+			} else {
+				// If not JSON or YAML, pass through unchanged
+				for k, vs := range responseRecorder.Header() {
+					for _, v := range vs {
+						w.Header().Add(k, v)
+					}
+				}
+				w.WriteHeader(responseRecorder.Code)
+				w.Write(body)
+				return
+			}
+
+			// Modify the host based on the environment
+			switch config.Environment {
+			case "local":
+				swaggerDoc["host"] = fmt.Sprintf("localhost:%s", config.Port)
+			case "dev":
+				swaggerDoc["host"] = "dev.shopify-solver.ngrok.io"
+			case "prod":
+				swaggerDoc["host"] = "shopify-solver.ngrok.io"
+			}
+
+			// Set the proper response headers
+			for k, vs := range responseRecorder.Header() {
+				for _, v := range vs {
+					w.Header().Add(k, v)
+				}
+			}
+
+			// Write the modified document back to the response
+			var responseBody []byte
+			var err error
+
+			if strings.Contains(contentType, "application/json") {
+				responseBody, err = json.Marshal(swaggerDoc)
+			} else {
+				responseBody, err = yaml.Marshal(swaggerDoc)
+			}
+
+			if err != nil {
+				http.Error(w, "Error generating Swagger document", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(responseRecorder.Code)
+			w.Write(responseBody)
+			return
+		}
+
+		// For other requests (like UI files), pass through to the default handler
+		defaultHandler.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// Initialize the logger
 	logger = NewLogger()
@@ -787,7 +880,7 @@ func main() {
 	router.HandleFunc("/filter/items", handleFilterItems).Methods("GET", "OPTIONS")
 
 	// Swagger documentation
-	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	router.PathPrefix("/swagger/").Handler(customSwaggerHandler())
 
 	// Start server
 	logger.Info("Server starting on :%s", config.Port)

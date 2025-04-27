@@ -2,7 +2,7 @@
 
 # Define environments
 ENVIRONMENTS=(
-  "local=http://localhost:3006"
+  "local=http://localhost:3007"
   "dev=https://dev.shopify-solver.ngrok.io"
   "prod=https://shopify-solver.ngrok.io"
 )
