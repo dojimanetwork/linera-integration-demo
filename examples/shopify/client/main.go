@@ -350,7 +350,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 				Chain:     chain,
 				Timestamp: time.Now().Unix(),
 				Data:      map[string]interface{}{"error": "Invalid chain parameter. Must be 'solana' or 'ethereum'"},
-				Client:    "non-fungible",
+				Client:    "shopify",
 			}
 			webhookChan <- errorNotification
 			return
@@ -364,7 +364,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 				Chain:     chain,
 				Timestamp: time.Now().Unix(),
 				Data:      map[string]interface{}{"error": err.Error()},
-				Client:    "non-fungible",
+				Client:    "shopify",
 			}
 			webhookChan <- errorNotification
 			return
@@ -380,7 +380,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 				Chain:     chain,
 				Timestamp: time.Now().Unix(),
 				Data:      map[string]interface{}{"error": err.Error()},
-				Client:    "non-fungible",
+				Client:    "shopify",
 			}
 			webhookChan <- errorNotification
 			return
@@ -399,7 +399,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 				FromToken: fromToken,
 				Timestamp: time.Now().Unix(),
 				Data:      map[string]interface{}{"error": err.Error()},
-				Client:    "non-fungible",
+				Client:    "shopify",
 			}
 			webhookChan <- errorNotification
 			return
@@ -435,7 +435,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 					"error":          err.Error(),
 					"transferParams": transferParams,
 				},
-				Client: "non-fungible",
+				Client: "shopify",
 			}
 			webhookChan <- errorNotification
 			return
@@ -456,7 +456,7 @@ func handlePostTxHash(w http.ResponseWriter, r *http.Request) {
 				"newTxHash":      txhash,
 				"transferParams": transferParams,
 			},
-			Client: "non-fungible",
+			Client: "shopify",
 		}
 		webhookChan <- notification
 
