@@ -159,7 +159,9 @@ func getEnvOrDefault(key, defaultValue string) string {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if config.AllowedOrigins[origin] {
+		if config.AllowedOrigins[origin] || 
+		   origin == "http://localhost:3002" || 
+		   origin == "https://shopify-solver.ngrok.io" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
