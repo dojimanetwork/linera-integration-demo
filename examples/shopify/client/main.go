@@ -199,8 +199,11 @@ func extractAmountFromTx(tx interface{}) (float64, error) {
 			if !ethValue.IsUint64() {
 				return 0, fmt.Errorf("converted ETH value exceeds uint64 range: %s", ethValue.String())
 			}
-			flval, _ := ethValue.Float64()
-			return flval, nil
+			// Convert to float for decimal values
+			flval := new(big.Float).SetInt(bigValue)
+			flval.Quo(flval, new(big.Float).SetInt(weiPerEth))
+			result, _ := flval.Float64()
+			return result, nil
 		}
 		// For Solana
 		if result, ok := v["result"].(map[string]interface{}); ok {
