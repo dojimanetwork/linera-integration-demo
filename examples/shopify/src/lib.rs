@@ -8,6 +8,7 @@ use fungible::Account;
 use linera_sdk::{
     base::{AccountOwner, ApplicationId, ChainId, ContractAbi, ServiceAbi},
     graphql::GraphQLMutationRoot,
+    views::CustomSerialize,
     DataBlobHash, ToBcsBytes,
 };
 use serde::{Deserialize, Serialize};
@@ -88,6 +89,54 @@ pub enum Message {
         token_id: TokenId,
         target_account: Account,
     },
+}
+
+// store trade price of token
+#[derive(
+    PartialEq,
+    Default,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    Eq,
+    Ord,
+    PartialOrd,
+    SimpleObject,
+    InputObject,
+)]
+pub struct Trade {
+    pub token: String,
+    pub quantity: String,
+    pub price: String,
+}
+
+impl CustomSerialize for Trade {
+    fn to_custom_bytes(&self) -> Result<Vec<u8>, linera_sdk::views::ViewError> {
+        Ok(bcs::to_bytes(self)
+            .map_err(|e| linera_sdk::views::ViewError::BcsError(e))?)
+    }
+
+    fn from_custom_bytes(bytes: &[u8]) -> Result<Self, linera_sdk::views::ViewError> {
+        bcs::from_bytes(bytes).map_err(|e| linera_sdk::views::ViewError::BcsError(e))
+    }
+}
+
+#[derive(
+    PartialEq,
+    Debug,
+    Clone,
+    Serialize,
+    Deserialize,
+    Default,
+    Eq,
+    Ord,
+    PartialOrd,
+    SimpleObject,
+    InputObject,
+)]
+pub struct Trades {
+    pub trades: Vec<Trade>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Enum)]

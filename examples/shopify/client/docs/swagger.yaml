@@ -1,4 +1,14 @@
 basePath: /
+definitions:
+  shopify.WithdrawTokenRequest:
+    properties:
+      amount:
+        example: "0.05"
+        type: string
+      token:
+        example: ETH
+        type: string
+    type: object
 host: localhost:3007
 info:
   contact:
@@ -188,6 +198,26 @@ paths:
       summary: Post transaction hash
       tags:
       - transactions
+  /trades:
+    get:
+      description: Get all trades in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all trades
+      tags:
+      - trades
   /withdraw/token:
     post:
       consumes:
@@ -199,7 +229,7 @@ paths:
         name: request
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/shopify.WithdrawTokenRequest'
       produces:
       - application/json
       responses:

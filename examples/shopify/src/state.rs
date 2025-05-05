@@ -5,7 +5,8 @@ use std::collections::BTreeSet;
 
 use async_graphql::SimpleObject;
 use linera_sdk::{base::AccountOwner, views::{linera_views, MapView, RegisterView, RootView, ViewStorageContext}, DataBlobHash};
-use shopify::{Nft, TokenId};
+use linera_sdk::views::CustomSetView;
+use shopify::{Nft, TokenId, Trade};
 
 /// The application state.
 #[derive(RootView, SimpleObject)]
@@ -17,6 +18,9 @@ pub struct NonFungibleTokenState {
     pub owned_token_ids: MapView<AccountOwner, BTreeSet<TokenId>>,
     // chain owned to the set of NFTs for multiple chains
     pub blob_token_ids: MapView<DataBlobHash, TokenId>,
+    // store token balances
+    pub balances: MapView<String, String>,
+    // store all trades to off ramp
+    pub user_trades: CustomSetView<Trade>,
 
-    pub balances: MapView<String, String>
 }

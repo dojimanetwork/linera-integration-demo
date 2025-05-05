@@ -13,12 +13,13 @@ use std::{
 use async_graphql::{EmptySubscription, Object, Request, Response, Schema};
 use base64::engine::{general_purpose::STANDARD_NO_PAD, Engine as _};
 use fungible::Account;
+use linera_sdk::views::CustomSetView;
 use linera_sdk::{
     base::{AccountOwner, WithServiceAbi},
     views::View,
     DataBlobHash, Service, ServiceRuntime,
 };
-use shopify::{NftOutput, NftStatus, Operation, TokenId};
+use shopify::{NftOutput, NftStatus, Operation, TokenId, Trade, Trades};
 
 use self::state::NonFungibleTokenState;
 
@@ -92,7 +93,12 @@ impl QueryRoot {
     }
 
     async fn nftUsingBlobHash(&self, blobHash: DataBlobHash) -> Option<NftOutput> {
-        let token_id = self.non_fungible_token.blob_token_ids.get(&blobHash).await.unwrap();
+        let token_id = self
+            .non_fungible_token
+            .blob_token_ids
+            .get(&blobHash)
+            .await
+            .unwrap();
 
         let nft = self
             .non_fungible_token
@@ -109,7 +115,8 @@ impl QueryRoot {
                     .expect("Services only run in a single thread");
                 runtime.read_data_blob(nft.blob_hash)
             };
-            let nft_output = NftOutput::new_with_token_id(token_id.unwrap().to_string(), nft, payload);
+            let nft_output =
+                NftOutput::new_with_token_id(token_id.unwrap().to_string(), nft, payload);
             Some(nft_output)
         } else {
             None
@@ -240,19 +247,29 @@ impl QueryRoot {
 
         balances
     }
+
+    async fn trades(&self) -> BTreeSet<Trade> {
+        let trades = self.non_fungible_token.clone();
+        let trade_indices = trades.user_trades.indices().await.unwrap();
+        trade_indices.into_iter().collect()
+    }
 }
 
 struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-    async fn mint(&self, minter: AccountOwner, name: String, blob_hash: DataBlobHash,
-                  token: String, // ETH, SOL
-                  price: String, // 0.05 [token]
-                  chain_minter: String, // chain nft minter
-                  chain_owner: String, // chain nft owner
-                  description: String,
-                  ) -> Vec<u8> {
+    async fn mint(
+        &self,
+        minter: AccountOwner,
+        name: String,
+        blob_hash: DataBlobHash,
+        token: String,        // ETH, SOL
+        price: String,        // 0.05 [token]
+        chain_minter: String, // chain nft minter
+        chain_owner: String,  // chain nft owner
+        description: String,
+    ) -> Vec<u8> {
         bcs::to_bytes(&Operation::Mint {
             minter,
             name,
@@ -304,23 +321,17 @@ impl MutationRoot {
         .unwrap()
     }
 
-    async fn listNftForSale(
-        &self,
-        token_id: String,
-        chain_owner: String,
-    ) -> Vec<u8> {
+    async fn listNftForSale(&self, token_id: String, chain_owner: String) -> Vec<u8> {
         bcs::to_bytes(&Operation::ListNftForSale {
             token_id: TokenId {
                 id: STANDARD_NO_PAD.decode(token_id).unwrap(),
             },
             chain_owner,
-        }).unwrap()
+        })
+        .unwrap()
     }
 
     async fn withdrawToken(&self, token: String, amount: String) -> Vec<u8> {
-        bcs::to_bytes(&Operation::WithdrawToken {
-            token,
-            amount,
-        }).unwrap()
+        bcs::to_bytes(&Operation::WithdrawToken { token, amount }).unwrap()
     }
 }

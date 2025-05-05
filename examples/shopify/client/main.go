@@ -633,10 +633,7 @@ func handleWithdrawToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse request body
-	var requestBody struct {
-		Token  string `json:"token"`
-		Amount string `json:"amount"`
-	}
+	var requestBody shopify.WithdrawTokenRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		logger.Error("Error parsing request body: %v", err)
@@ -734,6 +731,38 @@ func handleFilterItems(w http.ResponseWriter, r *http.Request) {
 		"type":   nftType,
 		"count":  len(nfts),
 		"items":  nfts,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// @Summary Get all trades
+// @Description Get all trades in the system
+// @Tags trades
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]string
+// @Router /trades [get]
+func handleGetTrades(w http.ResponseWriter, r *http.Request) {
+	logger.Info("Received GET request to /trades")
+
+	if r.Method != http.MethodGet {
+		logger.Error("Invalid method %s for /trades", r.Method)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	trades, err := shopifyClient.GetTrades()
+	if err != nil {
+		logger.Error("Error getting trades: %v", err)
+		http.Error(w, "Error getting trades: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"status": "success",
+		"trades": trades,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -883,6 +912,7 @@ func main() {
 	router.HandleFunc("/balances", handleGetBalances).Methods("GET", "OPTIONS")
 	router.HandleFunc("/withdraw/token", handleWithdrawToken).Methods("POST", "OPTIONS")
 	router.HandleFunc("/filter/items", handleFilterItems).Methods("GET", "OPTIONS")
+	router.HandleFunc("/trades", handleGetTrades).Methods("GET", "OPTIONS")
 
 	// Swagger documentation
 	router.PathPrefix("/swagger/").Handler(customSwaggerHandler())

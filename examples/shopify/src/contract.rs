@@ -13,9 +13,9 @@ use linera_sdk::base::ApplicationId;
 use linera_sdk::{
     base::{AccountOwner, WithContractAbi},
     views::{RootView, View},
-    Contract, ContractRuntime, DataBlobHash,
+    Contract, ContractRuntime, DataBlobHash, ToBcsBytes,
 };
-use shopify::{Message, Nft, NftStatus, NonFungibleTokenAbi, Operation, TokenId};
+use shopify::{Message, Nft, NftStatus, NonFungibleTokenAbi, Operation, TokenId, Trade};
 use universal_solver::UniversalSolverAbi;
 
 pub struct NonFungibleTokenContract {
@@ -32,7 +32,7 @@ impl WithContractAbi for NonFungibleTokenContract {
 impl Contract for NonFungibleTokenContract {
     type Message = Message;
     type InstantiationArgument = ();
-    type Parameters = ();
+    type Parameters = ApplicationId<UniversalSolverAbi>;
 
     async fn load(runtime: ContractRuntime<Self>) -> Self {
         let state = NonFungibleTokenState::load(runtime.root_view_storage_context())
@@ -86,15 +86,6 @@ impl Contract for NonFungibleTokenContract {
                 // change chain owner
                 nft.chain_owner = chain_owner.clone();
                 // self.check_account_authentication(nft.owner);
-                // let call_swap = universal_solver::Operation::Swap {
-                //     from_token: buy_from_token,
-                //     to_token,
-                //     amount,
-                //     destination_address: chain_owner.clone(),
-                // };
-
-                // let universal_solver_id = self.universal_solver_id();
-                // self.runtime.call_application(false, universal_solver_id, &call_swap);
 
                 self.transfer(nft, target_account, buy_from_token, amount)
                     .await;
@@ -132,7 +123,29 @@ impl Contract for NonFungibleTokenContract {
             }
 
             Operation::WithdrawToken { token, amount } => {
-                self.withdraw(token, amount).await;
+                // Calculate swap amount using service query
+                let application_id = self.universal_solver_id();
+                let request = async_graphql::Request::new(format!(
+                    r#"query {{ calculateSwap(fromToken: "{token}", toToken: "USDT", amount: {amount}) {{ fromToken toToken fromAmount toAmount exchangeRate }} }}"#
+                ));
+                let response = self.runtime.query_service(application_id, request);
+                let async_graphql::Value::Object(data_object) = response.data else {
+                    panic!("Unexpected response from `calculateSwap`: {response:?}");
+                };
+
+                let swap_result = match data_object.get("calculateSwap") {
+                    Some(async_graphql::Value::Object(result)) => result,
+                    _ => panic!(
+                        "Missing or invalid calculateSwap result in response data: {data_object:?}"
+                    ),
+                };
+
+                let to_amount = match swap_result.get("toAmount") {
+                    Some(async_graphql::Value::Number(n)) => n.as_f64().unwrap(),
+                    _ => panic!("Invalid toAmount in swap result: {swap_result:?}"),
+                };
+
+                self.withdraw(token, amount, to_amount.to_string()).await;
             }
         }
     }
@@ -181,6 +194,10 @@ impl Contract for NonFungibleTokenContract {
 }
 
 impl NonFungibleTokenContract {
+    fn universal_solver_id(&mut self) -> ApplicationId<UniversalSolverAbi> {
+        self.runtime.application_parameters()
+    }
+
     /// Verifies that a transfer is authenticated for this local account.
     fn check_account_authentication(&mut self, owner: AccountOwner) {
         match owner {
@@ -261,7 +278,7 @@ impl NonFungibleTokenContract {
         }
     }
 
-    async fn withdraw(&mut self, token: String, amount: String) {
+    async fn withdraw(&mut self, token: String, amount: String, trade_price: String) {
         let mut updates = Vec::new();
 
         self.state
@@ -291,6 +308,19 @@ impl NonFungibleTokenContract {
                 .insert(&token, new_amount)
                 .expect("Failed to update balances");
         }
+
+        // Create and insert new trade
+        let trade = Trade {
+            token,
+            quantity: amount,
+            price: trade_price,
+        };
+
+        // Insert the new trade directly
+        self.state
+            .user_trades
+            .insert(&trade)
+            .expect("Failed to insert trade data");
     }
 
     async fn get_nft(&self, token_id: &TokenId) -> Nft {

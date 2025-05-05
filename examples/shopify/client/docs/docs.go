@@ -285,6 +285,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/trades": {
+            "get": {
+                "description": "Get all trades in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "trades"
+                ],
+                "summary": "Get all trades",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/withdraw/token": {
             "post": {
                 "description": "Withdraw tokens from the system",
@@ -305,7 +335,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/shopify.WithdrawTokenRequest"
                         }
                     }
                 ],
@@ -335,6 +365,21 @@ const docTemplate = `{
                             }
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "shopify.WithdrawTokenRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "0.05"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "ETH"
                 }
             }
         }

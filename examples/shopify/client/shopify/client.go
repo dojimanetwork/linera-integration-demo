@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -17,6 +18,13 @@ var (
 	EthereumRPC string
 	SolanaRPC   string
 )
+
+// Trade represents a trade in the system
+type Trade struct {
+	Price    string `json:"price"`
+	Quantity string `json:"quantity"`
+	Token    string `json:"token"`
+}
 
 // Client provides methods to interact with the Shopify and Linera services
 type Client struct {
@@ -354,7 +362,23 @@ func (c *Client) GetEthereumTransaction(_, txHash string) (interface{}, error) {
 	}, nil
 }
 
+// WithdrawTokenRequest represents the request body for withdrawing tokens
+type WithdrawTokenRequest struct {
+	Token  string `json:"token" example:"ETH"`
+	Amount string `json:"amount" example:"0.05"`
+}
+
 // WithdrawToken withdraws tokens from the shopify service
+// @Summary Withdraw token
+// @Description Withdraw tokens from the system
+// @Tags balances
+// @Accept json
+// @Produce json
+// @Param request body WithdrawTokenRequest true "Withdrawal details"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /withdraw/token [post]
 func (c *Client) WithdrawToken(token string, amount string) (string, error) {
 	Logger.Printf("Withdrawing %s %s", amount, token)
 
@@ -438,4 +462,70 @@ func (c *Client) FilterNFTs(nftType NFTType) (map[string]NFT, error) {
 
 	Logger.Printf("Successfully filtered NFTs, found %d items", len(filterResp.Data.FilterNfts))
 	return filterResp.Data.FilterNfts, nil
+}
+
+// executeQuery executes a GraphQL query
+func (c *Client) executeQuery(query string, response interface{}) error {
+	reqBody := map[string]interface{}{
+		"query": query,
+	}
+
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("error marshaling request body: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", c.ShopifyURL, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return fmt.Errorf("error creating request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("error executing request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading response body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	if err := json.Unmarshal(body, response); err != nil {
+		return fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return nil
+}
+
+// GetTrades retrieves all trades from the system
+func (c *Client) GetTrades() ([]Trade, error) {
+	query := `
+		query {
+			trades {
+				price
+				quantity
+				token
+			}
+		}
+	`
+
+	var response struct {
+		Data struct {
+			Trades []Trade `json:"trades"`
+		} `json:"data"`
+	}
+
+	err := c.executeQuery(query, &response)
+	if err != nil {
+		return nil, fmt.Errorf("error executing trades query: %v", err)
+	}
+
+	return response.Data.Trades, nil
 }
