@@ -44,10 +44,7 @@ type TransferParams struct {
 }
 
 type TransferResponse struct {
-	Data   string `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors,omitempty"`
+	Data string `json:"data"`
 }
 
 type NFTQueryResponse struct {

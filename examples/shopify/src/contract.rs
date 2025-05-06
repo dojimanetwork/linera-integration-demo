@@ -291,15 +291,30 @@ impl NonFungibleTokenContract {
                         .then(|| "0".to_string())
                         .unwrap_or(_amount.to_string());
                     let mut curr_amt_f64: f64 = curr_amt.parse().unwrap();
-                    if curr_amt_f64 > __amount {
+                     assert!(curr_amt_f64 > 0.0, "Current amount cannot be 0");
+                     
+                     if curr_amt_f64 > __amount {
                         curr_amt_f64 -= __amount;
                         updates.push((_token.clone(), curr_amt_f64.to_string()));
+                    } else if (curr_amt_f64 == __amount) {
+                         log::info!("token balance is zero");
+                        updates.push((_token.clone(), "0".to_string()));
                     }
+
+                    log::info!(
+                        "Withdraw called: token = {}, amount = {}, trade_price = {}, current_balance = {}",
+                        token,
+                        amount,
+                        trade_price,
+                        curr_amt_f64
+                    );
                 }
                 Ok(())
             })
             .await
             .unwrap();
+
+        assert!(!updates.is_empty(), "token not found");
 
         // Apply updates after iteration
         for (token, new_amount) in updates {

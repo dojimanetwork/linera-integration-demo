@@ -215,12 +215,11 @@ func (c *Client) ExecuteTransferMutation(params TransferParams) (*TransferRespon
 		return nil, "", fmt.Errorf("error parsing transfer response: %w", err)
 	}
 
-	if len(transferResp.Errors) > 0 {
-		Logger.Printf("Transfer error: %s", transferResp.Errors[0].Message)
-		return nil, "", fmt.Errorf("transfer error: %s", transferResp.Errors[0].Message)
+	if len(transferResp.Data) > 0 {
+		Logger.Printf("Transfer error")
+		return nil, "", fmt.Errorf("transfer error")
 	}
-
-	// Logger.Printf("Successfully executed transfer mutation: %+v", transferResp)
+	
 	return &transferResp, hash, nil
 }
 
@@ -409,9 +408,9 @@ func (c *Client) WithdrawToken(token string, amount string) (string, error) {
 		return "", fmt.Errorf("error parsing withdraw token response: %w", err)
 	}
 
-	if len(withdrawResp.Errors) > 0 {
-		Logger.Printf("Withdraw token error: %s", withdrawResp.Errors[0].Message)
-		return "", fmt.Errorf("withdraw token error: %s", withdrawResp.Errors[0].Message)
+	if len(withdrawResp.Data) == 0 {
+		Logger.Printf("Withdraw token error")
+		return "", fmt.Errorf("withdraw token error")
 	}
 
 	Logger.Printf("Successfully withdrew tokens with transaction hash: %s", withdrawResp.Data)

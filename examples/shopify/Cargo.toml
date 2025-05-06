@@ -16,6 +16,7 @@ linera-sdk = { git = "https://github.com/jvff/linera-protocol", rev = "26a5299" 
 serde = { version = "1.0.152", features = ["derive"] }
 sha3 = "0.10.8"
 universal-solver = { git = "https://github.com/bhaagiKenpachi/universal-solver-linera", rev = "7ccd4c6"}
+log.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 fungible = { git = "https://github.com/bhaagiKenpachi/linera-fungible", rev = "e93272c" }
