@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -559,11 +560,8 @@ func (c *Client) getPoolAddress(token string) (string, error) {
 
 // Update the prepareEthereumTransaction method
 func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
-	// Get pool address for the token
-	fromAddress, err := c.getPoolAddress(swap.SwapResult.ToToken)
-	if err != nil {
-		return fmt.Errorf("failed to get source pool address: %w", err)
-	}
+	// Get the sender's address from the private key
+	senderAddress := crypto.PubkeyToAddress(chainKeys.EthereumKey.PublicKey)
 
 	// Query Ethereum node for current gas price
 	client, err := ethclient.Dial(EthereumRPC)
@@ -577,22 +575,31 @@ func (c *Client) prepareEthereumTransaction(swap *SwapResponse) error {
 		return fmt.Errorf("failed to get gas price: %w", err)
 	}
 
-	// Get nonce for the from address
-	nonce, err := client.PendingNonceAt(context.Background(), common.HexToAddress(fromAddress))
+	// Use senderAddress for nonce
+	nonce, err := client.PendingNonceAt(context.Background(), senderAddress)
 	if err != nil {
 		return fmt.Errorf("failed to get nonce: %w", err)
 	}
 
+	latestNonce, err := client.NonceAt(context.Background(), senderAddress, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get latest nonce: %w", err)
+	}
+	if latestNonce > nonce {
+		nonce = latestNonce
+	}
+	log.Printf("Using nonce %d for address %s (pending: %d, latest: %d)", nonce, senderAddress.Hex(), nonce, latestNonce)
+
 	// Prepare transaction parameters
 	swap.TxToSign = &TransactionPrep{
 		Chain: "ethereum",
-		RawTx: "", // Will be filled by the signer
+		RawTx: "",
 		ChainParams: ChainParams{
-			FromAddress: fromAddress,
+			FromAddress: senderAddress.Hex(),
 			ToAddress:   swap.DestinationAddress,
 			Amount:      fmt.Sprintf("%f", swap.SwapResult.ToAmount),
 			GasPrice:    gasPrice.String(),
-			GasLimit:    21000, // Standard ETH transfer gas limit
+			GasLimit:    21000,
 			Nonce:       nonce,
 		},
 	}
